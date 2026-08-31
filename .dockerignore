@@ -1,0 +1,16 @@
+.git
+.gitignore
+**/.env
+**/.env.production
+**/node_modules
+**/vendor
+deploy/
+deploy.zip
+frontend/dist
+backend/storage/logs/*
+backend/storage/framework/cache/data/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+backend/.phpunit.result.cache
+*.md
+!README.md

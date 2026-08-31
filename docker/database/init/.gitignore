@@ -1,0 +1,11 @@
+# Coloque aqui o backup .sql antes do primeiro deploy (não commitar arquivos grandes).
+# O MySQL importa automaticamente arquivos desta pasta na primeira inicialização
+# do volume mysql_init (volume vazio).
+#
+# Opções no Coolify:
+# 1) Upload via terminal/SFTP para o volume mysql_init
+# 2) Ou use IMPORT_DB_ON_START=true e coloque backup.sql no volume db_import
+
+*.sql
+*.sql.gz
+!/.gitkeep

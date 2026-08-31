@@ -1,0 +1,17 @@
+# Override local — use: docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
+
+services:
+  app:
+    ports:
+      - "${APP_PORT:-8080}:80"
+    environment:
+      APP_KEY: ${APP_KEY:-base64:CHANGE_ME_GENERATE_WITH_ARTISAN_KEY_GENERATE}
+      SERVICE_PASSWORD_MYSQL: ${MYSQL_PASSWORD:-semel}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-semel}
+
+  mysql:
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-semel}

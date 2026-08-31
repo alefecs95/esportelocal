@@ -1,0 +1,4 @@
+# Backup SQL para importação via container app (IMPORT_DB_ON_START=true)
+*.sql
+*.sql.gz
+!/.gitkeep
