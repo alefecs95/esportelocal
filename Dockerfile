@@ -37,15 +37,18 @@ FROM php:8.2-fpm-alpine AS runtime
 RUN apk add --no-cache \
         nginx \
         wget \
-        mysql-client \
+        mariadb-client \
         freetype-dev \
         libjpeg-turbo-dev \
         libpng-dev \
         libzip-dev \
-        icu-dev \
+        libxml2-dev \
+        curl-dev \
         oniguruma-dev \
+        linux-headers \
+        $PHPIZE_DEPS \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j"$(nproc)" \
+    && docker-php-ext-install -j"$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 2)" \
         pdo_mysql \
         mbstring \
         xml \
@@ -53,7 +56,8 @@ RUN apk add --no-cache \
         gd \
         zip \
         bcmath \
-    && rm -rf /var/cache/apk/*
+    && apk del --no-network $PHPIZE_DEPS \
+    && rm -rf /var/cache/apk/* /tmp/pear /var/www/html/*
 
 RUN addgroup -g 1000 -S www \
     && adduser -u 1000 -S www -G www
