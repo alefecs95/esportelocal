@@ -8,8 +8,12 @@ services:
         VITE_MAIN_DOMAIN: ${VITE_MAIN_DOMAIN:-}
     expose:
       - "80"
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.app.loadbalancer.server.port=80
     environment:
-      # Coolify gera domínio temporário (sslip.io) e roteia HTTPS via Traefik
+      # Coolify: registra domínio e roteia HTTPS (porta 80) para este serviço
+      SERVICE_URL_APP_80: /
       SERVICE_FQDN_APP_80: /
       APP_NAME: ${APP_NAME:-SEMEL}
       APP_ENV: production

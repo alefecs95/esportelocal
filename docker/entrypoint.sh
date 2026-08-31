@@ -6,12 +6,20 @@ cd /var/www/html/backend
 auto_configure_urls() {
     base=""
 
-    if [ -n "${SERVICE_URL_APP_80:-}" ]; then
-        base="${SERVICE_URL_APP_80%/}"
-    elif [ -n "${COOLIFY_URL:-}" ]; then
+    if [ -n "${COOLIFY_URL:-}" ]; then
         base="${COOLIFY_URL%/}"
+    elif [ -n "${SERVICE_URL_APP_80:-}" ]; then
+        base="${SERVICE_URL_APP_80%/}"
     elif [ -n "${COOLIFY_FQDN:-}" ]; then
         base="https://${COOLIFY_FQDN%/}"
+    fi
+
+    if [ -n "$base" ]; then
+        case "$base" in
+            //*) base="https:${base}" ;;
+            http://*|https://*) ;;
+            *) base="https://${base}" ;;
+        esac
     fi
 
     if [ -n "$base" ]; then
@@ -126,11 +134,11 @@ run_migrations_if_needed() {
 
     if [ -z "${APP_KEY:-}" ]; then
         echo "APP_KEY não definida — migrations ignoradas." >&2
-        return 1
+        return 0
     fi
 
     echo "Executando migrations..."
-    php artisan migrate --force
+    php artisan migrate --force || echo "Aviso: migrations falharam (container continua)." >&2
 }
 
 cache_configuration_if_needed() {
