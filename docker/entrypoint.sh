@@ -17,7 +17,8 @@ auto_configure_urls() {
     if [ -n "$base" ]; then
         case "$base" in
             //*) base="https:${base}" ;;
-            http://*|https://*) ;;
+            http://*) base="https://${base#http://}" ;;
+            https://*) ;;
             *) base="https://${base}" ;;
         esac
     fi
@@ -125,6 +126,8 @@ prepare_storage() {
     chmod -R ug+rwx storage bootstrap/cache
 
     php artisan storage:link --force 2>/dev/null || true
+    rm -f public/tenants 2>/dev/null || true
+    ln -sfn ../storage/app/public/tenants public/tenants 2>/dev/null || true
 }
 
 run_migrations_if_needed() {
@@ -155,11 +158,21 @@ cache_configuration_if_needed() {
     php artisan view:cache
 }
 
+run_deferred_setup() {
+    wait_for_mysql || {
+        echo "Setup em background: MySQL indisponível." >&2
+        return 1
+    }
+    import_database_if_needed
+    run_migrations_if_needed
+    cache_configuration_if_needed
+    echo "Setup em background concluído."
+}
+
 auto_configure_urls
 prepare_storage
-wait_for_mysql
-import_database_if_needed
-run_migrations_if_needed
-cache_configuration_if_needed
+
+# MySQL/migrations em background — nginx sobe imediatamente (evita 504 do proxy)
+run_deferred_setup &
 
 exec "$@"

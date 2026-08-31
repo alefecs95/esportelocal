@@ -17,7 +17,7 @@ services:
       SERVICE_FQDN_APP_80: /
       APP_NAME: ${APP_NAME:-SEMEL}
       APP_ENV: production
-      APP_KEY: ${APP_KEY:?}
+      APP_KEY: ${APP_KEY:-}
       APP_DEBUG: ${APP_DEBUG:-false}
       APP_PUBLIC_PATH: /backend/public
       LOG_CHANNEL: stack
@@ -51,10 +51,10 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 120s
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     restart: unless-stopped
 
   mysql:

@@ -64,8 +64,9 @@ RUN addgroup -g 1000 -S www \
 
 COPY docker/nginx/default.conf /etc/nginx/http.d/default.conf
 COPY docker/entrypoint.sh /entrypoint.sh
+COPY docker/start.sh /start.sh
 COPY scripts/coolify-import-db.sh /usr/local/bin/import-database.sh
-RUN chmod +x /entrypoint.sh /usr/local/bin/import-database.sh
+RUN chmod +x /entrypoint.sh /start.sh /usr/local/bin/import-database.sh
 
 WORKDIR /var/www/html
 
@@ -76,13 +77,18 @@ RUN mkdir -p /var/www/html/backend/storage/framework/{cache/data,sessions,views}
     && mkdir -p /var/www/html/backend/storage/logs \
     && mkdir -p /var/www/html/backend/storage/app/public/tenants \
     && mkdir -p /var/www/html/backend/bootstrap/cache \
-    && chown -R www:www /var/www/html/backend/storage /var/www/html/backend/bootstrap/cache
+    && chown -R www:www /var/www/html/backend/storage /var/www/html/backend/bootstrap/cache \
+    && chmod -R a+rX /var/www/html/public
 
 RUN sed -i 's/user = www-data/user = www/g' /usr/local/etc/php-fpm.d/www.conf \
     && sed -i 's/group = www-data/group = www/g' /usr/local/etc/php-fpm.d/www.conf \
     && sed -i 's/^;clear_env = no/clear_env = no/' /usr/local/etc/php-fpm.d/www.conf
 
+RUN sed -i 's/user nginx;/user www;/' /etc/nginx/nginx.conf \
+    && mkdir -p /run/nginx /var/log/nginx \
+    && chown -R www:www /run/nginx /var/log/nginx
+
 EXPOSE 80
 
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["sh", "-c", "php-fpm -D && nginx -g 'daemon off;'"]
+CMD ["/start.sh"]
