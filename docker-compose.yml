@@ -8,13 +8,14 @@ services:
         VITE_MAIN_DOMAIN: ${VITE_MAIN_DOMAIN:-}
     expose:
       - "80"
+    networks:
+      - default
+      - coolify
     labels:
-      - traefik.enable=true
-      - traefik.http.services.app.loadbalancer.server.port=80
+      - traefik.docker.network=coolify
     environment:
       # Coolify: registra domínio e roteia HTTPS (porta 80) para este serviço
       SERVICE_URL_APP_80: /
-      SERVICE_FQDN_APP_80: /
       APP_NAME: ${APP_NAME:-SEMEL}
       APP_ENV: production
       APP_KEY: ${APP_KEY:-}
@@ -50,7 +51,7 @@ services:
       mysql:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/health"]
       interval: 15s
       timeout: 5s
       retries: 3
@@ -59,6 +60,8 @@ services:
 
   mysql:
     image: mysql:8.0
+    networks:
+      - default
     environment:
       MYSQL_ROOT_PASSWORD: ${SERVICE_PASSWORD_MYSQL:?}
       MYSQL_DATABASE: ${DB_DATABASE:-semel}
@@ -84,3 +87,8 @@ volumes:
   mysql_data:
   mysql_init:
   db_import:
+
+networks:
+  coolify:
+    external: true
+    name: coolify
