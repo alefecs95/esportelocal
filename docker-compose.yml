@@ -8,13 +8,8 @@ services:
         VITE_MAIN_DOMAIN: ${VITE_MAIN_DOMAIN:-}
     expose:
       - "80"
-    networks:
-      - default
-      - coolify
-    labels:
-      - traefik.docker.network=coolify
     environment:
-      # Coolify: registra domínio e roteia HTTPS (porta 80) para este serviço
+      # Coolify: gera domínio e roteia tráfego HTTPS → porta 80 deste serviço
       SERVICE_URL_APP_80: /
       APP_NAME: ${APP_NAME:-SEMEL}
       APP_ENV: production
@@ -60,8 +55,6 @@ services:
 
   mysql:
     image: mysql:8.0
-    networks:
-      - default
     environment:
       MYSQL_ROOT_PASSWORD: ${SERVICE_PASSWORD_MYSQL:?}
       MYSQL_DATABASE: ${DB_DATABASE:-semel}
@@ -87,8 +80,3 @@ volumes:
   mysql_data:
   mysql_init:
   db_import:
-
-networks:
-  coolify:
-    external: true
-    name: coolify

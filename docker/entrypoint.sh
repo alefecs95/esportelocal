@@ -125,9 +125,8 @@ prepare_storage() {
     chown -R www:www storage bootstrap/cache
     chmod -R ug+rwx storage bootstrap/cache
 
+    rm -f public/storage public/tenants 2>/dev/null || true
     php artisan storage:link --force 2>/dev/null || true
-    rm -f public/tenants 2>/dev/null || true
-    ln -sfn ../storage/app/public/tenants public/tenants 2>/dev/null || true
 }
 
 run_migrations_if_needed() {
