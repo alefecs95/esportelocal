@@ -9,8 +9,6 @@ services:
     expose:
       - "80"
     environment:
-      # Coolify: gera domínio e roteia tráfego HTTPS → porta 80 deste serviço
-      SERVICE_URL_APP_80: /
       APP_NAME: ${APP_NAME:-SEMEL}
       APP_ENV: production
       APP_KEY: ${APP_KEY:-}

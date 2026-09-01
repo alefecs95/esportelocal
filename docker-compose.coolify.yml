@@ -10,7 +10,6 @@ services:
     expose:
       - "80"
     environment:
-      SERVICE_URL_APP_80: /
       APP_NAME: ${APP_NAME:-SEMEL}
       APP_ENV: production
       APP_KEY: ${APP_KEY:-}
