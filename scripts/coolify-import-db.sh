@@ -29,6 +29,7 @@ fi
 echo "Importando $BACKUP_FILE em ${DB_HOST}/${DB_DATABASE}..."
 
 mysql \
+    --skip-ssl \
     -h"$DB_HOST" \
     -P"$DB_PORT" \
     -u"$DB_USERNAME" \

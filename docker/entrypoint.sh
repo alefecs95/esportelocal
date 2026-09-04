@@ -148,7 +148,9 @@ import_database_if_needed() {
     fi
 
     echo "Importando backup SQL: $import_file"
+    # MySQL 8 no Docker usa CA autoassinada; o cliente MariaDB 11 recusa o certificado.
     mysql \
+        --skip-ssl \
         -h"${DB_HOST}" \
         -P"${DB_PORT:-3306}" \
         -u"${DB_USERNAME}" \
