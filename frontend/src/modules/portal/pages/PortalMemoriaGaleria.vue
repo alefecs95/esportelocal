@@ -91,12 +91,6 @@ const emptyTitle = computed(() => {
   return 'Nada encontrado com esses filtros.';
 });
 
-const loading = ref(true);
-const itens = ref([]);
-const locais = ref([]);
-const decadas = ref([]);
-const filters = ref({ decada: '', tipo: '', local_id: '', q: '' });
-
 const load = async () => {
   loading.value = true;
   try {

@@ -87,11 +87,11 @@
             <MemoriaField label="Seu nome" required>
               <input v-model="form.doador_nome" required :class="inputClass" placeholder="Nome e sobrenome" autocomplete="name" />
             </MemoriaField>
-            <MemoriaField label="E-mail" hint="Opcional. Se informar, avisamos quando o envio for aprovado ou recusado.">
-              <input v-model="form.doador_email" type="email" :class="inputClass" placeholder="voce@email.com" autocomplete="email" />
+            <MemoriaField label="Telefone / WhatsApp" hint="Opcional. Só a curadoria vê, para falar com você se precisar. Não enviamos mensagem automática.">
+              <input v-model="form.doador_telefone" type="tel" :class="inputClass" placeholder="(15) 99999-0000" autocomplete="tel" />
             </MemoriaField>
           </div>
-          <p class="text-xs text-gray-500">Ao enviar, você autoriza o uso desta mídia no acervo histórico municipal. Se informar e-mail, avisamos quando for aprovada ou recusada.</p>
+          <p class="text-xs text-gray-500">Ao enviar, você autoriza o uso desta mídia no acervo histórico municipal. A prefeitura avalia antes de publicar.</p>
         </section>
 
         <div v-if="error" class="text-red-700 text-sm bg-red-50 border border-red-100 rounded-2xl px-4 py-3">{{ error }}</div>
@@ -128,7 +128,7 @@ const form = ref({
   pessoas_envolvidas: '',
   doacao: '',
   doador_nome: '',
-  doador_email: '',
+  doador_telefone: '',
   tipo: 'foto',
 });
 
@@ -168,7 +168,7 @@ const resetForm = () => {
     pessoas_envolvidas: '',
     doacao: '',
     doador_nome: '',
-    doador_email: '',
+    doador_telefone: '',
     tipo: 'foto',
   };
 };

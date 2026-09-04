@@ -191,7 +191,8 @@
             <p class="text-sm text-gray-600 mt-1 whitespace-pre-line">{{ item.descricao || 'Sem descrição da pessoa que enviou.' }}</p>
             <dl class="mt-3 grid sm:grid-cols-2 gap-1 text-xs text-gray-500">
               <div><span class="font-semibold text-gray-700">Quem enviou:</span> {{ item.doador_nome }}</div>
-              <div><span class="font-semibold text-gray-700">E-mail:</span> {{ item.doador_email }}</div>
+              <div v-if="item.doador_telefone"><span class="font-semibold text-gray-700">WhatsApp/telefone:</span> {{ item.doador_telefone }}</div>
+              <div v-if="item.doador_email"><span class="font-semibold text-gray-700">E-mail:</span> {{ item.doador_email }}</div>
               <div v-if="item.ano"><span class="font-semibold text-gray-700">Ano:</span> {{ item.ano }}</div>
               <div v-if="item.pessoas_envolvidas"><span class="font-semibold text-gray-700">Pessoas:</span> {{ item.pessoas_envolvidas }}</div>
               <div v-if="item.fonte"><span class="font-semibold text-gray-700">Fonte:</span> {{ item.fonte }}</div>
@@ -359,7 +360,7 @@ const lote = async (acao) => {
   if (!selectedIds.value.length) return;
   let motivo = '';
   if (acao === 'rejeitar') {
-    motivo = prompt('Motivo da recusa (enviado por e-mail a quem informou contato):') || '';
+    motivo = prompt('Motivo da recusa (fica registrado na curadoria):') || '';
   }
   try {
     await memoriaService.lote({ ids: selectedIds.value, acao, motivo_rejeicao: motivo });

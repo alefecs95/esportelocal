@@ -299,7 +299,6 @@ class MemoriaAdminController extends Controller
 
         $item->save();
         $this->curation->log($request->user(), 'aprovou', 'acervo', $item->id, $item->titulo);
-        $this->curation->notifyDoador($item, true);
         return response()->json($item);
     }
 
@@ -315,7 +314,6 @@ class MemoriaAdminController extends Controller
         $item->revisado_em = now();
         $item->save();
         $this->curation->log($request->user(), 'rejeitou', 'acervo', $item->id, $item->titulo);
-        $this->curation->notifyDoador($item, false, $item->motivo_rejeicao);
         return response()->json($item);
     }
 
@@ -338,7 +336,6 @@ class MemoriaAdminController extends Controller
                 $item->revisado_por = $request->user()->id;
                 $item->revisado_em = now();
                 $item->save();
-                $this->curation->notifyDoador($item, true);
             } else {
                 $item->status = 'rejeitado';
                 $item->publicado = false;
@@ -346,7 +343,6 @@ class MemoriaAdminController extends Controller
                 $item->revisado_por = $request->user()->id;
                 $item->revisado_em = now();
                 $item->save();
-                $this->curation->notifyDoador($item, false, $item->motivo_rejeicao);
             }
         }
 
