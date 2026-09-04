@@ -37,6 +37,7 @@ FROM php:8.2-fpm-alpine AS runtime
 RUN apk add --no-cache \
         nginx \
         wget \
+        unzip \
         mariadb-client \
         freetype-dev \
         libjpeg-turbo-dev \
@@ -66,6 +67,7 @@ COPY docker/nginx/default.conf /etc/nginx/http.d/default.conf
 COPY docker/entrypoint.sh /entrypoint.sh
 COPY docker/start.sh /start.sh
 COPY scripts/coolify-import-db.sh /usr/local/bin/import-database.sh
+COPY docker/seed /opt/seed
 RUN chmod +x /entrypoint.sh /start.sh /usr/local/bin/import-database.sh
 
 WORKDIR /var/www/html

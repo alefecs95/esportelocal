@@ -9,10 +9,15 @@ services:
     expose:
       - "80"
     environment:
+      # Diz ao Coolify para publicar este serviço (nginx) na porta 80.
+      # No painel, domínio do serviço app: https://esportelocal.com:80
+      SERVICE_FQDN_APP_80: ${SERVICE_FQDN_APP_80:-}
       APP_NAME: ${APP_NAME:-SEMEL}
       APP_ENV: production
       APP_KEY: ${APP_KEY:-}
       APP_DEBUG: ${APP_DEBUG:-false}
+      APP_URL: ${APP_URL:-}
+      FRONTEND_URL: ${FRONTEND_URL:-}
       APP_PUBLIC_PATH: /backend/public
       LOG_CHANNEL: stack
       LOG_LEVEL: warning
@@ -35,7 +40,11 @@ services:
       SUPER_ADMIN_PASSWORD: ${SUPER_ADMIN_PASSWORD:-}
       RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
       IMPORT_DB_ON_START: ${IMPORT_DB_ON_START:-false}
-      IMPORT_DB_FILE: ${IMPORT_DB_FILE:-/docker/database/import/backup.sql}
+      FORCE_IMPORT_DB: ${FORCE_IMPORT_DB:-false}
+      IMPORT_DB_FILE: ${IMPORT_DB_FILE:-/opt/seed/backup.sql}
+      IMPORT_STORAGE_DIR: ${IMPORT_STORAGE_DIR:-/opt/seed/public}
+      IMPORT_STORAGE_FILE: ${IMPORT_STORAGE_FILE:-}
+      FORCE_IMPORT_STORAGE: ${FORCE_IMPORT_STORAGE:-false}
       RUN_CONFIG_CACHE: ${RUN_CONFIG_CACHE:-true}
     volumes:
       - app_storage:/var/www/html/backend/storage

@@ -12,6 +12,7 @@ deploy.zip
 *.sql
 *.sql.gz
 !docker/database/**/.gitkeep
+!docker/seed/backup.sql
 
 # Ambiente
 .env

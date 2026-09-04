@@ -3,33 +3,65 @@ set -e
 
 cd /var/www/html/backend
 
+# Coolify concatena vários domínios com vírgula (ex.: https://a.com,https://www.a.com).
+# Laravel APP_URL/FRONTEND_URL precisam ser uma URI única — senão: "Invalid URI: Host is malformed."
+first_url() {
+    val="${1:-}"
+    val="${val%%,*}"
+    val="${val%% }"
+    val="${val%/}"
+    echo "$val"
+}
+
+normalize_https_url() {
+    url="$(first_url "${1:-}")"
+    [ -z "$url" ] && return 0
+
+    case "$url" in
+        //*) url="https:${url}" ;;
+        http://*) url="https://${url#http://}" ;;
+        https://*) ;;
+        *) url="https://${url}" ;;
+    esac
+
+    echo "${url%/}"
+}
+
+ensure_public_path() {
+    url="${1:-}"
+    public_path="${APP_PUBLIC_PATH:-/backend/public}"
+    public_path="/${public_path#/}"
+    public_path="${public_path%/}"
+
+    [ -z "$url" ] && echo "$url" && return 0
+
+    case "$url" in
+        *"${public_path}") echo "$url" ;;
+        *) echo "${url}${public_path}" ;;
+    esac
+}
+
 auto_configure_urls() {
     base=""
 
     if [ -n "${COOLIFY_URL:-}" ]; then
-        base="${COOLIFY_URL%/}"
+        base="$(normalize_https_url "$COOLIFY_URL")"
     elif [ -n "${SERVICE_URL_APP_80:-}" ]; then
-        base="${SERVICE_URL_APP_80%/}"
+        base="$(normalize_https_url "$SERVICE_URL_APP_80")"
     elif [ -n "${COOLIFY_FQDN:-}" ]; then
-        base="https://${COOLIFY_FQDN%/}"
+        base="$(normalize_https_url "$COOLIFY_FQDN")"
     fi
 
-    if [ -n "$base" ]; then
-        case "$base" in
-            //*) base="https:${base}" ;;
-            http://*) base="https://${base#http://}" ;;
-            https://*) ;;
-            *) base="https://${base}" ;;
-        esac
+    if [ -n "${FRONTEND_URL:-}" ]; then
+        export FRONTEND_URL="$(normalize_https_url "$FRONTEND_URL")"
+    elif [ -n "$base" ]; then
+        export FRONTEND_URL="$base"
     fi
 
-    if [ -n "$base" ]; then
-        if [ -z "${FRONTEND_URL:-}" ]; then
-            export FRONTEND_URL="$base"
-        fi
-        if [ -z "${APP_URL:-}" ]; then
-            export APP_URL="${base}/backend/public"
-        fi
+    if [ -n "${APP_URL:-}" ]; then
+        export APP_URL="$(ensure_public_path "$(normalize_https_url "$APP_URL")")"
+    elif [ -n "$base" ]; then
+        export APP_URL="$(ensure_public_path "$base")"
     fi
 
     echo "APP_URL=${APP_URL:-não definido}"
@@ -93,15 +125,26 @@ import_database_if_needed() {
         return 0
     fi
 
-    import_file="${IMPORT_DB_FILE:-/docker/database/import/backup.sql}"
+    import_file="${IMPORT_DB_FILE:-/opt/seed/backup.sql}"
+    if [ ! -f "$import_file" ] && [ -f /opt/seed/backup.sql ]; then
+        import_file="/opt/seed/backup.sql"
+    fi
+    if [ ! -f "$import_file" ] && [ -f /docker/database/import/backup.sql ]; then
+        import_file="/docker/database/import/backup.sql"
+    fi
     if [ ! -f "$import_file" ]; then
         echo "IMPORT_DB_ON_START=true, mas backup não encontrado em: $import_file"
         return 0
     fi
 
-    if database_has_tables; then
+    if [ "${FORCE_IMPORT_DB:-false}" != "true" ] && database_has_tables; then
         echo "Banco já contém tabelas — importação automática ignorada."
+        echo "Para substituir os dados: FORCE_IMPORT_DB=true (o dump precisa ter DROP TABLE)."
         return 0
+    fi
+
+    if [ "${FORCE_IMPORT_DB:-false}" = "true" ]; then
+        echo "FORCE_IMPORT_DB=true — importando por cima do banco atual."
     fi
 
     echo "Importando backup SQL: $import_file"
@@ -114,6 +157,38 @@ import_database_if_needed() {
     echo "Backup importado com sucesso."
 }
 
+import_storage_if_needed() {
+    dest="storage/app/public"
+    mkdir -p "$dest"
+
+    seed_dir="${IMPORT_STORAGE_DIR:-/opt/seed/public}"
+    if [ -d "$seed_dir" ]; then
+        echo "Copiando mídias de $seed_dir -> $dest"
+        find "$seed_dir" -type f | while IFS= read -r src; do
+            rel="${src#"$seed_dir"/}"
+            tgt="$dest/$rel"
+            if [ ! -f "$tgt" ]; then
+                mkdir -p "$(dirname "$tgt")"
+                cp "$src" "$tgt"
+            fi
+        done
+        echo "Mídias copiadas."
+    fi
+
+    zip_file="${IMPORT_STORAGE_FILE:-}"
+    if [ -z "$zip_file" ] || [ ! -f "$zip_file" ]; then
+        return 0
+    fi
+
+    echo "Extraindo mídias: $zip_file -> $dest"
+    if [ "${FORCE_IMPORT_STORAGE:-false}" = "true" ]; then
+        unzip -o "$zip_file" -d "$dest"
+    else
+        unzip -n "$zip_file" -d "$dest"
+    fi
+    echo "Mídias extraídas."
+}
+
 prepare_storage() {
     mkdir -p storage/framework/cache/data
     mkdir -p storage/framework/sessions
@@ -121,6 +196,8 @@ prepare_storage() {
     mkdir -p storage/logs
     mkdir -p storage/app/public/tenants
     mkdir -p bootstrap/cache
+
+    import_storage_if_needed
 
     chown -R www:www storage bootstrap/cache
     chmod -R ug+rwx storage bootstrap/cache
