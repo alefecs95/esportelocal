@@ -7,14 +7,19 @@ use App\Models\MemoriaAcervo;
 use App\Models\MemoriaLocal;
 use App\Models\MemoriaMarco;
 use App\Models\MemoriaPersonalidade;
+use App\Models\MemoriaAuditoria;
+use App\Models\MemoriaNotificacao;
+use App\Services\MemoriaCurationService;
 use App\Services\TenantFileService;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 
 class MemoriaAdminController extends Controller
 {
-    public function __construct(private TenantFileService $fileService)
-    {
+    public function __construct(
+        private TenantFileService $fileService,
+        private MemoriaCurationService $curation
+    ) {
     }
 
     public function dashboard()
@@ -23,9 +28,17 @@ class MemoriaAdminController extends Controller
 
         return response()->json([
             'marcos' => MemoriaMarco::count(),
+            'marcos_publicados' => MemoriaMarco::where('publicado', true)->count(),
+            'marcos_rascunho' => MemoriaMarco::where('publicado', false)->count(),
             'personalidades' => MemoriaPersonalidade::count(),
+            'personalidades_publicadas' => MemoriaPersonalidade::where('publicado', true)->count(),
+            'personalidades_rascunho' => MemoriaPersonalidade::where('publicado', false)->count(),
             'acervo' => MemoriaAcervo::aprovado()->count(),
             'pendentes' => MemoriaAcervo::pendente()->count(),
+            'orfaos' => MemoriaAcervo::aprovado()->orfao()->count(),
+            'sem_alt' => MemoriaAcervo::aprovado()->where('tipo', 'foto')->where(function ($q) {
+                $q->whereNull('alt_text')->orWhere('alt_text', '');
+            })->count(),
             'locais' => MemoriaLocal::count(),
         ]);
     }
@@ -89,9 +102,13 @@ class MemoriaAdminController extends Controller
     public function storePersonalidade(Request $request)
     {
         $this->authorizeCuradoria($request);
-        $item = MemoriaPersonalidade::create($this->validatePersonalidade($request));
+        $item = MemoriaPersonalidade::create($this->validatePersonalidade($request) + [
+            'created_by' => $request->user()->id,
+            'updated_by' => $request->user()->id,
+        ]);
         $this->attachFoto($request, $item, 'memoria/personalidades');
         $item->save();
+        $this->curation->log($request->user(), 'criou', 'personalidade', $item->id, $item->nome);
         return response()->json($item->load('modalidade'), 201);
     }
 
@@ -100,8 +117,10 @@ class MemoriaAdminController extends Controller
         $this->authorizeCuradoria($request);
         $item = MemoriaPersonalidade::findOrFail($id);
         $item->fill($this->validatePersonalidade($request));
+        $item->updated_by = $request->user()->id;
         $this->attachFoto($request, $item, 'memoria/personalidades');
         $item->save();
+        $this->curation->log($request->user(), 'editou', 'personalidade', $item->id, $item->nome);
         return response()->json($item->load('modalidade'));
     }
 
@@ -138,10 +157,14 @@ class MemoriaAdminController extends Controller
         $data = $this->validateMarco($request);
         $ids = $this->parseIds($request->input('personalidade_ids'));
         unset($data['personalidade_ids']);
-        $item = MemoriaMarco::create($data);
+        $item = MemoriaMarco::create($data + [
+            'created_by' => $request->user()->id,
+            'updated_by' => $request->user()->id,
+        ]);
         $this->attachCapa($request, $item);
         $item->save();
         $item->personalidades()->sync($ids);
+        $this->curation->log($request->user(), 'criou', 'marco', $item->id, $item->titulo);
         return response()->json($item->load(['modalidade', 'local', 'personalidades']), 201);
     }
 
@@ -153,9 +176,11 @@ class MemoriaAdminController extends Controller
         $ids = $this->parseIds($request->input('personalidade_ids'));
         unset($data['personalidade_ids']);
         $item->fill($data);
+        $item->updated_by = $request->user()->id;
         $this->attachCapa($request, $item);
         $item->save();
         $item->personalidades()->sync($ids);
+        $this->curation->log($request->user(), 'editou', 'marco', $item->id, $item->titulo);
         return response()->json($item->load(['modalidade', 'local', 'personalidades']));
     }
 
@@ -176,6 +201,9 @@ class MemoriaAdminController extends Controller
             $query->where('status', $request->query('status'));
         } else {
             $query->where('status', '!=', 'pendente');
+        }
+        if ($request->boolean('orfaos')) {
+            $query->orfao();
         }
         if ($request->filled('q')) {
             $q = $request->query('q');
@@ -212,6 +240,7 @@ class MemoriaAdminController extends Controller
             'status' => 'aprovado',
             'publicado' => filter_var($request->input('publicado', true), FILTER_VALIDATE_BOOLEAN),
         ]));
+        $this->curation->log($request->user(), 'criou', 'acervo', $item->id, $item->titulo);
 
         return response()->json($item->load(['modalidade', 'local', 'marco', 'personalidade']), 201);
     }
@@ -240,6 +269,7 @@ class MemoriaAdminController extends Controller
 
         $item->fill($payload);
         $item->save();
+        $this->curation->log($request->user(), 'editou', 'acervo', $item->id, $item->titulo);
         return response()->json($item->load(['modalidade', 'local', 'marco', 'personalidade']));
     }
 
@@ -268,6 +298,8 @@ class MemoriaAdminController extends Controller
         }
 
         $item->save();
+        $this->curation->log($request->user(), 'aprovou', 'acervo', $item->id, $item->titulo);
+        $this->curation->notifyDoador($item, true);
         return response()->json($item);
     }
 
@@ -282,7 +314,110 @@ class MemoriaAdminController extends Controller
         $item->revisado_por = $request->user()->id;
         $item->revisado_em = now();
         $item->save();
+        $this->curation->log($request->user(), 'rejeitou', 'acervo', $item->id, $item->titulo);
+        $this->curation->notifyDoador($item, false, $item->motivo_rejeicao);
         return response()->json($item);
+    }
+
+    public function lote(Request $request)
+    {
+        $this->authorizeCuradoria($request);
+        $data = $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer',
+            'acao' => 'required|in:aprovar,rejeitar',
+            'motivo_rejeicao' => 'nullable|string|max:1000',
+        ]);
+
+        $items = MemoriaAcervo::whereIn('id', $data['ids'])->where('status', 'pendente')->get();
+        foreach ($items as $item) {
+            if ($data['acao'] === 'aprovar') {
+                $item->status = 'aprovado';
+                $item->publicado = true;
+                $item->motivo_rejeicao = null;
+                $item->revisado_por = $request->user()->id;
+                $item->revisado_em = now();
+                $item->save();
+                $this->curation->notifyDoador($item, true);
+            } else {
+                $item->status = 'rejeitado';
+                $item->publicado = false;
+                $item->motivo_rejeicao = $data['motivo_rejeicao'] ?? null;
+                $item->revisado_por = $request->user()->id;
+                $item->revisado_em = now();
+                $item->save();
+                $this->curation->notifyDoador($item, false, $item->motivo_rejeicao);
+            }
+        }
+
+        $this->curation->log($request->user(), 'lote_' . $data['acao'], 'acervo', null, count($items) . ' itens');
+        return response()->json(['atualizados' => $items->count()]);
+    }
+
+    public function duplicarMarco(Request $request, $id)
+    {
+        $this->authorizeCuradoria($request);
+        $orig = MemoriaMarco::with('personalidades')->findOrFail($id);
+        $copy = $orig->replicate(['slug']);
+        $copy->titulo = $orig->titulo . ' (cópia)';
+        $copy->slug = null;
+        $copy->publicado = false;
+        $copy->destaque = false;
+        $copy->created_by = $request->user()->id;
+        $copy->updated_by = $request->user()->id;
+        $copy->save();
+        $copy->personalidades()->sync($orig->personalidades->pluck('id'));
+        $this->curation->log($request->user(), 'duplicou', 'marco', $copy->id, $copy->titulo);
+        return response()->json($copy, 201);
+    }
+
+    public function duplicarPersonalidade(Request $request, $id)
+    {
+        $this->authorizeCuradoria($request);
+        $orig = MemoriaPersonalidade::findOrFail($id);
+        $copy = $orig->replicate(['slug']);
+        $copy->nome = $orig->nome . ' (cópia)';
+        $copy->slug = null;
+        $copy->publicado = false;
+        $copy->destaque = false;
+        $copy->created_by = $request->user()->id;
+        $copy->updated_by = $request->user()->id;
+        $copy->save();
+        $this->curation->log($request->user(), 'duplicou', 'personalidade', $copy->id, $copy->nome);
+        return response()->json($copy, 201);
+    }
+
+    public function auditoria(Request $request)
+    {
+        $this->authorizeCuradoria($request);
+        return response()->json(
+            MemoriaAuditoria::with('user:id,name,email')
+                ->orderByDesc('id')
+                ->limit(50)
+                ->get()
+        );
+    }
+
+    public function notificacoes(Request $request)
+    {
+        $this->authorizeCuradoria($request);
+        $items = MemoriaNotificacao::where('user_id', $request->user()->id)
+            ->orderByDesc('id')
+            ->limit(20)
+            ->get();
+        return response()->json([
+            'nao_lidas' => $items->where('lida', false)->count(),
+            'items' => $items,
+        ]);
+    }
+
+    public function lerNotificacoes(Request $request)
+    {
+        $this->authorizeCuradoria($request);
+        MemoriaNotificacao::where('user_id', $request->user()->id)
+            ->where('lida', false)
+            ->update(['lida' => true, 'lida_em' => now()]);
+        return response()->json(['ok' => true]);
     }
 
     private function authorizeCuradoria(Request $request): void
@@ -309,6 +444,7 @@ class MemoriaAdminController extends Controller
     {
         $data = $request->validate([
             'nome' => 'required|string|max:255',
+            'slug' => 'nullable|string|max:255',
             'papel' => 'nullable|in:atleta,tecnico,dirigente,outro',
             'mini_bio' => 'nullable|string',
             'data_nascimento' => 'nullable|date',
@@ -328,6 +464,7 @@ class MemoriaAdminController extends Controller
     {
         $data = $request->validate([
             'titulo' => 'required|string|max:255',
+            'slug' => 'nullable|string|max:255',
             'resumo' => 'nullable|string|max:500',
             'conteudo' => 'nullable|string',
             'data_evento' => 'nullable|date',
@@ -352,7 +489,9 @@ class MemoriaAdminController extends Controller
         return [
             'arquivo' => ($fileRequired ? 'required' : 'nullable') . '|file|max:51200|mimetypes:image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,application/pdf',
             'titulo' => 'required|string|max:255',
+            'alt_text' => 'nullable|string|max:255',
             'descricao' => 'nullable|string',
+            'historia' => 'nullable|string',
             'tipo' => 'nullable|in:foto,video,documento',
             'data_aproximada' => 'nullable|date',
             'ano' => 'nullable|integer|min:1900|max:' . (date('Y') + 1),
@@ -362,6 +501,8 @@ class MemoriaAdminController extends Controller
             'personalidade_id' => 'nullable|exists:memoria_personalidades,id',
             'pessoas_envolvidas' => 'nullable|string|max:255',
             'fonte' => 'nullable|string|max:255',
+            'fonte_tipo' => 'nullable|in:arquivo_publico,jornal,secretaria,clube,outro',
+            'doacao' => 'nullable|string|max:255',
             'publicado' => 'nullable',
         ];
     }
@@ -377,7 +518,9 @@ class MemoriaAdminController extends Controller
         $payload = [
             'tipo' => $tipo,
             'titulo' => $request->input('titulo'),
+            'alt_text' => $request->input('alt_text') ?: $request->input('titulo'),
             'descricao' => $request->input('descricao'),
+            'historia' => $request->input('historia'),
             'data_aproximada' => $request->input('data_aproximada'),
             'ano' => $request->input('ano'),
             'local_id' => $request->input('local_id') ?: null,
@@ -386,6 +529,8 @@ class MemoriaAdminController extends Controller
             'personalidade_id' => $request->input('personalidade_id') ?: null,
             'pessoas_envolvidas' => $request->input('pessoas_envolvidas'),
             'fonte' => $request->input('fonte'),
+            'fonte_tipo' => $request->input('fonte_tipo') ?: null,
+            'doacao' => $request->input('doacao'),
             'publicado' => filter_var($request->input('publicado', true), FILTER_VALIDATE_BOOLEAN),
         ];
 

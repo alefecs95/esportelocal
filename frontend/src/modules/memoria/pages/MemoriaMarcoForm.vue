@@ -1,75 +1,121 @@
 <template>
-  <div class="p-6 max-w-4xl">
-    <h1 class="text-2xl font-bold text-gray-800 mb-1">{{ isEdit ? 'Editar marco' : 'Novo marco' }}</h1>
-    <p class="text-gray-500 mb-6">Evento histórico da linha do tempo.</p>
+  <div class="p-4 sm:p-6 max-w-4xl">
+    <router-link to="/admin/memoria" class="text-sm font-semibold text-blue-700 hover:text-blue-900">← Voltar para a Memória</router-link>
+    <h1 class="text-2xl font-bold text-gray-800 mt-3">{{ isEdit ? 'Editar fato histórico' : 'Novo fato na linha do tempo' }}</h1>
+    <p class="text-gray-500 mt-1">Conte o que aconteceu, quando foi e quem participou. Só o título é obrigatório.</p>
 
-    <form class="bg-white p-6 rounded-xl border border-gray-200 space-y-5" @submit.prevent="submit">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="md:col-span-2">
-          <label class="block text-sm font-medium mb-1">Título</label>
-          <input v-model="form.titulo" required class="w-full rounded-lg border-gray-300" />
+    <form class="mt-6 space-y-6" @submit.prevent="submit">
+      <section class="bg-white p-5 sm:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-5">
+        <h2 class="text-sm font-bold uppercase tracking-wide text-gray-500">O que aconteceu</h2>
+        <MemoriaField label="Título do fato" hint="Ex.: Inauguração do Ginásio Municipal" required>
+          <input v-model="form.titulo" required :class="inputClass" placeholder="Qual fato a cidade deve lembrar?" maxlength="255" />
+        </MemoriaField>
+        <MemoriaField label="Endereço da página (slug)" hint="Gerado do título. Edite se quiser um link curto. Se já existir, o sistema acrescenta um número.">
+          <input v-model="form.slug" :class="inputClass" placeholder="deixe em branco para gerar automaticamente" maxlength="255" />
+        </MemoriaField>
+
+        <MemoriaField label="Tipo de fato" hint="Ajuda o público a filtrar a linha do tempo.">
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <button
+              v-for="option in tipoOptions"
+              :key="option.id"
+              type="button"
+              class="rounded-xl border px-3 py-3 text-left min-h-11"
+              :class="form.tipo === option.id ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-100' : 'border-gray-200 hover:border-gray-300'"
+              @click="form.tipo = option.id"
+            >
+              <span class="block text-sm font-semibold text-gray-900">{{ option.label }}</span>
+              <span class="block text-xs text-gray-500 mt-0.5">{{ option.hint }}</span>
+            </button>
+          </div>
+        </MemoriaField>
+
+        <MemoriaField label="Resumo curto" hint="Uma ou duas frases para o card da linha do tempo. Máx. 500 caracteres.">
+          <textarea v-model="form.resumo" rows="2" maxlength="500" :class="inputClass" class="!min-h-[4.5rem]" placeholder="Em 1998 a cidade parou para ver a final..." />
+          <p class="text-xs text-gray-400 mt-1 text-right">{{ (form.resumo || '').length }}/500</p>
+        </MemoriaField>
+      </section>
+
+      <section class="bg-white p-5 sm:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-5">
+        <h2 class="text-sm font-bold uppercase tracking-wide text-gray-500">Quando e onde</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <MemoriaField label="Data completa" hint="Use se souber o dia. O ano é preenchido sozinho.">
+            <input v-model="form.data_evento" type="date" :class="inputClass" @change="syncYear" />
+          </MemoriaField>
+          <MemoriaField label="Só o ano" hint="Use se não souber o dia. Ex.: 1998.">
+            <input v-model="form.ano" type="number" min="1900" :max="currentYear" :class="inputClass" :disabled="!!form.data_evento" placeholder="1998" />
+          </MemoriaField>
+          <MemoriaField label="Modalidade" hint="Futebol, vôlei, atletismo...">
+            <select v-model="form.modalidade_id" :class="inputClass">
+              <option value="">Não se aplica / várias</option>
+              <option v-for="m in modalidades" :key="m.id" :value="String(m.id)">{{ m.nome }}</option>
+            </select>
+          </MemoriaField>
+          <MemoriaField label="Local histórico" hint="Cadastre ginásios e estádios na aba Locais.">
+            <select v-model="form.local_id" :class="inputClass">
+              <option value="">Ainda não identificado</option>
+              <option v-for="l in locais" :key="l.id" :value="String(l.id)">{{ l.nome }}</option>
+            </select>
+          </MemoriaField>
         </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Data do evento</label>
-          <input v-model="form.data_evento" type="date" class="w-full rounded-lg border-gray-300" />
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Ano</label>
-          <input v-model="form.ano" type="number" min="1900" class="w-full rounded-lg border-gray-300" />
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Tipo</label>
-          <select v-model="form.tipo" class="w-full rounded-lg border-gray-300">
-            <option value="conquista">Conquista</option>
-            <option value="campeonato">Campeonato</option>
-            <option value="inauguracao">Inauguração</option>
-            <option value="atleta">Atleta em destaque</option>
-            <option value="marco">Outro marco</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Modalidade</label>
-          <select v-model="form.modalidade_id" class="w-full rounded-lg border-gray-300">
-            <option value="">Sem modalidade</option>
-            <option v-for="m in modalidades" :key="m.id" :value="String(m.id)">{{ m.nome }}</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Local histórico</label>
-          <select v-model="form.local_id" class="w-full rounded-lg border-gray-300">
-            <option value="">Sem local</option>
-            <option v-for="l in locais" :key="l.id" :value="String(l.id)">{{ l.nome }}</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Capa</label>
-          <input type="file" accept="image/*" @change="onFile" />
-        </div>
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1">Resumo</label>
-        <textarea v-model="form.resumo" rows="2" maxlength="500" class="w-full rounded-lg border-gray-300"></textarea>
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1">História</label>
-        <textarea v-model="form.conteudo" rows="6" class="w-full rounded-lg border-gray-300"></textarea>
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1">Personalidades ligadas</label>
-        <select v-model="form.personalidade_ids" multiple class="w-full rounded-lg border-gray-300 min-h-[6rem]">
-          <option v-for="p in personalidades" :key="p.id" :value="String(p.id)">{{ p.nome }}</option>
-        </select>
-      </div>
-      <label class="flex items-center gap-2">
-        <input v-model="form.destaque" type="checkbox" /> Destaque
-      </label>
-      <label class="flex items-center gap-2">
-        <input v-model="form.publicado" type="checkbox" /> Publicado
-      </label>
-      <div v-if="error" class="text-red-600 text-sm">{{ error }}</div>
-      <div class="flex gap-3">
-        <button class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium" :disabled="saving">{{ saving ? 'Salvando...' : 'Salvar' }}</button>
-        <router-link to="/admin/memoria" class="px-4 py-2 rounded-lg border">Cancelar</router-link>
+      </section>
+
+      <section class="bg-white p-5 sm:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-5">
+        <h2 class="text-sm font-bold uppercase tracking-wide text-gray-500">História e pessoas</h2>
+        <MemoriaFileDrop
+          label="Foto de capa"
+          hint="Aparece no topo da página pública. JPG, PNG ou WEBP, até 20 MB."
+          empty-title="Enviar foto de capa"
+          empty-subtitle="Uma imagem forte do fato histórico"
+          :existing-url="existingCapa"
+          @change="onFile"
+        />
+        <MemoriaField label="Texto da história" hint="Conte o contexto, o resultado e por que isso importa para a cidade.">
+          <textarea v-model="form.conteudo" rows="8" :class="inputClass" class="!min-h-[10rem]" placeholder="O que aconteceu, quem estava lá e o que mudou depois..." />
+        </MemoriaField>
+        <MemoriaField label="Quem fez parte" hint="Clique para marcar atletas, técnicos ou dirigentes já cadastrados.">
+          <p v-if="personalidades.length === 0" class="text-sm text-gray-500">
+            Nenhuma personalidade cadastrada ainda.
+            <router-link to="/admin/memoria/personalidades/nova" class="text-blue-700 font-semibold">Cadastrar agora</router-link>
+          </p>
+          <div v-else class="flex flex-wrap gap-2">
+            <button
+              v-for="p in personalidades"
+              :key="p.id"
+              type="button"
+              class="px-3 py-2 rounded-full text-sm font-medium border min-h-11"
+              :class="form.personalidade_ids.includes(String(p.id)) ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300'"
+              @click="togglePessoa(p.id)"
+            >
+              {{ p.nome }}
+            </button>
+          </div>
+        </MemoriaField>
+      </section>
+
+      <section class="bg-gray-50 p-5 sm:p-6 rounded-2xl border border-gray-200 grid sm:grid-cols-2 gap-4">
+        <label class="flex gap-3 items-start p-3 bg-white rounded-xl border border-gray-200 cursor-pointer">
+          <input v-model="form.publicado" type="checkbox" class="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-5 h-5" />
+          <span>
+            <span class="block font-semibold text-gray-800">Publicar no portal</span>
+            <span class="block text-sm text-gray-500">Desmarcado fica só como rascunho interno.</span>
+          </span>
+        </label>
+        <label class="flex gap-3 items-start p-3 bg-white rounded-xl border border-gray-200 cursor-pointer">
+          <input v-model="form.destaque" type="checkbox" class="mt-1 rounded border-gray-300 text-yellow-500 focus:ring-yellow-500 w-5 h-5" />
+          <span>
+            <span class="block font-semibold text-gray-800">Destacar na home</span>
+            <span class="block text-sm text-gray-500">Aparece no bloco Memória da página inicial.</span>
+          </span>
+        </label>
+      </section>
+
+      <div v-if="error" class="text-red-600 text-sm bg-red-50 border border-red-100 rounded-xl px-4 py-3">{{ error }}</div>
+      <div class="flex flex-wrap gap-3">
+        <button class="bg-blue-600 text-white px-5 py-3 rounded-xl font-semibold min-h-11 disabled:opacity-50" :disabled="saving">
+          {{ saving ? 'Salvando...' : (isEdit ? 'Salvar alterações' : 'Publicar fato') }}
+        </button>
+        <router-link to="/admin/memoria" class="px-5 py-3 rounded-xl border border-gray-300 font-medium min-h-11">Cancelar</router-link>
       </div>
     </form>
   </div>
@@ -80,18 +126,32 @@ import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import memoriaService from '../services/memoriaService';
 import modalidadeService from '@/modules/modalidades/services/modalidadeService';
+import MemoriaField from '../components/MemoriaField.vue';
+import MemoriaFileDrop from '../components/MemoriaFileDrop.vue';
+import { inputClass, yearFromDate } from '../utils/memoriaLabels';
+
+const tipoOptions = [
+  { id: 'conquista', label: 'Conquista', hint: 'Título, medalha, recorde' },
+  { id: 'campeonato', label: 'Campeonato', hint: 'Edição ou final histórica' },
+  { id: 'inauguracao', label: 'Inauguração', hint: 'Ginásio, campo, pista' },
+  { id: 'atleta', label: 'Pessoa', hint: 'Ídolo ou geração de ouro' },
+  { id: 'marco', label: 'Outro fato', hint: 'Qualquer marco da cidade' },
+];
 
 const route = useRoute();
 const router = useRouter();
 const isEdit = !!route.params.id;
+const currentYear = new Date().getFullYear();
 const saving = ref(false);
 const error = ref('');
 const file = ref(null);
+const existingCapa = ref('');
 const modalidades = ref([]);
 const locais = ref([]);
 const personalidades = ref([]);
 const form = ref({
   titulo: '',
+  slug: '',
   resumo: '',
   conteudo: '',
   data_evento: '',
@@ -104,7 +164,15 @@ const form = ref({
   publicado: true,
 });
 
-const onFile = (e) => { file.value = e.target.files?.[0] || null; };
+const onFile = (next) => { file.value = next; };
+const syncYear = () => {
+  if (form.value.data_evento) form.value.ano = yearFromDate(form.value.data_evento);
+};
+const togglePessoa = (id) => {
+  const key = String(id);
+  const list = form.value.personalidade_ids;
+  form.value.personalidade_ids = list.includes(key) ? list.filter((x) => x !== key) : [...list, key];
+};
 
 const buildFormData = () => {
   const fd = new FormData();
@@ -127,12 +195,11 @@ const submit = async () => {
   saving.value = true;
   error.value = '';
   try {
-    const fd = buildFormData();
-    if (isEdit) await memoriaService.updateMarco(route.params.id, fd);
-    else await memoriaService.createMarco(fd);
+    if (isEdit) await memoriaService.updateMarco(route.params.id, buildFormData());
+    else await memoriaService.createMarco(buildFormData());
     router.push('/admin/memoria');
   } catch (e) {
-    error.value = e.response?.data?.message || 'Erro ao salvar marco.';
+    error.value = e.response?.data?.message || 'Não foi possível salvar. Confira os campos e tente de novo.';
   } finally {
     saving.value = false;
   }
@@ -151,6 +218,7 @@ onMounted(async () => {
     const { data } = await memoriaService.getMarco(route.params.id);
     form.value = {
       titulo: data.titulo,
+      slug: data.slug || '',
       resumo: data.resumo || '',
       conteudo: data.conteudo || '',
       data_evento: data.data_evento ? String(data.data_evento).slice(0, 10) : '',
@@ -162,6 +230,7 @@ onMounted(async () => {
       destaque: !!data.destaque,
       publicado: !!data.publicado,
     };
+    existingCapa.value = data.capa_url || '';
   }
 });
 </script>

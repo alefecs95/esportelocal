@@ -18,7 +18,9 @@ class MemoriaAcervo extends Model
         'prefeitura_id',
         'tipo',
         'titulo',
+        'alt_text',
         'descricao',
+        'historia',
         'arquivo',
         'mime',
         'tamanho',
@@ -31,6 +33,8 @@ class MemoriaAcervo extends Model
         'personalidade_id',
         'pessoas_envolvidas',
         'fonte',
+        'fonte_tipo',
+        'doacao',
         'origem',
         'doador_nome',
         'doador_email',
@@ -115,5 +119,10 @@ class MemoriaAcervo extends Model
     public function scopePendente($query)
     {
         return $query->where('status', 'pendente');
+    }
+
+    public function scopeOrfao($query)
+    {
+        return $query->whereNull('marco_id')->whereNull('personalidade_id');
     }
 }

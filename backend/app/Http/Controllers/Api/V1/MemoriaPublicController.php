@@ -7,14 +7,17 @@ use App\Models\MemoriaAcervo;
 use App\Models\MemoriaLocal;
 use App\Models\MemoriaMarco;
 use App\Models\MemoriaPersonalidade;
+use App\Services\MemoriaCurationService;
 use App\Services\TenantFileService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
 class MemoriaPublicController extends Controller
 {
-    public function __construct(private TenantFileService $fileService)
-    {
+    public function __construct(
+        private TenantFileService $fileService,
+        private MemoriaCurationService $curation
+    ) {
     }
 
     public function overview()
@@ -108,6 +111,27 @@ class MemoriaPublicController extends Controller
             })
             ->firstOrFail();
 
+        $relacionados = collect();
+        if ($marco->decada || $marco->modalidade_id) {
+            $relacionados = MemoriaMarco::publicado()
+                ->with(['modalidade', 'local'])
+                ->where('id', '!=', $marco->id)
+                ->where(function ($q) use ($marco) {
+                    if ($marco->decada) {
+                        $q->orWhere('decada', $marco->decada);
+                    }
+                    if ($marco->modalidade_id) {
+                        $q->orWhere('modalidade_id', $marco->modalidade_id);
+                    }
+                })
+                ->orderByDesc('destaque')
+                ->orderByDesc('ano')
+                ->limit(4)
+                ->get();
+        }
+
+        $marco->setAttribute('relacionados', $relacionados);
+
         return response()->json($marco);
     }
 
@@ -194,6 +218,7 @@ class MemoriaPublicController extends Controller
             'arquivo' => 'required|file|max:20480|mimetypes:image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,application/pdf',
             'titulo' => 'required|string|max:255',
             'descricao' => 'nullable|string|max:2000',
+            'historia' => 'nullable|string|max:5000',
             'tipo' => 'nullable|in:foto,video,documento',
             'data_aproximada' => 'nullable|date',
             'ano' => 'nullable|integer|min:1900|max:' . (date('Y') + 1),
@@ -201,8 +226,10 @@ class MemoriaPublicController extends Controller
             'modalidade_id' => 'nullable|exists:modalidades,id',
             'pessoas_envolvidas' => 'nullable|string|max:255',
             'fonte' => 'nullable|string|max:255',
+            'doacao' => 'nullable|string|max:255',
+            'alt_text' => 'nullable|string|max:255',
             'doador_nome' => 'required|string|max:255',
-            'doador_email' => 'required|email|max:255',
+            'doador_email' => 'nullable|email|max:255',
             'doador_telefone' => 'nullable|string|max:30',
         ]);
 
@@ -218,7 +245,9 @@ class MemoriaPublicController extends Controller
         $item = MemoriaAcervo::create([
             'tipo' => $tipo,
             'titulo' => $request->input('titulo'),
+            'alt_text' => $request->input('alt_text') ?: $request->input('titulo'),
             'descricao' => $request->input('descricao'),
+            'historia' => $request->input('historia'),
             'arquivo' => $path,
             'mime' => $mime,
             'tamanho' => $file->getSize(),
@@ -227,7 +256,8 @@ class MemoriaPublicController extends Controller
             'local_id' => $request->input('local_id'),
             'modalidade_id' => $request->input('modalidade_id'),
             'pessoas_envolvidas' => $request->input('pessoas_envolvidas'),
-            'fonte' => $request->input('fonte'),
+            'fonte' => null,
+            'doacao' => $request->input('doacao') ?: $request->input('fonte'),
             'origem' => 'comunidade',
             'doador_nome' => $request->input('doador_nome'),
             'doador_email' => $request->input('doador_email'),
@@ -235,6 +265,8 @@ class MemoriaPublicController extends Controller
             'status' => 'pendente',
             'publicado' => false,
         ]);
+
+        $this->curation->notifyCuradores($item);
 
         return response()->json([
             'message' => 'Contribuição enviada. A curadoria da prefeitura vai avaliar antes de publicar.',

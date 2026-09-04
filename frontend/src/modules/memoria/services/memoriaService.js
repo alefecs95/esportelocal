@@ -86,4 +86,22 @@ export default {
   rejeitar(id, payload = {}) {
     return api.post(`/memoria/contribuicoes/${id}/rejeitar`, payload);
   },
+  lote(payload) {
+    return api.post('/memoria/contribuicoes/lote', payload);
+  },
+  duplicarMarco(id) {
+    return api.post(`/memoria/marcos/${id}/duplicar`);
+  },
+  duplicarPersonalidade(id) {
+    return api.post(`/memoria/personalidades/${id}/duplicar`);
+  },
+  auditoria() {
+    return api.get('/memoria/auditoria');
+  },
+  notificacoes() {
+    return api.get('/memoria/notificacoes');
+  },
+  lerNotificacoes() {
+    return api.post('/memoria/notificacoes/ler');
+  },
 };

@@ -27,6 +27,8 @@ class MemoriaPersonalidade extends Model
         'modalidade_id',
         'destaque',
         'publicado',
+        'created_by',
+        'updated_by',
     ];
 
     protected $casts = [
@@ -43,7 +45,9 @@ class MemoriaPersonalidade extends Model
         parent::boot();
 
         static::saving(function (self $model) {
-            if (empty($model->slug) && $model->nome) {
+            if ($model->slug) {
+                $model->slug = static::uniqueSlugFor($model, Str::slug($model->slug) ?: 'personalidade');
+            } elseif ($model->nome) {
                 $model->slug = static::uniqueSlugFor($model, Str::slug($model->nome));
             }
         });

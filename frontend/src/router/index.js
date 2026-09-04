@@ -29,7 +29,7 @@ router.beforeEach((to, from, next) => {
                 return;
             }
 
-            if (user.perfil === 'REDATOR' && to.path.startsWith('/admin') && !to.path.startsWith('/admin/noticias')) {
+            if (user.perfil === 'REDATOR' && to.path.startsWith('/admin') && !to.path.startsWith('/admin/noticias') && !to.path.startsWith('/admin/memoria')) {
                 next('/admin/noticias');
                 return;
             }

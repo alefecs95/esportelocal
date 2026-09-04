@@ -297,6 +297,12 @@ Route::prefix('v1')->group(function () {
         Route::delete('memoria/acervo/{id}', [MemoriaAdminController::class, 'destroyAcervo']);
         Route::post('memoria/contribuicoes/{id}/aprovar', [MemoriaAdminController::class, 'aprovar']);
         Route::post('memoria/contribuicoes/{id}/rejeitar', [MemoriaAdminController::class, 'rejeitar']);
+        Route::post('memoria/contribuicoes/lote', [MemoriaAdminController::class, 'lote']);
+        Route::post('memoria/marcos/{id}/duplicar', [MemoriaAdminController::class, 'duplicarMarco']);
+        Route::post('memoria/personalidades/{id}/duplicar', [MemoriaAdminController::class, 'duplicarPersonalidade']);
+        Route::get('memoria/auditoria', [MemoriaAdminController::class, 'auditoria']);
+        Route::get('memoria/notificacoes', [MemoriaAdminController::class, 'notificacoes']);
+        Route::post('memoria/notificacoes/ler', [MemoriaAdminController::class, 'lerNotificacoes']);
 
         Route::apiResource('noticias', NoticiaController::class);
         Route::patch('noticias/{id}/toggle-destaque', [NoticiaController::class, 'toggleDestaque']);

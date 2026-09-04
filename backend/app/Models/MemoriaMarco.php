@@ -31,6 +31,8 @@ class MemoriaMarco extends Model
         'destaque',
         'publicado',
         'ordem',
+        'created_by',
+        'updated_by',
     ];
 
     protected $casts = [
@@ -49,7 +51,9 @@ class MemoriaMarco extends Model
         parent::boot();
 
         static::saving(function (self $model) {
-            if (empty($model->slug) && $model->titulo) {
+            if ($model->slug) {
+                $model->slug = static::uniqueSlugFor($model, Str::slug($model->slug) ?: 'marco');
+            } elseif ($model->titulo) {
                 $model->slug = static::uniqueSlugFor($model, Str::slug($model->titulo));
             }
 
