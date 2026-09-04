@@ -8,6 +8,20 @@ services:
         VITE_MAIN_DOMAIN: ${VITE_MAIN_DOMAIN:-}
     expose:
       - "80"
+    labels:
+      # O painel do Coolify rejeita *.esportelocal.com. Estes labels roteiam
+      # qualquer tenant (saofranciscoma.esportelocal.com, etc.) para o nginx.
+      - traefik.http.services.semel-tenants.loadbalancer.server.port=80
+      - traefik.http.routers.semel-tenants-https.rule=HostRegexp(`^(?:[a-z0-9-]+\.)?esportelocal\.com$$`)
+      - traefik.http.routers.semel-tenants-https.entrypoints=https
+      - traefik.http.routers.semel-tenants-https.tls=true
+      - traefik.http.routers.semel-tenants-https.service=semel-tenants
+      - traefik.http.routers.semel-tenants-http.rule=HostRegexp(`^(?:[a-z0-9-]+\.)?esportelocal\.com$$`)
+      - traefik.http.routers.semel-tenants-http.entrypoints=http
+      - traefik.http.routers.semel-tenants-http.middlewares=redirect-to-https
+      - traefik.http.routers.semel-tenants-http.service=semel-tenants
+      - caddy_semeltenants=http://*.esportelocal.com
+      - caddy_semeltenants.reverse_proxy={{upstreams 80}}
     environment:
       # Diz ao Coolify para publicar este serviço (nginx) na porta 80.
       # No painel, domínio do serviço app: https://esportelocal.com:80
