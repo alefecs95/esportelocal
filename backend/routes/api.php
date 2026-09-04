@@ -32,6 +32,8 @@ use App\Http\Controllers\Api\V1\InstitucionalController;
 use App\Http\Controllers\Api\V1\DiretoriaController;
 use App\Http\Controllers\Api\V1\WhatsAppNotificationController;
 use App\Http\Controllers\Api\V1\PublicMediaController;
+use App\Http\Controllers\Api\V1\MemoriaPublicController;
+use App\Http\Controllers\Api\V1\MemoriaAdminController;
 
 if (config('app.debug')) {
     require __DIR__ . '/debug_img.php';
@@ -211,6 +213,15 @@ Route::prefix('v1')->group(function () {
     Route::get('public/partidas/{id}', [PartidaController::class, 'show']);
     Route::get('public/partidas/{id}/eventos', [EventoPartidaController::class, 'index']);
 
+    Route::get('public/memoria', [MemoriaPublicController::class, 'overview']);
+    Route::get('public/memoria/timeline', [MemoriaPublicController::class, 'timeline']);
+    Route::get('public/memoria/marcos/{slug}', [MemoriaPublicController::class, 'showMarco']);
+    Route::get('public/memoria/galeria', [MemoriaPublicController::class, 'galeria']);
+    Route::get('public/memoria/personalidades', [MemoriaPublicController::class, 'personalidades']);
+    Route::get('public/memoria/personalidades/{slug}', [MemoriaPublicController::class, 'showPersonalidade']);
+    Route::get('public/memoria/locais', [MemoriaPublicController::class, 'locais']);
+    Route::post('public/memoria/contribuicoes', [MemoriaPublicController::class, 'contribuir'])->middleware('throttle:10,1');
+
     // Rotas protegidas que geram URLs para PDF (agora exigem autenticação)
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
@@ -263,7 +274,30 @@ Route::prefix('v1')->group(function () {
         Route::put('fases/{id}/regras-classificacao', [CompeticaoEstruturaController::class, 'putRegrasClassificacao']);
         Route::get('fases/{id}/classificacao', [CompeticaoEstruturaController::class, 'getClassificacaoFase']);
 
-        // Notícias
+        // Memória do Esporte
+        Route::get('memoria/dashboard', [MemoriaAdminController::class, 'dashboard']);
+        Route::get('memoria/locais', [MemoriaAdminController::class, 'locais']);
+        Route::post('memoria/locais', [MemoriaAdminController::class, 'storeLocal']);
+        Route::post('memoria/locais/{id}', [MemoriaAdminController::class, 'updateLocal']);
+        Route::delete('memoria/locais/{id}', [MemoriaAdminController::class, 'destroyLocal']);
+        Route::get('memoria/personalidades', [MemoriaAdminController::class, 'personalidades']);
+        Route::get('memoria/personalidades/{id}', [MemoriaAdminController::class, 'showPersonalidade']);
+        Route::post('memoria/personalidades', [MemoriaAdminController::class, 'storePersonalidade']);
+        Route::post('memoria/personalidades/{id}', [MemoriaAdminController::class, 'updatePersonalidade']);
+        Route::delete('memoria/personalidades/{id}', [MemoriaAdminController::class, 'destroyPersonalidade']);
+        Route::get('memoria/marcos', [MemoriaAdminController::class, 'marcos']);
+        Route::get('memoria/marcos/{id}', [MemoriaAdminController::class, 'showMarco']);
+        Route::post('memoria/marcos', [MemoriaAdminController::class, 'storeMarco']);
+        Route::post('memoria/marcos/{id}', [MemoriaAdminController::class, 'updateMarco']);
+        Route::delete('memoria/marcos/{id}', [MemoriaAdminController::class, 'destroyMarco']);
+        Route::get('memoria/acervo', [MemoriaAdminController::class, 'acervo']);
+        Route::get('memoria/acervo/{id}', [MemoriaAdminController::class, 'showAcervo']);
+        Route::post('memoria/acervo', [MemoriaAdminController::class, 'storeAcervo']);
+        Route::post('memoria/acervo/{id}', [MemoriaAdminController::class, 'updateAcervo']);
+        Route::delete('memoria/acervo/{id}', [MemoriaAdminController::class, 'destroyAcervo']);
+        Route::post('memoria/contribuicoes/{id}/aprovar', [MemoriaAdminController::class, 'aprovar']);
+        Route::post('memoria/contribuicoes/{id}/rejeitar', [MemoriaAdminController::class, 'rejeitar']);
+
         Route::apiResource('noticias', NoticiaController::class);
         Route::patch('noticias/{id}/toggle-destaque', [NoticiaController::class, 'toggleDestaque']);
         Route::post('noticias/{id}/comentarios', [\App\Http\Controllers\Api\V1\ComentarioController::class, 'store']);

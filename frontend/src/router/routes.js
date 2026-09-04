@@ -183,6 +183,36 @@ const routes = [
                 name: 'PortalDiretoria',
                 component: () => import('../modules/portal/pages/PortalDiretoria.vue'),
                 meta: { title: 'Diretoria' }
+            },
+            {
+                path: 'memoria',
+                name: 'PortalMemoria',
+                component: () => import('../modules/portal/pages/PortalMemoria.vue'),
+                meta: { title: 'Memória do Esporte' }
+            },
+            {
+                path: 'memoria/galeria',
+                name: 'PortalMemoriaGaleria',
+                component: () => import('../modules/portal/pages/PortalMemoriaGaleria.vue'),
+                meta: { title: 'Galeria histórica' }
+            },
+            {
+                path: 'memoria/enviar',
+                name: 'PortalMemoriaEnviar',
+                component: () => import('../modules/portal/pages/PortalMemoriaEnviar.vue'),
+                meta: { title: 'Enviar para o acervo' }
+            },
+            {
+                path: 'memoria/personalidades/:slug',
+                name: 'PortalMemoriaPersonalidade',
+                component: () => import('../modules/portal/pages/PortalMemoriaPersonalidade.vue'),
+                meta: { title: 'Personalidade' }
+            },
+            {
+                path: 'memoria/marcos/:slug',
+                name: 'PortalMemoriaMarco',
+                component: () => import('../modules/portal/pages/PortalMemoriaMarco.vue'),
+                meta: { title: 'Marco histórico' }
             }
         ]
     },
@@ -327,6 +357,48 @@ const routes = [
                 name: 'Noticias',
                 component: () => import('../modules/noticias/pages/NoticiaList.vue'),
                 meta: { title: 'Notícias' }
+            },
+            {
+                path: 'memoria',
+                name: 'MemoriaAdmin',
+                component: () => import('../modules/memoria/pages/MemoriaAdmin.vue'),
+                meta: { title: 'Memória do Esporte' }
+            },
+            {
+                path: 'memoria/marcos/novo',
+                name: 'MemoriaMarcoCreate',
+                component: () => import('../modules/memoria/pages/MemoriaMarcoForm.vue'),
+                meta: { title: 'Novo marco' }
+            },
+            {
+                path: 'memoria/marcos/:id/editar',
+                name: 'MemoriaMarcoEdit',
+                component: () => import('../modules/memoria/pages/MemoriaMarcoForm.vue'),
+                meta: { title: 'Editar marco' }
+            },
+            {
+                path: 'memoria/personalidades/nova',
+                name: 'MemoriaPersonalidadeCreate',
+                component: () => import('../modules/memoria/pages/MemoriaPersonalidadeForm.vue'),
+                meta: { title: 'Nova personalidade' }
+            },
+            {
+                path: 'memoria/personalidades/:id/editar',
+                name: 'MemoriaPersonalidadeEdit',
+                component: () => import('../modules/memoria/pages/MemoriaPersonalidadeForm.vue'),
+                meta: { title: 'Editar personalidade' }
+            },
+            {
+                path: 'memoria/acervo/novo',
+                name: 'MemoriaAcervoCreate',
+                component: () => import('../modules/memoria/pages/MemoriaAcervoForm.vue'),
+                meta: { title: 'Novo acervo' }
+            },
+            {
+                path: 'memoria/acervo/:id/editar',
+                name: 'MemoriaAcervoEdit',
+                component: () => import('../modules/memoria/pages/MemoriaAcervoForm.vue'),
+                meta: { title: 'Editar acervo' }
             },
             {
                 path: 'noticias/nova',

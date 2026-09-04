@@ -25,6 +25,10 @@
           <FileText :size="20" />
           Notícias
         </router-link>
+        <router-link to="/admin/memoria" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors" active-class="bg-gray-800 text-white font-medium">
+          <Landmark :size="20" />
+          Memória
+        </router-link>
       </template>
 
       <!-- MENU PARA ADMIN (original) -->
@@ -61,6 +65,11 @@
         <router-link to="/admin/noticias" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors" active-class="bg-gray-800 text-white font-medium">
           <FileText :size="20" />
           Notícias
+        </router-link>
+
+        <router-link to="/admin/memoria" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors" active-class="bg-gray-800 text-white font-medium">
+          <Landmark :size="20" />
+          Memória
         </router-link>
 
         <div class="pt-4 pb-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -146,7 +155,8 @@ import {
   TrendingUp,
   LogOut,
   Building,
-  Briefcase
+  Briefcase,
+  Landmark
 } from 'lucide-vue-next';
 
 defineProps({

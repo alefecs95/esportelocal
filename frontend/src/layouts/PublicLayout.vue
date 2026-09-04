@@ -17,6 +17,7 @@
         <nav class="hidden xl:flex items-center gap-1 bg-primary-700/30 p-1 rounded-full backdrop-blur-sm border border-white/10 shrink-0">
             <router-link to="/" class="px-4 py-2 rounded-full text-sm font-bold transition-all hover:bg-white/10 hover:text-yellow-400" active-class="bg-white text-primary-700 shadow-sm hover:bg-white hover:text-primary-700" exact-active-class="bg-white text-primary-700 shadow-sm">Início</router-link>
             <router-link to="/noticias" class="px-4 py-2 rounded-full text-sm font-bold transition-all hover:bg-white/10 hover:text-yellow-400" active-class="bg-white text-primary-700 shadow-sm hover:bg-white hover:text-primary-700">Notícias</router-link>
+            <router-link to="/memoria" class="px-4 py-2 rounded-full text-sm font-bold transition-all hover:bg-white/10 hover:text-yellow-400" active-class="bg-white text-primary-700 shadow-sm hover:bg-white hover:text-primary-700">Memória</router-link>
             <router-link to="/campeonatos" class="px-4 py-2 rounded-full text-sm font-bold transition-all hover:bg-white/10 hover:text-yellow-400" active-class="bg-white text-primary-700 shadow-sm hover:bg-white hover:text-primary-700">Eventos</router-link>
             <router-link to="/partidas" class="px-4 py-2 rounded-full text-sm font-bold transition-all hover:bg-white/10 hover:text-yellow-400" active-class="bg-white text-primary-700 shadow-sm hover:bg-white hover:text-primary-700">Partidas</router-link>
             <router-link to="/equipes" class="px-4 py-2 rounded-full text-sm font-bold transition-all hover:bg-white/10 hover:text-yellow-400" active-class="bg-white text-primary-700 shadow-sm hover:bg-white hover:text-primary-700">Equipes</router-link>
@@ -55,6 +56,9 @@
             </router-link>
             <router-link to="/noticias" class="flex items-center gap-3 px-4 py-3 rounded-xl font-bold hover:bg-gray-50 transition-colors" active-class="bg-blue-50 text-blue-600" @click="mobileMenuOpen = false">
                 <Newspaper :size="20" /> Notícias
+            </router-link>
+            <router-link to="/memoria" class="flex items-center gap-3 px-4 py-3 rounded-xl font-bold hover:bg-gray-50 transition-colors" active-class="bg-blue-50 text-blue-600" @click="mobileMenuOpen = false">
+                <Landmark :size="20" /> Memória
             </router-link>
             <router-link to="/campeonatos" class="flex items-center gap-3 px-4 py-3 rounded-xl font-bold hover:bg-gray-50 transition-colors" active-class="bg-blue-50 text-blue-600" @click="mobileMenuOpen = false">
                 <Trophy :size="20" /> Eventos
@@ -132,7 +136,7 @@
 </template>
 
 <script setup>
-import { Facebook, Twitter, Instagram, Youtube, Menu, User, X, Home, Newspaper, Trophy, Calendar, Shield, Users, Briefcase } from 'lucide-vue-next';
+import { Facebook, Twitter, Instagram, Youtube, Menu, User, X, Home, Newspaper, Trophy, Calendar, Shield, Users, Briefcase, Landmark } from 'lucide-vue-next';
 import { useTheme } from '@/composables/useTheme';
 import { ref, onMounted, computed, watch } from 'vue';
 import { isTenantDomain } from '@/utils/tenantHelpers';

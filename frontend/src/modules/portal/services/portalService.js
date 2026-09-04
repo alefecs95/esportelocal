@@ -66,5 +66,39 @@ export default {
 
   getPartidas(params = {}) {
     return api.get('/public/partidas', { params });
+  },
+
+  getMemoria() {
+    return api.get('/public/memoria');
+  },
+
+  getMemoriaTimeline(params = {}) {
+    return api.get('/public/memoria/timeline', { params });
+  },
+
+  getMemoriaMarco(slug) {
+    return api.get(`/public/memoria/marcos/${slug}`);
+  },
+
+  getMemoriaGaleria(params = {}) {
+    return api.get('/public/memoria/galeria', { params });
+  },
+
+  getMemoriaPersonalidades(params = {}) {
+    return api.get('/public/memoria/personalidades', { params });
+  },
+
+  getMemoriaPersonalidade(slug) {
+    return api.get(`/public/memoria/personalidades/${slug}`);
+  },
+
+  getMemoriaLocais() {
+    return api.get('/public/memoria/locais');
+  },
+
+  enviarMemoriaContribuicao(data) {
+    return api.post('/public/memoria/contribuicoes', data, {
+      headers: { 'Content-Type': undefined },
+    });
   }
 };

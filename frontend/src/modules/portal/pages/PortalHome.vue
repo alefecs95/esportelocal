@@ -106,6 +106,22 @@
       </div>
     </div>
 
+    <section class="bg-slate-950 text-white">
+      <div class="container mx-auto px-4 py-10 sm:py-14">
+        <p class="text-yellow-400 font-bold uppercase tracking-[0.2em] text-xs mb-2">Memória do Esporte</p>
+        <h2 class="text-2xl sm:text-4xl font-extrabold max-w-3xl leading-tight">
+          {{ memoriaDestaque?.titulo || 'A história do esporte da cidade, em um só lugar.' }}
+        </h2>
+        <p class="mt-3 text-slate-300 max-w-2xl">
+          {{ memoriaDestaque?.resumo || 'Conquistas, ídolos e fotos que a cidade não pode esquecer.' }}
+        </p>
+        <div class="mt-6 flex flex-wrap gap-3">
+          <router-link to="/memoria" class="bg-yellow-400 text-slate-900 px-5 py-3 rounded-full font-bold">Ver a linha do tempo</router-link>
+          <router-link to="/memoria/enviar" class="border border-white/30 px-5 py-3 rounded-full font-bold hover:bg-white/10">Envie sua foto</router-link>
+        </div>
+      </div>
+    </section>
+
     <!-- Seção de Notícias -->
     <section id="noticias" class="py-10 sm:py-16 bg-gray-50 scroll-mt-20">
       <div class="container mx-auto px-4">
@@ -401,6 +417,7 @@ const stats = ref({});
 const proximosEventos = ref([]);
 const ultimasNoticias = ref([]);
 const destaqueNoticia = ref(null);
+const memoriaDestaque = ref(null);
 const listaNoticias = ref([]);
 const destaqueSlider = ref([]);
 const currentSlide = ref(0);
@@ -564,6 +581,13 @@ const loadData = async () => {
     }
 
     ultimasNoticias.value = allNews;
+
+    try {
+      const memoria = await portalService.getMemoria();
+      memoriaDestaque.value = memoria.data?.neste_dia || (memoria.data?.destaques || [])[0] || null;
+    } catch {
+      memoriaDestaque.value = null;
+    }
   } catch (e) {
     console.error('Erro ao carregar dados da home', e);
   } finally {
