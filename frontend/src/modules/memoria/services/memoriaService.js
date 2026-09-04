@@ -14,6 +14,12 @@ export default {
   dashboard() {
     return api.get('/memoria/dashboard');
   },
+  opcoes() {
+    return api.get('/memoria/opcoes');
+  },
+  createOpcao(payload) {
+    return api.post('/memoria/opcoes', payload);
+  },
   locais() {
     return api.get('/memoria/locais');
   },

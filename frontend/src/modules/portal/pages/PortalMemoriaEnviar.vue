@@ -1,14 +1,14 @@
 <template>
   <div class="min-h-screen bg-slate-50">
     <section class="bg-slate-900 text-white py-10 sm:py-14">
-      <div class="container mx-auto px-4 max-w-2xl">
+      <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <router-link to="/memoria" class="text-yellow-400 text-sm font-bold">← Voltar à Memória</router-link>
         <h1 class="text-3xl sm:text-4xl font-extrabold mt-3 leading-tight">Envie uma memória da cidade</h1>
-        <p class="text-slate-300 mt-3 text-base sm:text-lg">Foto antiga, recorte de jornal ou vídeo. A prefeitura confere antes de publicar — nada entra no ar automaticamente.</p>
+        <p class="text-slate-300 mt-3 text-base sm:text-lg max-w-3xl">Foto antiga, recorte de jornal ou vídeo. A prefeitura confere antes de publicar — nada entra no ar automaticamente.</p>
       </div>
     </section>
 
-    <section class="container mx-auto px-4 py-8 max-w-2xl">
+    <section class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div v-if="ok" class="bg-white border border-green-100 rounded-3xl p-8 text-center shadow-sm">
         <div class="mx-auto w-14 h-14 rounded-full bg-green-100 text-green-700 flex items-center justify-center mb-4">✓</div>
         <h2 class="text-2xl font-bold text-gray-900">Recebemos o seu envio</h2>
@@ -26,7 +26,8 @@
           <li class="flex-1 h-1.5 rounded-full" :class="contactReady ? 'bg-yellow-400' : 'bg-slate-200'"></li>
         </ol>
 
-        <section class="bg-white p-5 sm:p-6 rounded-3xl border border-gray-200 shadow-sm space-y-4">
+        <div class="grid lg:grid-cols-2 gap-6 items-start">
+        <section class="bg-white p-5 sm:p-6 lg:p-8 rounded-3xl border border-gray-200 shadow-sm space-y-4 lg:min-h-[22rem]">
           <p class="text-xs font-bold uppercase tracking-wide text-slate-400">1. Arquivo</p>
           <MemoriaFileDrop
             label="Sua foto, vídeo ou PDF"
@@ -45,7 +46,8 @@
           </ul>
         </section>
 
-        <section class="bg-white p-5 sm:p-6 rounded-3xl border border-gray-200 shadow-sm space-y-4">
+        <div class="space-y-6">
+        <section class="bg-white p-5 sm:p-6 lg:p-8 rounded-3xl border border-gray-200 shadow-sm space-y-4">
           <p class="text-xs font-bold uppercase tracking-wide text-slate-400">2. O que é isso?</p>
           <MemoriaField label="Como chamar esta memória" required hint="Uma frase que qualquer morador entenda.">
             <input v-model="form.titulo" required :class="inputClass" placeholder="Final do campeonato no ginásio, anos 90" maxlength="255" />
@@ -93,6 +95,8 @@
           </div>
           <p class="text-xs text-gray-500">Ao enviar, você autoriza o uso desta mídia no acervo histórico municipal. A prefeitura avalia antes de publicar.</p>
         </section>
+        </div>
+        </div>
 
         <div v-if="error" class="text-red-700 text-sm bg-red-50 border border-red-100 rounded-2xl px-4 py-3">{{ error }}</div>
         <button class="w-full sm:w-auto bg-yellow-400 hover:bg-yellow-300 text-slate-900 px-8 py-3.5 rounded-full font-black min-h-12 disabled:opacity-50" :disabled="saving || !file">

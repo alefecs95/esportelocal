@@ -220,9 +220,15 @@
             <input v-model="localForm.nome" required class="w-full rounded-xl border-gray-300 min-h-11" placeholder="Ginásio Municipal" />
           </MemoriaField>
           <MemoriaField label="Tipo">
-            <select v-model="localForm.tipo" class="w-full rounded-xl border-gray-300 min-h-11">
-              <option v-for="(label, key) in tipoLocalLabels" :key="key" :value="key">{{ label }}</option>
-            </select>
+            <MemoriaChoicePicker
+              v-model="localForm.tipo"
+              grupo="local_tipo"
+              variant="select"
+              :defaults="tipoLocalOptions"
+              :hidden-ids="['outro']"
+              add-label="Adicionar tipo"
+              placeholder="Ex.: Campo, piscina, ciclovia..."
+            />
           </MemoriaField>
           <MemoriaField label="Endereço ou bairro" hint="Opcional.">
             <input v-model="localForm.endereco" class="w-full rounded-xl border-gray-300 min-h-11" placeholder="Centro, rua..." />
@@ -257,6 +263,7 @@ import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import memoriaService from '../services/memoriaService';
 import MemoriaField from '../components/MemoriaField.vue';
+import MemoriaChoicePicker from '../components/MemoriaChoicePicker.vue';
 import { originLabels, papelLabels, tipoAcervoLabels, tipoLocalLabels, tipoMarcoLabels } from '../utils/memoriaLabels';
 
 const tabs = [
@@ -266,6 +273,14 @@ const tabs = [
   { id: 'pendentes', label: 'Envios da cidade' },
   { id: 'locais', label: 'Locais' },
   { id: 'auditoria', label: 'Histórico' },
+];
+
+const tipoLocalOptions = [
+  { id: 'ginasio', label: 'Ginásio' },
+  { id: 'estadio', label: 'Estádio' },
+  { id: 'quadra', label: 'Quadra' },
+  { id: 'pista', label: 'Pista' },
+  { id: 'outro', label: 'Outro' },
 ];
 
 const activeTab = ref('marcos');

@@ -4,11 +4,12 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\MemoriaAcervo;
+use App\Models\MemoriaAuditoria;
 use App\Models\MemoriaLocal;
 use App\Models\MemoriaMarco;
-use App\Models\MemoriaPersonalidade;
-use App\Models\MemoriaAuditoria;
 use App\Models\MemoriaNotificacao;
+use App\Models\MemoriaOpcao;
+use App\Models\MemoriaPersonalidade;
 use App\Services\MemoriaCurationService;
 use App\Services\TenantFileService;
 use Illuminate\Http\Request;
@@ -43,6 +44,33 @@ class MemoriaAdminController extends Controller
         ]);
     }
 
+    public function opcoes()
+    {
+        $this->authorizeCuradoria(request());
+
+        return response()->json([
+            'local_tipo' => $this->collectOpcoes('local_tipo', MemoriaLocal::class, 'tipo', ['ginasio', 'estadio', 'quadra', 'pista', 'outro']),
+            'marco_tipo' => $this->collectOpcoes('marco_tipo', MemoriaMarco::class, 'tipo', ['conquista', 'campeonato', 'inauguracao', 'atleta', 'marco']),
+            'papel' => $this->collectOpcoes('papel', MemoriaPersonalidade::class, 'papel', ['atleta', 'tecnico', 'dirigente', 'outro']),
+        ]);
+    }
+
+    public function storeOpcao(Request $request)
+    {
+        $this->authorizeCuradoria($request);
+        $data = $request->validate([
+            'grupo' => 'required|in:local_tipo,marco_tipo,papel',
+            'valor' => 'required|string|max:50',
+        ]);
+        $valor = trim($data['valor']);
+        MemoriaOpcao::firstOrCreate([
+            'grupo' => $data['grupo'],
+            'valor' => $valor,
+        ]);
+
+        return response()->json(['grupo' => $data['grupo'], 'valor' => $valor], 201);
+    }
+
     public function locais()
     {
         $this->authorizeCuradoria(request());
@@ -58,6 +86,7 @@ class MemoriaAdminController extends Controller
         $local = MemoriaLocal::create($data);
         $this->attachFoto($request, $local, 'memoria/locais');
         $local->save();
+        $this->rememberOpcao('local_tipo', $local->tipo);
         return response()->json($local, 201);
     }
 
@@ -71,6 +100,7 @@ class MemoriaAdminController extends Controller
         $local->fill($data);
         $this->attachFoto($request, $local, 'memoria/locais');
         $local->save();
+        $this->rememberOpcao('local_tipo', $local->tipo);
         return response()->json($local);
     }
 
@@ -108,6 +138,7 @@ class MemoriaAdminController extends Controller
         ]);
         $this->attachFoto($request, $item, 'memoria/personalidades');
         $item->save();
+        $this->rememberOpcao('papel', $item->papel);
         $this->curation->log($request->user(), 'criou', 'personalidade', $item->id, $item->nome);
         return response()->json($item->load('modalidade'), 201);
     }
@@ -120,6 +151,7 @@ class MemoriaAdminController extends Controller
         $item->updated_by = $request->user()->id;
         $this->attachFoto($request, $item, 'memoria/personalidades');
         $item->save();
+        $this->rememberOpcao('papel', $item->papel);
         $this->curation->log($request->user(), 'editou', 'personalidade', $item->id, $item->nome);
         return response()->json($item->load('modalidade'));
     }
@@ -164,6 +196,7 @@ class MemoriaAdminController extends Controller
         $this->attachCapa($request, $item);
         $item->save();
         $item->personalidades()->sync($ids);
+        $this->rememberOpcao('marco_tipo', $item->tipo);
         $this->curation->log($request->user(), 'criou', 'marco', $item->id, $item->titulo);
         return response()->json($item->load(['modalidade', 'local', 'personalidades']), 201);
     }
@@ -180,6 +213,7 @@ class MemoriaAdminController extends Controller
         $this->attachCapa($request, $item);
         $item->save();
         $item->personalidades()->sync($ids);
+        $this->rememberOpcao('marco_tipo', $item->tipo);
         $this->curation->log($request->user(), 'editou', 'marco', $item->id, $item->titulo);
         return response()->json($item->load(['modalidade', 'local', 'personalidades']));
     }
@@ -441,7 +475,7 @@ class MemoriaAdminController extends Controller
         $data = $request->validate([
             'nome' => 'required|string|max:255',
             'slug' => 'nullable|string|max:255',
-            'papel' => 'nullable|in:atleta,tecnico,dirigente,outro',
+            'papel' => 'nullable|string|max:50',
             'mini_bio' => 'nullable|string',
             'data_nascimento' => 'nullable|date',
             'data_falecimento' => 'nullable|date',
@@ -569,5 +603,37 @@ class MemoriaAdminController extends Controller
             return [];
         }
         return array_values(array_filter(array_map('intval', $value)));
+    }
+
+    private function collectOpcoes(string $grupo, string $model, string $column, array $defaults): array
+    {
+        $saved = MemoriaOpcao::query()->where('grupo', $grupo)->pluck('valor');
+        $used = $model::query()->whereNotNull($column)->where($column, '!=', '')->distinct()->pluck($column);
+
+        return $saved->merge($used)
+            ->map(fn ($v) => trim((string) $v))
+            ->filter()
+            ->reject(fn ($v) => in_array($v, $defaults, true))
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
+    }
+
+    private function rememberOpcao(string $grupo, ?string $valor): void
+    {
+        $valor = trim((string) $valor);
+        if ($valor === '') {
+            return;
+        }
+        $defaults = [
+            'local_tipo' => ['ginasio', 'estadio', 'quadra', 'pista', 'outro'],
+            'marco_tipo' => ['conquista', 'campeonato', 'inauguracao', 'atleta', 'marco'],
+            'papel' => ['atleta', 'tecnico', 'dirigente', 'outro'],
+        ];
+        if (in_array($valor, $defaults[$grupo] ?? [], true)) {
+            return;
+        }
+        MemoriaOpcao::firstOrCreate(['grupo' => $grupo, 'valor' => $valor]);
     }
 }

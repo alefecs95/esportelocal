@@ -1,5 +1,5 @@
 <template>
-  <div class="p-4 sm:p-6 max-w-3xl">
+  <div class="p-4 sm:p-6 w-full">
     <router-link to="/admin/memoria" class="text-sm font-semibold text-blue-700 hover:text-blue-900">← Voltar para a Memória</router-link>
     <h1 class="text-2xl font-bold text-gray-800 mt-3">{{ isEdit ? 'Editar item do acervo' : 'Novo item do acervo' }}</h1>
     <p class="text-gray-500 mt-1">Foto, vídeo ou documento. O arquivo e um título curto bastam para publicar.</p>

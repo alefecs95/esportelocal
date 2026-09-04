@@ -1,5 +1,5 @@
 <template>
-  <div class="p-4 sm:p-6 max-w-3xl">
+  <div class="p-4 sm:p-6 w-full">
     <router-link to="/admin/memoria" class="text-sm font-semibold text-blue-700 hover:text-blue-900">← Voltar para a Memória</router-link>
     <h1 class="text-2xl font-bold text-gray-800 mt-3">{{ isEdit ? 'Editar personalidade' : 'Nova personalidade' }}</h1>
     <p class="text-gray-500 mt-1">Atleta, técnico ou dirigente que a cidade reconhece. O nome é o único campo obrigatório.</p>
@@ -20,19 +20,16 @@
         <MemoriaField label="Endereço da página (slug)" hint="Gerado do nome. Edite se quiser um link curto e estável.">
           <input v-model="form.slug" :class="inputClass" placeholder="deixe em branco para gerar automaticamente" maxlength="255" />
         </MemoriaField>
-        <MemoriaField label="Como atuou" hint="Escolha o papel principal na história local.">
-          <div class="grid grid-cols-2 gap-2">
-            <button
-              v-for="option in papelOptions"
-              :key="option.id"
-              type="button"
-              class="rounded-xl border px-3 py-3 text-left min-h-11"
-              :class="form.papel === option.id ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-100' : 'border-gray-200 hover:border-gray-300'"
-              @click="form.papel = option.id"
-            >
-              <span class="block text-sm font-semibold">{{ option.label }}</span>
-            </button>
-          </div>
+        <MemoriaField label="Como atuou" hint="Escolha o papel principal. Se não estiver na lista, inclua — fica disponível da próxima vez.">
+          <MemoriaChoicePicker
+            v-model="form.papel"
+            grupo="papel"
+            :defaults="papelOptions"
+            :hidden-ids="['outro']"
+            grid-class="grid grid-cols-2 gap-2"
+            add-label="Outra atuação"
+            placeholder="Ex.: Árbitro, mascote, torcida..."
+          />
         </MemoriaField>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <MemoriaField label="Modalidade principal">
@@ -88,6 +85,7 @@ import memoriaService from '../services/memoriaService';
 import modalidadeService from '@/modules/modalidades/services/modalidadeService';
 import MemoriaField from '../components/MemoriaField.vue';
 import MemoriaFileDrop from '../components/MemoriaFileDrop.vue';
+import MemoriaChoicePicker from '../components/MemoriaChoicePicker.vue';
 import { inputClass } from '../utils/memoriaLabels';
 
 const papelOptions = [

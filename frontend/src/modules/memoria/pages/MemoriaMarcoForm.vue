@@ -1,5 +1,5 @@
 <template>
-  <div class="p-4 sm:p-6 max-w-4xl">
+  <div class="p-4 sm:p-6 w-full">
     <router-link to="/admin/memoria" class="text-sm font-semibold text-blue-700 hover:text-blue-900">← Voltar para a Memória</router-link>
     <h1 class="text-2xl font-bold text-gray-800 mt-3">{{ isEdit ? 'Editar fato histórico' : 'Novo fato na linha do tempo' }}</h1>
     <p class="text-gray-500 mt-1">Conte o que aconteceu, quando foi e quem participou. Só o título é obrigatório.</p>
@@ -14,20 +14,15 @@
           <input v-model="form.slug" :class="inputClass" placeholder="deixe em branco para gerar automaticamente" maxlength="255" />
         </MemoriaField>
 
-        <MemoriaField label="Tipo de fato" hint="Ajuda o público a filtrar a linha do tempo.">
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            <button
-              v-for="option in tipoOptions"
-              :key="option.id"
-              type="button"
-              class="rounded-xl border px-3 py-3 text-left min-h-11"
-              :class="form.tipo === option.id ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-100' : 'border-gray-200 hover:border-gray-300'"
-              @click="form.tipo = option.id"
-            >
-              <span class="block text-sm font-semibold text-gray-900">{{ option.label }}</span>
-              <span class="block text-xs text-gray-500 mt-0.5">{{ option.hint }}</span>
-            </button>
-          </div>
+        <MemoriaField label="Tipo de fato" hint="Ajuda o público a filtrar a linha do tempo. Se faltar um tipo, inclua — ele aparece nos próximos cadastros.">
+          <MemoriaChoicePicker
+            v-model="form.tipo"
+            grupo="marco_tipo"
+            :defaults="tipoOptions"
+            :hidden-ids="['marco']"
+            add-label="Novo tipo de fato"
+            placeholder="Ex.: Festival, recorde escolar..."
+          />
         </MemoriaField>
 
         <MemoriaField label="Resumo curto" hint="Uma ou duas frases para o card da linha do tempo. Máx. 500 caracteres.">
@@ -128,6 +123,7 @@ import memoriaService from '../services/memoriaService';
 import modalidadeService from '@/modules/modalidades/services/modalidadeService';
 import MemoriaField from '../components/MemoriaField.vue';
 import MemoriaFileDrop from '../components/MemoriaFileDrop.vue';
+import MemoriaChoicePicker from '../components/MemoriaChoicePicker.vue';
 import { inputClass, yearFromDate } from '../utils/memoriaLabels';
 
 const tipoOptions = [

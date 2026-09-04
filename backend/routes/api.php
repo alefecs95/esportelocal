@@ -276,6 +276,8 @@ Route::prefix('v1')->group(function () {
 
         // Memória do Esporte
         Route::get('memoria/dashboard', [MemoriaAdminController::class, 'dashboard']);
+        Route::get('memoria/opcoes', [MemoriaAdminController::class, 'opcoes']);
+        Route::post('memoria/opcoes', [MemoriaAdminController::class, 'storeOpcao']);
         Route::get('memoria/locais', [MemoriaAdminController::class, 'locais']);
         Route::post('memoria/locais', [MemoriaAdminController::class, 'storeLocal']);
         Route::post('memoria/locais/{id}', [MemoriaAdminController::class, 'updateLocal']);
