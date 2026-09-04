@@ -120,6 +120,39 @@ database_has_tables() {
     "
 }
 
+# Cliente MariaDB 11 + MySQL 8 no Docker: CA autoassinada.
+mysql_cli() {
+    mysql --skip-ssl --default-character-set=utf8mb4 \
+        -h"${DB_HOST}" \
+        -P"${DB_PORT:-3306}" \
+        -u"${DB_USERNAME}" \
+        -p"${DB_PASSWORD}" \
+        "$@"
+}
+
+# Dump do phpMyAdmin cria tabelas sem PRIMARY KEY e só indexa no ALTER final.
+# No MySQL 8 isso quebra se ainda existirem FKs das migrations (ERROR 1822).
+wipe_all_tables() {
+    echo "Removendo tabelas existentes..."
+    drop_sql="$(
+        mysql_cli -N "${DB_DATABASE}" -e "
+            SET SESSION group_concat_max_len = 1000000;
+            SELECT IFNULL(
+                CONCAT(
+                    'SET FOREIGN_KEY_CHECKS=0; DROP TABLE IF EXISTS ',
+                    GROUP_CONCAT(CONCAT('\`', table_name, '\`') SEPARATOR ', '),
+                    '; SET FOREIGN_KEY_CHECKS=1;'
+                ),
+                'SELECT 1'
+            )
+            FROM information_schema.tables
+            WHERE table_schema = '${DB_DATABASE}';
+        "
+    )"
+    mysql_cli "${DB_DATABASE}" -e "${drop_sql}"
+    echo "Banco vazio."
+}
+
 import_database_if_needed() {
     if [ "${IMPORT_DB_ON_START:-false}" != "true" ]; then
         return 0
@@ -147,15 +180,10 @@ import_database_if_needed() {
         echo "FORCE_IMPORT_DB=true — importando por cima do banco atual."
     fi
 
+    wipe_all_tables
+
     echo "Importando backup SQL: $import_file"
-    # MySQL 8 no Docker usa CA autoassinada; o cliente MariaDB 11 recusa o certificado.
-    mysql \
-        --skip-ssl \
-        -h"${DB_HOST}" \
-        -P"${DB_PORT:-3306}" \
-        -u"${DB_USERNAME}" \
-        -p"${DB_PASSWORD}" \
-        "${DB_DATABASE}" < "$import_file"
+    mysql_cli "${DB_DATABASE}" < "$import_file"
     echo "Backup importado com sucesso."
 }
 
