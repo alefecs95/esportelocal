@@ -1,10 +1,10 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-12">
+  <div class="overflow-x-clip min-h-screen bg-gray-50 py-8 sm:py-12">
     <div class="container mx-auto px-4">
-      <div class="text-center mb-16">
-        <h1 class="text-4xl font-black text-gray-900 mb-4 tracking-tight uppercase">Diretoria</h1>
-        <div class="w-24 h-1 bg-yellow-400 mx-auto rounded-full mb-6"></div>
-        <p class="text-gray-600 text-lg max-w-2xl mx-auto">
+      <div class="text-center mb-8 sm:mb-16">
+        <h1 class="text-2xl sm:text-4xl font-black text-gray-900 mb-4 tracking-tight uppercase">Diretoria</h1>
+        <div class="w-16 sm:w-24 h-1 bg-yellow-400 mx-auto rounded-full mb-4 sm:mb-6"></div>
+        <p class="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto">
           Conheça a equipe responsável pela gestão esportiva do município.
         </p>
       </div>
@@ -13,9 +13,9 @@
         <Loader2 :size="48" class="animate-spin text-blue-600" />
       </div>
 
-      <div v-else-if="membros.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-        <div v-for="membro in membros" :key="membro.id" class="bg-white rounded-2xl shadow-lg overflow-hidden group hover:-translate-y-2 transition-transform duration-300">
-          <div class="relative h-80 overflow-hidden">
+      <div v-else-if="membros.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-8">
+        <div v-for="membro in membros" :key="membro.id" class="bg-white rounded-2xl shadow-lg overflow-hidden group sm:hover:-translate-y-2 transition-transform duration-300 min-w-0">
+          <div class="relative h-64 sm:h-80 overflow-hidden">
             <img 
               :src="membro.foto_url || `https://ui-avatars.com/api/?name=${membro.nome}&background=0D47A1&color=fff&size=256`" 
               class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
@@ -23,9 +23,9 @@
             />
             <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-90"></div>
             
-            <div class="absolute bottom-0 left-0 w-full p-6 text-white">
-                <h3 class="text-xl font-bold mb-1 group-hover:text-yellow-400 transition-colors">{{ membro.nome }}</h3>
-                <p class="text-blue-200 text-sm uppercase tracking-wider font-semibold">{{ membro.funcao }}</p>
+            <div class="absolute bottom-0 left-0 w-full p-4 sm:p-6 text-white">
+                <h3 class="text-lg sm:text-xl font-bold mb-1 group-hover:text-yellow-400 transition-colors line-clamp-2">{{ membro.nome }}</h3>
+                <p class="text-blue-200 text-xs sm:text-sm uppercase tracking-wide sm:tracking-wider font-semibold line-clamp-2">{{ membro.funcao }}</p>
             </div>
           </div>
         </div>

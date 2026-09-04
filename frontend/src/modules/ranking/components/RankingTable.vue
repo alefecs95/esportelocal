@@ -1,48 +1,48 @@
 <template>
-  <div class="overflow-x-auto">
+  <div class="overflow-x-auto -mx-1">
     <table class="min-w-full divide-y divide-gray-200">
       <thead class="bg-gray-50">
         <tr>
-          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+          <th scope="col" class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
             #
           </th>
-          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+          <th scope="col" class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
             {{ type === 'equipe' ? 'Equipe' : 'Atleta' }}
           </th>
-          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+          <th scope="col" class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
             Pontos
           </th>
-          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+          <th scope="col" class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
             Títulos
           </th>
-          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-            Participações
+          <th scope="col" class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Part.
           </th>
         </tr>
       </thead>
       <tbody class="bg-white divide-y divide-gray-200">
         <tr v-for="(item, index) in rankingData" :key="index" :class="getRowClass(index)">
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+          <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
             {{ index + 1 }}
-            <span v-if="index === 0" class="ml-2">🥇</span>
-            <span v-if="index === 1" class="ml-2">🥈</span>
-            <span v-if="index === 2" class="ml-2">🥉</span>
+            <span v-if="index === 0" class="ml-1">🥇</span>
+            <span v-if="index === 1" class="ml-1">🥈</span>
+            <span v-if="index === 2" class="ml-1">🥉</span>
           </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+          <td class="px-3 sm:px-6 py-4 text-sm font-medium text-gray-900 min-w-[8rem]">
             {{ type === 'equipe' ? item.equipe?.nome : item.atleta?.nome }}
           </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-bold">
+          <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-bold">
             {{ item.total_pontos || item.pontos }}
           </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+          <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
             {{ item.total_titulos || item.titulos }}
           </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+          <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
             {{ item.total_participacoes || item.participacoes }}
           </td>
         </tr>
         <tr v-if="rankingData.length === 0">
-          <td colspan="5" class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">
+          <td colspan="5" class="px-3 sm:px-6 py-4 text-sm text-center text-gray-500">
             Nenhum registro encontrado.
           </td>
         </tr>

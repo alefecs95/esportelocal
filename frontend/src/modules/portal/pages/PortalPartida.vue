@@ -12,7 +12,7 @@
           <span class="h-2.5 w-2.5 rounded-full" :class="statusTempoRealAtivo ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'"></span>
           {{ statusTempoRealAtivo ? 'ONLINE' : 'OFFLINE' }}
         </span>
-        <button @click="$router.go(-1)" class="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-bold text-blue-700 hover:bg-blue-100">
+        <button @click="$router.go(-1)" class="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 hover:bg-blue-100 min-h-11">
           <ArrowLeft :size="16" /> Voltar
         </button>
       </div>
@@ -51,11 +51,11 @@
               <div v-else class="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-slate-100 flex items-center justify-center text-xl sm:text-2xl font-black text-slate-400 uppercase shadow-sm border border-slate-200 mb-3">
                 {{ partida.mandante?.sigla || partida.mandante?.nome?.substring(0,2) || '?' }}
               </div>
-              <h2 class="text-xl sm:text-3xl font-black text-slate-800 truncate w-full">{{ partida.mandante?.nome || 'A definir' }}</h2>
+              <h2 class="text-xl sm:text-3xl font-black text-slate-800 leading-tight line-clamp-2 w-full">{{ partida.mandante?.nome || 'A definir' }}</h2>
               <p class="text-[11px] text-slate-500 uppercase font-bold tracking-widest mt-1">Mandante</p>
             </div>
-            <div class="rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 text-white px-5 sm:px-8 py-3 shadow-lg flex items-center justify-center">
-              <div class="text-4xl sm:text-5xl font-mono font-black tracking-widest">
+            <div class="rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 text-white px-4 sm:px-8 py-3 shadow-lg flex items-center justify-center min-w-0">
+              <div class="text-3xl sm:text-5xl font-mono font-black tracking-normal sm:tracking-widest tabular-nums">
                 {{ partida.placar_mandante ?? 0 }} <span class="text-slate-500 mx-2">:</span> {{ partida.placar_visitante ?? 0 }}
               </div>
             </div>
@@ -64,7 +64,7 @@
               <div v-else class="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-slate-100 flex items-center justify-center text-xl sm:text-2xl font-black text-slate-400 uppercase shadow-sm border border-slate-200 mb-3">
                 {{ partida.visitante?.sigla || partida.visitante?.nome?.substring(0,2) || '?' }}
               </div>
-              <h2 class="text-xl sm:text-3xl font-black text-slate-800 truncate w-full">{{ partida.visitante?.nome || 'A definir' }}</h2>
+              <h2 class="text-xl sm:text-3xl font-black text-slate-800 leading-tight line-clamp-2 w-full">{{ partida.visitante?.nome || 'A definir' }}</h2>
               <p class="text-[11px] text-slate-500 uppercase font-bold tracking-widest mt-1">Visitante</p>
             </div>
           </div>

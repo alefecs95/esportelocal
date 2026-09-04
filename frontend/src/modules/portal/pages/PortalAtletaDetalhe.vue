@@ -1,5 +1,5 @@
 <template>
-  <div class="p-4 max-w-7xl mx-auto">
+  <div class="overflow-x-clip p-4 max-w-7xl mx-auto">
     <div v-if="loading" class="flex justify-center py-20">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
     </div>
@@ -10,12 +10,12 @@
 
     <div v-else>
       <!-- Header -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 mb-8 flex flex-col md:flex-row items-center gap-8">
-        <div class="w-32 h-32 flex-shrink-0 bg-gray-50 rounded-full flex items-center justify-center overflow-hidden border-2 border-green-500">
-          <img :src="atleta.foto_url || '/placeholder-user.png'" class="w-full h-full object-cover" />
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 sm:p-8 mb-6 sm:mb-8 flex flex-col md:flex-row items-center gap-5 sm:gap-8">
+        <div class="w-24 h-24 sm:w-32 sm:h-32 flex-shrink-0 bg-gray-50 rounded-full flex items-center justify-center overflow-hidden border-2 border-green-500">
+          <img :src="atleta.foto_url || '/placeholder-user.png'" class="w-full h-full object-cover" alt="" />
         </div>
-        <div class="text-center md:text-left flex-grow">
-          <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ atleta.nome }}</h1>
+        <div class="text-center md:text-left flex-grow min-w-0">
+          <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-2 leading-tight break-words">{{ atleta.nome }}</h1>
           <div class="flex flex-wrap justify-center md:justify-start gap-4 text-sm text-gray-600">
             <span class="flex items-center gap-1">
               <User :size="16" /> {{ calculateAge(atleta.data_nascimento) }} anos
@@ -28,12 +28,12 @@
       </div>
 
       <!-- Abas -->
-      <div class="flex border-b border-gray-200 mb-8 overflow-x-auto">
+      <div class="flex border-b border-gray-200 mb-6 sm:mb-8 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
         <button 
           v-for="tab in tabs" 
           :key="tab.id"
           @click="activeTab = tab.id"
-          class="px-6 py-3 font-medium text-sm flex items-center gap-2 whitespace-nowrap border-b-2 transition-colors"
+          class="px-4 sm:px-6 py-3 font-medium text-sm flex items-center gap-2 whitespace-nowrap border-b-2 transition-colors min-h-12"
           :class="activeTab === tab.id ? 'border-green-600 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
         >
           <component :is="tab.icon" :size="18" /> {{ tab.label }}
@@ -43,6 +43,7 @@
       <!-- Conteúdo: Competições -->
       <div v-if="activeTab === 'competicoes'">
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
@@ -67,6 +68,7 @@
           </tbody>
         </table>
         </div>
+        </div>
       </div>
 
       <!-- Conteúdo: Estatísticas -->
@@ -76,7 +78,7 @@
                 <Target :size="24" />
             </div>
             <span class="text-3xl font-bold text-gray-800">{{ stats?.total_gols || 0 }}</span>
-            <span class="text-sm text-gray-500 uppercase tracking-wide font-medium mt-1">Total de Gols</span>
+            <span class="text-xs sm:text-sm text-gray-500 uppercase tracking-wide font-medium mt-1 text-center">Total de Gols</span>
         </div>
 
         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex flex-col items-center">
@@ -109,6 +111,7 @@
 
       <!-- Conteúdo: Histórico (Equipes que já jogou) -->
       <div v-else-if="activeTab === 'historico'" class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+         <div class="overflow-x-auto">
          <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
@@ -126,6 +129,7 @@
             </tr>
           </tbody>
         </table>
+        </div>
       </div>
 
     </div>

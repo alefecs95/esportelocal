@@ -1,19 +1,19 @@
 <template>
-  <div class="p-4 max-w-7xl mx-auto">
+  <div class="overflow-x-clip p-4 max-w-7xl mx-auto">
     <div class="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-      <div>
-        <h1 class="text-2xl font-black text-gray-800 flex items-center gap-2">
-          <Shield :size="22" class="text-blue-600" />
+      <div class="min-w-0">
+        <h1 class="text-2xl sm:text-3xl font-black text-gray-800 flex items-center gap-2">
+          <Shield :size="22" class="text-blue-600 shrink-0" />
           Partidas
         </h1>
-        <p class="text-gray-500 mt-1 flex items-center gap-2">
-          <span class="h-2.5 w-2.5 rounded-full" :class="onlinePortal ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'"></span>
+        <p class="text-gray-500 mt-1 flex items-start sm:items-center gap-2 text-sm sm:text-base">
+          <span class="h-2.5 w-2.5 rounded-full mt-1.5 sm:mt-0 shrink-0" :class="onlinePortal ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'"></span>
           Acompanhe jogos agendados, ao vivo e finalizados.
         </p>
       </div>
       <div class="w-full sm:w-auto relative">
         <Filter :size="15" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-        <select v-model="statusFiltro" class="w-full sm:w-56 rounded-lg border border-gray-300 bg-white pl-9 pr-3 py-2 text-sm text-gray-700">
+        <select v-model="statusFiltro" class="w-full sm:w-56 min-h-11 rounded-lg border border-gray-300 bg-white pl-9 pr-3 py-2 text-sm text-gray-700">
           <option value="">Todos os status</option>
           <option value="em_andamento">Ao Vivo</option>
           <option value="agendada">Agendada</option>
@@ -40,7 +40,7 @@
       </div>
 
       <div v-if="paginacao.hasMore" class="mt-6 flex justify-center">
-        <button @click="carregarMais" :disabled="carregandoMais" class="px-5 py-2.5 rounded-lg bg-gray-900 text-white text-sm font-bold hover:bg-gray-800 disabled:opacity-60">
+        <button @click="carregarMais" :disabled="carregandoMais" class="w-full sm:w-auto min-h-11 px-5 py-2.5 rounded-lg bg-gray-900 text-white text-sm font-bold hover:bg-gray-800 disabled:opacity-60">
           {{ carregandoMais ? 'Carregando...' : 'Carregar mais partidas' }}
         </button>
       </div>

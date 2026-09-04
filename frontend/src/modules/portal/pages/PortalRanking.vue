@@ -1,8 +1,8 @@
 <template>
-  <div class="container mx-auto px-4 py-8">
-    <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
-      <h1 class="text-3xl font-bold text-blue-900 mb-2">Ranking Municipal {{ temporadaAtiva ? temporadaAtiva.ano : '' }}</h1>
-      <p class="text-gray-600">Confira a classificação geral dos atletas e equipes na temporada atual.</p>
+  <div class="overflow-x-clip container mx-auto px-4 py-6 sm:py-8">
+    <div class="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-6 sm:mb-8">
+      <h1 class="text-2xl sm:text-3xl font-bold text-blue-900 mb-2 leading-tight">Ranking Municipal {{ temporadaAtiva ? temporadaAtiva.ano : '' }}</h1>
+      <p class="text-gray-600 text-sm sm:text-base">Confira a classificação geral dos atletas e equipes na temporada atual.</p>
     </div>
 
     <div class="bg-white rounded-lg shadow-sm overflow-hidden">
@@ -14,7 +14,7 @@
               type === 'atleta'
                 ? 'border-blue-500 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
-              'w-1/2 py-4 px-1 text-center border-b-2 font-medium text-lg'
+              'w-1/2 py-3 sm:py-4 px-1 text-center border-b-2 font-medium text-sm sm:text-lg min-h-12'
             ]"
           >
             Atletas
@@ -25,7 +25,7 @@
               type === 'equipe'
                 ? 'border-blue-500 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
-              'w-1/2 py-4 px-1 text-center border-b-2 font-medium text-lg'
+              'w-1/2 py-3 sm:py-4 px-1 text-center border-b-2 font-medium text-sm sm:text-lg min-h-12'
             ]"
           >
             Equipes
@@ -33,7 +33,7 @@
         </nav>
       </div>
 
-      <div class="p-6">
+      <div class="p-3 sm:p-6">
         <div v-if="loading" class="flex justify-center py-12">
           <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>

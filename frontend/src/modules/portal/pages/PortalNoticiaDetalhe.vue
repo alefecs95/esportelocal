@@ -27,7 +27,7 @@
     <div v-else-if="noticia" class="animate-fade-in">
       <!-- Hero / Header Section -->
       <header class="bg-white border-b border-gray-200">
-        <div class="container mx-auto px-4 py-8 md:py-12 max-w-5xl">
+        <div class="container mx-auto px-4 py-6 sm:py-8 md:py-12 max-w-5xl">
           <!-- Breadcrumb / Category -->
           <div class="flex flex-wrap items-center gap-2 text-sm text-gray-500 mb-6">
             <router-link :to="{ name: 'PortalNoticias' }" class="hover:text-blue-600 transition-colors">Notícias</router-link>
@@ -36,7 +36,7 @@
                 {{ noticia.categoria.nome }}
             </span>
             <span v-if="noticia.categoria">/</span>
-            <span class="text-gray-900 font-medium truncate max-w-[200px]">{{ noticia.titulo }}</span>
+            <span class="text-gray-900 font-medium truncate min-w-0 max-w-[40vw] sm:max-w-[280px]">{{ noticia.titulo }}</span>
           </div>
 
           <!-- Title -->
@@ -113,8 +113,8 @@
       </div>
 
       <!-- Main Content -->
-      <main class="container mx-auto px-4 py-12 max-w-4xl">
-        <article class="bg-white p-6 md:p-10 rounded-2xl shadow-sm border border-gray-100">
+      <main class="container mx-auto px-4 py-8 sm:py-12 max-w-4xl">
+        <article class="bg-white p-4 sm:p-6 md:p-10 rounded-2xl shadow-sm border border-gray-100">
           <NewsRenderer 
             :content="noticia.conteudo" 
             :carousel-urls="noticia.carrossel_urls"
@@ -125,8 +125,8 @@
            <!-- Share Buttons -->
            <div class="mt-8 pt-8 border-t border-gray-100">
               <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Compartilhar</h3>
-              <div class="flex gap-2">
-                  <a :href="`https://www.facebook.com/sharer/sharer.php?u=${sharePageUrl}`" target="_blank" class="bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition-colors" title="Facebook">
+              <div class="flex flex-wrap gap-2">
+                  <a :href="`https://www.facebook.com/sharer/sharer.php?u=${sharePageUrl}`" target="_blank" class="bg-blue-600 text-white p-2.5 rounded-full hover:bg-blue-700 transition-colors w-11 h-11 inline-flex items-center justify-center" title="Facebook">
                       <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
                   </a>
                   <a :href="`https://twitter.com/intent/tweet?text=${encodeURIComponent(noticia.titulo)}&url=${sharePageUrl}`" target="_blank" class="bg-sky-500 text-white p-2 rounded-full hover:bg-sky-600 transition-colors" title="Twitter">
@@ -179,8 +179,8 @@
         </section>
 
         <!-- Comments Section -->
-        <section class="mt-16 bg-white p-6 md:p-10 rounded-2xl shadow-sm border border-gray-100">
-            <h2 class="text-2xl font-bold text-gray-900 mb-6">Comentários</h2>
+        <section class="mt-10 sm:mt-16 bg-white p-4 sm:p-6 md:p-10 rounded-2xl shadow-sm border border-gray-100">
+            <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mb-6">Comentários</h2>
             
             <div v-if="!isAuthenticated" class="mb-8 p-4 rounded-xl border border-amber-200 bg-amber-50">
                 <p class="text-sm text-amber-900 font-medium">

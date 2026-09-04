@@ -1,5 +1,5 @@
 <template>
-  <div class="p-4 max-w-7xl mx-auto">
+  <div class="overflow-x-clip p-4 max-w-7xl mx-auto">
     <div v-if="loading" class="flex justify-center py-20">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
     </div>
@@ -10,12 +10,12 @@
 
     <div v-else>
       <!-- Header -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 mb-8 flex flex-col md:flex-row items-center gap-8">
-        <div class="w-32 h-32 flex-shrink-0 bg-gray-50 rounded-full flex items-center justify-center p-4 border border-gray-100">
-          <img :src="equipe.logo_url || equipe.entidade?.logo_url || '/placeholder-shield.png'" class="w-full h-full object-contain" />
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 sm:p-8 mb-6 sm:mb-8 flex flex-col md:flex-row items-center gap-5 sm:gap-8">
+        <div class="w-24 h-24 sm:w-32 sm:h-32 flex-shrink-0 bg-gray-50 rounded-full flex items-center justify-center p-4 border border-gray-100">
+          <img :src="equipe.logo_url || equipe.entidade?.logo_url || '/placeholder-shield.png'" class="w-full h-full object-contain" alt="" />
         </div>
-        <div class="text-center md:text-left flex-grow">
-          <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ equipe.nome }}</h1>
+        <div class="text-center md:text-left flex-grow min-w-0">
+          <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-2 leading-tight break-words">{{ equipe.nome }}</h1>
           <div class="flex flex-wrap justify-center md:justify-start gap-4 text-sm text-gray-600">
             <span class="flex items-center gap-1">
               <MapPin :size="16" /> {{ equipe.entidade?.cidade || 'Cidade não informada' }}
@@ -31,12 +31,12 @@
       </div>
 
       <!-- Abas -->
-      <div class="flex border-b border-gray-200 mb-8 overflow-x-auto">
+      <div class="flex border-b border-gray-200 mb-6 sm:mb-8 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
         <button 
           v-for="tab in tabs" 
           :key="tab.id"
           @click="activeTab = tab.id"
-          class="px-6 py-3 font-medium text-sm flex items-center gap-2 whitespace-nowrap border-b-2 transition-colors"
+          class="px-4 sm:px-6 py-3 font-medium text-sm flex items-center gap-2 whitespace-nowrap border-b-2 transition-colors min-h-12"
           :class="activeTab === tab.id ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
         >
           <component :is="tab.icon" :size="18" /> {{ tab.label }}
@@ -48,10 +48,10 @@
         <div 
           v-for="atleta in equipe.atletas_aprovados" 
           :key="atleta.id"
-          class="bg-white rounded-lg shadow-sm p-4 flex items-center gap-4 border border-gray-100 hover:shadow-md transition-shadow"
+          class="bg-white rounded-lg shadow-sm p-4 flex items-center gap-4 border border-gray-100 hover:shadow-md transition-shadow min-w-0"
         >
-          <img :src="atleta.foto_url || '/placeholder-user.png'" class="w-16 h-16 rounded-full object-cover bg-gray-100" />
-          <div>
+          <img :src="atleta.foto_url || '/placeholder-user.png'" class="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover bg-gray-100 shrink-0" alt="" />
+          <div class="min-w-0">
             <h3 class="font-bold text-gray-800 line-clamp-1">{{ atleta.nome }}</h3>
             <p class="text-xs text-gray-500">Atleta</p>
           </div>
@@ -63,6 +63,7 @@
 
       <!-- Conteúdo: Competições -->
       <div v-else-if="activeTab === 'competicoes'" class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
@@ -81,6 +82,7 @@
             </tr>
           </tbody>
         </table>
+        </div>
       </div>
 
       <!-- Conteúdo: Estatísticas (placeholder simples pois backend não retorna estatísticas detalhadas ainda) -->
@@ -90,20 +92,20 @@
 
       <!-- Conteúdo: Confrontos Recentes -->
       <div v-else-if="activeTab === 'confrontos'" class="space-y-4">
-        <div v-for="jogo in ultimosJogos" :key="jogo.id" class="bg-white rounded-lg shadow-sm border border-gray-100 p-4 flex items-center justify-between">
-            <div class="text-sm text-gray-500 w-24">{{ formatDate(jogo.data) }}</div>
+        <div v-for="jogo in ultimosJogos" :key="jogo.id" class="bg-white rounded-lg shadow-sm border border-gray-100 p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between min-w-0">
+            <div class="text-sm text-gray-500 sm:w-24 shrink-0">{{ formatDate(jogo.data) }}</div>
             
-            <div class="flex-1 flex items-center justify-center gap-4">
-                <span class="font-bold text-gray-800 text-right w-1/3 truncate">{{ jogo.is_mandante ? equipe.nome : jogo.adversario_nome }}</span>
-                <div class="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-lg font-mono font-bold text-lg">
+            <div class="flex-1 flex items-center justify-center gap-2 sm:gap-4 min-w-0">
+                <span class="font-bold text-gray-800 text-right flex-1 min-w-0 text-sm leading-tight line-clamp-2">{{ jogo.is_mandante ? equipe.nome : jogo.adversario_nome }}</span>
+                <div class="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-lg font-mono font-bold text-base sm:text-lg shrink-0">
                     <span>{{ jogo.placar_mandante }}</span>
                     <span class="text-gray-400">x</span>
                     <span>{{ jogo.placar_visitante }}</span>
                 </div>
-                <span class="font-bold text-gray-800 text-left w-1/3 truncate">{{ jogo.is_mandante ? jogo.adversario_nome : equipe.nome }}</span>
+                <span class="font-bold text-gray-800 text-left flex-1 min-w-0 text-sm leading-tight line-clamp-2">{{ jogo.is_mandante ? jogo.adversario_nome : equipe.nome }}</span>
             </div>
 
-            <div class="w-10 flex justify-center">
+            <div class="w-full sm:w-10 flex justify-center shrink-0">
                 <span 
                     class="w-8 h-8 flex items-center justify-center rounded-full font-bold text-xs text-white"
                     :class="{

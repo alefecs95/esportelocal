@@ -1,14 +1,14 @@
 <template>
-  <div class="p-4 max-w-7xl mx-auto">
-    <div class="flex justify-between items-center mb-8">
-      <h1 class="text-3xl font-bold text-gray-800">Equipes</h1>
-      <div class="w-full md:w-1/3">
+  <div class="overflow-x-clip p-4 max-w-7xl mx-auto">
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
+      <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">Equipes</h1>
+      <div class="w-full sm:max-w-sm">
         <input 
           v-model="search" 
           @input="handleSearch" 
-          type="text" 
+          type="search" 
           placeholder="Buscar equipe ou cidade..." 
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-shadow"
+          class="w-full min-h-11 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-shadow"
         />
       </div>
     </div>
@@ -38,7 +38,7 @@
           />
         </div>
         
-        <h3 class="font-bold text-gray-800 text-lg mb-1 group-hover:text-blue-700 transition-colors line-clamp-1">{{ equipe.nome }}</h3>
+        <h3 class="font-bold text-gray-800 text-lg mb-1 group-hover:text-blue-700 transition-colors line-clamp-2 leading-snug w-full">{{ equipe.nome }}</h3>
         
         <div class="flex items-center gap-1 text-sm text-gray-500 mb-3">
           <MapPin :size="14" />
@@ -55,21 +55,21 @@
     </div>
     
     <!-- Paginação Simples -->
-    <div v-if="pagination.last_page > 1" class="mt-8 flex justify-center gap-2">
+    <div v-if="pagination.last_page > 1" class="mt-8 flex flex-wrap justify-center items-center gap-2">
       <button 
         @click="changePage(pagination.current_page - 1)"
         :disabled="pagination.current_page === 1"
-        class="px-4 py-2 border rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        class="min-h-11 px-4 py-2 border rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Anterior
       </button>
-      <span class="px-4 py-2 text-gray-600">
-        Página {{ pagination.current_page }} de {{ pagination.last_page }}
+      <span class="px-3 py-2 text-sm text-gray-600">
+        {{ pagination.current_page }} / {{ pagination.last_page }}
       </span>
       <button 
         @click="changePage(pagination.current_page + 1)"
         :disabled="pagination.current_page === pagination.last_page"
-        class="px-4 py-2 border rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        class="min-h-11 px-4 py-2 border rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Próxima
       </button>

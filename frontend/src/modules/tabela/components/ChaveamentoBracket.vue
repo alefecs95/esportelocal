@@ -1,6 +1,6 @@
 <template>
   <div class="overflow-x-auto pb-4">
-    <div class="flex items-center gap-12 min-w-max p-8">
+    <div class="flex items-center gap-8 sm:gap-12 min-w-max p-4 sm:p-8">
       <div 
         v-for="(fase, index) in fasesOrdenadas" 
         :key="fase.id" 
@@ -53,13 +53,12 @@
               </div>
             </div>
 
-            <!-- Botão Ver Detalhes (Hover) -->
-            <div class="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity rounded-lg">
+            <div class="px-3 pb-3">
               <router-link 
-                :to="{ name: 'PartidaDetail', params: { id: partida.id } }"
-                class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 shadow-sm"
+                :to="{ name: partidaRoute, params: { id: partida.id } }"
+                class="block w-full text-center px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 min-h-10"
               >
-                Ver Detalhes
+                Ver detalhes
               </router-link>
             </div>
           </div>
@@ -86,6 +85,10 @@ export default {
     fases: {
       type: Array,
       required: true
+    },
+    partidaRoute: {
+      type: String,
+      default: 'PartidaDetail'
     }
   },
   setup(props) {
