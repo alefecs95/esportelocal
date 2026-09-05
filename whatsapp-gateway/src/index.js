@@ -37,13 +37,57 @@ function publicState(session) {
     }
 }
 
-function toJid(number) {
-    const digits = String(number || '').replace(/\D+/g, '')
+function normalizeDigits(number) {
+    let digits = String(number || '').replace(/\D+/g, '')
+    if (!digits) {
+        return ''
+    }
+    if (digits.length === 10 || digits.length === 11) {
+        digits = `55${digits}`
+    }
+    return digits
+}
+
+function brazilVariants(digits) {
+    const variants = new Set([digits])
+    if (digits.startsWith('55') && digits.length === 13) {
+        const ddd = digits.slice(2, 4)
+        const subscriber = digits.slice(4)
+        if (subscriber.startsWith('9') && subscriber.length === 9) {
+            variants.add(`55${ddd}${subscriber.slice(1)}`)
+        }
+    }
+    if (digits.startsWith('55') && digits.length === 12) {
+        const ddd = digits.slice(2, 4)
+        const subscriber = digits.slice(4)
+        if (!subscriber.startsWith('9')) {
+            variants.add(`55${ddd}9${subscriber}`)
+        }
+    }
+    return [...variants]
+}
+
+async function resolveJid(sock, number) {
+    const digits = normalizeDigits(number)
     if (!digits) {
         return null
     }
 
-    return `${digits}@s.whatsapp.net`
+    const variants = brazilVariants(digits)
+    for (const candidate of variants) {
+        try {
+            const result = await sock.onWhatsApp(candidate)
+            const hits = Array.isArray(result) ? result : [result]
+            const found = hits.find((item) => item?.exists && item?.jid)
+            if (found?.jid) {
+                return found.jid
+            }
+        } catch (error) {
+            logger.warn({ err: error, candidate }, 'Falha ao consultar JID no WhatsApp')
+        }
+    }
+
+    return `${variants[0]}@s.whatsapp.net`
 }
 
 function authPath(sessionId) {
@@ -276,9 +320,8 @@ app.post('/send/text', async (req, res) => {
     const sessionId = String(req.body?.session || '')
     const number = String(req.body?.number || '')
     const text = String(req.body?.text || '')
-    const jid = toJid(number)
 
-    if (!sessionId || !jid || !text.trim()) {
+    if (!sessionId || !number || !text.trim()) {
         return res.status(422).json({
             ok: false,
             message: 'Informe session, number e text.',
@@ -287,6 +330,7 @@ app.post('/send/text', async (req, res) => {
 
     const session = sessions.get(sessionId)
     if (!session?.sock || session.status !== 'connected') {
+        logger.warn({ sessionId, status: session?.status || 'disconnected', number }, 'Envio recusado: sessão desconectada')
         return res.status(409).json({
             ok: false,
             message: 'WhatsApp não está conectado para este tenant.',
@@ -295,8 +339,18 @@ app.post('/send/text', async (req, res) => {
     }
 
     try {
+        const jid = await resolveJid(session.sock, number)
+        if (!jid) {
+            return res.status(422).json({
+                ok: false,
+                message: 'Número de WhatsApp inválido.',
+            })
+        }
+
+        logger.info({ sessionId, number, jid }, 'Enviando texto')
         await session.sock.sendMessage(jid, { text })
-        return res.json({ ok: true })
+        logger.info({ sessionId, jid }, 'Texto enviado')
+        return res.json({ ok: true, jid })
     } catch (error) {
         logger.error({ err: error, sessionId, number }, 'Falha ao enviar mensagem')
         return res.status(500).json({

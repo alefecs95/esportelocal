@@ -23,7 +23,9 @@ class SendWhatsAppNotification implements ShouldQueue
 
     public function handle(WhatsAppNotificationRequested $event): void
     {
-        $phone = preg_replace('/\D+/', '', $event->phone);
+        $notificationService = app(\App\Services\WhatsAppNotificationService::class);
+        $phone = $notificationService->normalizePhone($event->phone)
+            ?: preg_replace('/\D+/', '', $event->phone);
         if (!$phone) {
             return;
         }
@@ -62,9 +64,6 @@ class SendWhatsAppNotification implements ShouldQueue
         $message = trim($event->message);
         if (!$event->force) {
             $backendUrl = rtrim((string) config('app.url'), '/');
-            $notificationService = app(\App\Services\WhatsAppNotificationService::class);
-            // Como o descadastro é uma rota de API, mantemos a URL base da API mas tentamos 
-            // usar o domínio do tenant se existir (pois a API é o mesmo backend)
             $tenantUrl = $notificationService->getTenantFrontendUrl();
             $tenantName = $notificationService->getTenantDisplayName($tenantId);
             // Se estivermos em dev (localhost:5173), precisamos da URL da API local, 
@@ -82,12 +81,20 @@ class SendWhatsAppNotification implements ShouldQueue
         if ($sent) {
             $preference->last_notified_at = now();
             $preference->save();
+            Log::info('Mensagem WhatsApp enviada', [
+                'phone' => $phone,
+                'type' => $event->type,
+                'tenant_id' => $tenantId,
+            ]);
             return;
         }
 
-        Log::warning('Mensagem WhatsApp não enviada', [
+        Log::error('Mensagem WhatsApp não enviada', [
             'phone' => $phone,
             'type' => $event->type,
+            'tenant_id' => $tenantId,
         ]);
+
+        throw new \RuntimeException('Falha ao enviar WhatsApp para ' . $phone);
     }
 }

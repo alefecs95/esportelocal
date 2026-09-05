@@ -29,7 +29,7 @@ class WhatsAppNotificationService
             return null;
         }
 
-        if (strlen($digits) === 11) {
+        if (strlen($digits) === 10 || strlen($digits) === 11) {
             $digits = '55' . $digits;
         }
 

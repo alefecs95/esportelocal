@@ -33,7 +33,7 @@ return [
 
     'whatsapp' => [
         'gateway_url' => env('WHATSAPP_GATEWAY_URL', 'http://whatsapp:3000'),
-        'gateway_token' => env('WHATSAPP_GATEWAY_TOKEN'),
+        'gateway_token' => env('WHATSAPP_GATEWAY_TOKEN', 'semel-internal-whatsapp'),
     ],
 
     'consultas' => [
