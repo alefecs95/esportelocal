@@ -35,6 +35,36 @@ export default {
   deleteLocal(id) {
     return api.delete(`/memoria/locais/${id}`);
   },
+  createMomento(localId, data) {
+    const cfg = asForm(data);
+    return api.post(`/memoria/locais/${localId}/momentos`, cfg.data, { headers: cfg.headers });
+  },
+  deleteMomento(localId, id) {
+    return api.delete(`/memoria/locais/${localId}/momentos/${id}`);
+  },
+  equipes() {
+    return api.get('/memoria/equipes');
+  },
+  createEquipe(data) {
+    const cfg = asForm(data);
+    return api.post('/memoria/equipes', cfg.data, { headers: cfg.headers });
+  },
+  updateEquipe(id, data) {
+    const cfg = asForm(data);
+    return api.post(`/memoria/equipes/${id}`, cfg.data, { headers: cfg.headers });
+  },
+  deleteEquipe(id) {
+    return api.delete(`/memoria/equipes/${id}`);
+  },
+  correcoes(params = {}) {
+    return api.get('/memoria/correcoes', { params });
+  },
+  aprovarCorrecao(id) {
+    return api.post(`/memoria/correcoes/${id}/aprovar`);
+  },
+  rejeitarCorrecao(id, payload = {}) {
+    return api.post(`/memoria/correcoes/${id}/rejeitar`, payload);
+  },
   personalidades(params = {}) {
     return api.get('/memoria/personalidades', { params });
   },
@@ -92,6 +122,9 @@ export default {
   rejeitar(id, payload = {}) {
     return api.post(`/memoria/contribuicoes/${id}/rejeitar`, payload);
   },
+  pedirComplemento(id, payload = {}) {
+    return api.post(`/memoria/contribuicoes/${id}/complemento`, payload);
+  },
   lote(payload) {
     return api.post('/memoria/contribuicoes/lote', payload);
   },
@@ -109,5 +142,26 @@ export default {
   },
   lerNotificacoes() {
     return api.post('/memoria/notificacoes/ler');
+  },
+  identificacoes(params = {}) {
+    return api.get('/memoria/identificacoes', { params });
+  },
+  aprovarIdentificacao(id, payload = {}) {
+    return api.post(`/memoria/identificacoes/${id}/aprovar`, payload);
+  },
+  rejeitarIdentificacao(id, payload = {}) {
+    return api.post(`/memoria/identificacoes/${id}/rejeitar`, payload);
+  },
+  recordes() {
+    return api.get('/memoria/recordes');
+  },
+  createRecorde(payload) {
+    return api.post('/memoria/recordes', payload);
+  },
+  updateRecorde(id, payload) {
+    return api.post(`/memoria/recordes/${id}`, payload);
+  },
+  deleteRecorde(id) {
+    return api.delete(`/memoria/recordes/${id}`);
   },
 };

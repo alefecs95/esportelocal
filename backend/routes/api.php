@@ -217,9 +217,21 @@ Route::prefix('v1')->group(function () {
     Route::get('public/memoria/timeline', [MemoriaPublicController::class, 'timeline']);
     Route::get('public/memoria/marcos/{slug}', [MemoriaPublicController::class, 'showMarco']);
     Route::get('public/memoria/galeria', [MemoriaPublicController::class, 'galeria']);
+    Route::get('public/memoria/acervo/{slug}', [MemoriaPublicController::class, 'showAcervo']);
     Route::get('public/memoria/personalidades', [MemoriaPublicController::class, 'personalidades']);
     Route::get('public/memoria/personalidades/{slug}', [MemoriaPublicController::class, 'showPersonalidade']);
+    Route::post('public/memoria/personalidades/{slug}/votar', [MemoriaPublicController::class, 'votarHall'])->middleware('throttle:20,1');
+    Route::get('public/memoria/mapa', [MemoriaPublicController::class, 'mapa']);
     Route::get('public/memoria/locais', [MemoriaPublicController::class, 'locais']);
+    Route::get('public/memoria/locais/{slug}', [MemoriaPublicController::class, 'showLocal']);
+    Route::get('public/memoria/equipes', [MemoriaPublicController::class, 'equipes']);
+    Route::get('public/memoria/equipes/{slug}', [MemoriaPublicController::class, 'showEquipe']);
+    Route::get('public/memoria/tags', [MemoriaPublicController::class, 'tags']);
+    Route::get('public/memoria/quem-e', [MemoriaPublicController::class, 'quemE']);
+    Route::post('public/memoria/acervo/{id}/identificar', [MemoriaPublicController::class, 'identificar'])->middleware('throttle:20,1');
+    Route::post('public/memoria/acervo/{id}/corrigir', [MemoriaPublicController::class, 'corrigir'])->middleware('throttle:20,1');
+    Route::get('public/memoria/depoimentos', [MemoriaPublicController::class, 'depoimentos']);
+    Route::get('public/memoria/recordes', [MemoriaPublicController::class, 'recordes']);
     Route::post('public/memoria/contribuicoes', [MemoriaPublicController::class, 'contribuir'])->middleware('throttle:10,1');
 
     // Rotas protegidas que geram URLs para PDF (agora exigem autenticação)
@@ -282,6 +294,15 @@ Route::prefix('v1')->group(function () {
         Route::post('memoria/locais', [MemoriaAdminController::class, 'storeLocal']);
         Route::post('memoria/locais/{id}', [MemoriaAdminController::class, 'updateLocal']);
         Route::delete('memoria/locais/{id}', [MemoriaAdminController::class, 'destroyLocal']);
+        Route::post('memoria/locais/{id}/momentos', [MemoriaAdminController::class, 'storeMomento']);
+        Route::delete('memoria/locais/{id}/momentos/{momentoId}', [MemoriaAdminController::class, 'destroyMomento']);
+        Route::get('memoria/equipes', [MemoriaAdminController::class, 'equipes']);
+        Route::get('memoria/equipes/{id}', [MemoriaAdminController::class, 'showEquipe']);
+        Route::post('memoria/equipes', [MemoriaAdminController::class, 'storeEquipe']);
+        Route::post('memoria/equipes/{id}', [MemoriaAdminController::class, 'updateEquipe']);
+        Route::delete('memoria/equipes/{id}', [MemoriaAdminController::class, 'destroyEquipe']);
+        Route::get('memoria/tags', [MemoriaAdminController::class, 'tags']);
+        Route::post('memoria/tags', [MemoriaAdminController::class, 'storeTag']);
         Route::get('memoria/personalidades', [MemoriaAdminController::class, 'personalidades']);
         Route::get('memoria/personalidades/{id}', [MemoriaAdminController::class, 'showPersonalidade']);
         Route::post('memoria/personalidades', [MemoriaAdminController::class, 'storePersonalidade']);
@@ -299,9 +320,20 @@ Route::prefix('v1')->group(function () {
         Route::delete('memoria/acervo/{id}', [MemoriaAdminController::class, 'destroyAcervo']);
         Route::post('memoria/contribuicoes/{id}/aprovar', [MemoriaAdminController::class, 'aprovar']);
         Route::post('memoria/contribuicoes/{id}/rejeitar', [MemoriaAdminController::class, 'rejeitar']);
+        Route::post('memoria/contribuicoes/{id}/complemento', [MemoriaAdminController::class, 'pedirComplemento']);
         Route::post('memoria/contribuicoes/lote', [MemoriaAdminController::class, 'lote']);
         Route::post('memoria/marcos/{id}/duplicar', [MemoriaAdminController::class, 'duplicarMarco']);
         Route::post('memoria/personalidades/{id}/duplicar', [MemoriaAdminController::class, 'duplicarPersonalidade']);
+        Route::get('memoria/identificacoes', [MemoriaAdminController::class, 'identificacoes']);
+        Route::post('memoria/identificacoes/{id}/aprovar', [MemoriaAdminController::class, 'aprovarIdentificacao']);
+        Route::post('memoria/identificacoes/{id}/rejeitar', [MemoriaAdminController::class, 'rejeitarIdentificacao']);
+        Route::get('memoria/correcoes', [MemoriaAdminController::class, 'correcoes']);
+        Route::post('memoria/correcoes/{id}/aprovar', [MemoriaAdminController::class, 'aprovarCorrecao']);
+        Route::post('memoria/correcoes/{id}/rejeitar', [MemoriaAdminController::class, 'rejeitarCorrecao']);
+        Route::get('memoria/recordes', [MemoriaAdminController::class, 'recordes']);
+        Route::post('memoria/recordes', [MemoriaAdminController::class, 'storeRecorde']);
+        Route::post('memoria/recordes/{id}', [MemoriaAdminController::class, 'updateRecorde']);
+        Route::delete('memoria/recordes/{id}', [MemoriaAdminController::class, 'destroyRecorde']);
         Route::get('memoria/auditoria', [MemoriaAdminController::class, 'auditoria']);
         Route::get('memoria/notificacoes', [MemoriaAdminController::class, 'notificacoes']);
         Route::post('memoria/notificacoes/ler', [MemoriaAdminController::class, 'lerNotificacoes']);

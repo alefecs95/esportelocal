@@ -3,6 +3,15 @@ set -e
 
 nginx -t
 php-fpm -D
+
+(
+    cd /var/www/html/backend
+    while true; do
+        php artisan queue:work --sleep=2 --tries=3 --timeout=90 || true
+        sleep 2
+    done
+) &
+
 nginx -g 'daemon off;' &
 NGINX_PID=$!
 

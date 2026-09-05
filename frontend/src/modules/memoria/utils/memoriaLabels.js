@@ -8,6 +8,25 @@ export const papelLabels = {
   outro: 'Outra atuação',
 };
 
+export const papelPecaLabels = {
+  ...papelLabels,
+  treinador: 'Treinador',
+  arbitro: 'Árbitro',
+  organizador: 'Organizador',
+  torcedor: 'Torcedor',
+  autoridade: 'Autoridade',
+  fotografo: 'Fotógrafo',
+  entrevistado: 'Entrevistado',
+};
+
+export const licencaLabels = {
+  uso_institucional: 'Uso institucional da prefeitura',
+  doacao: 'Doação autorizada ao acervo',
+  arquivo_publico: 'Arquivo público',
+  direitos_reservados: 'Direitos reservados',
+  nao_informado: 'Não informado',
+};
+
 export const tipoMarcoLabels = {
   conquista: 'Conquista',
   campeonato: 'Campeonato',
@@ -20,6 +39,7 @@ export const tipoAcervoLabels = {
   foto: 'Foto',
   video: 'Vídeo',
   documento: 'Documento',
+  audio: 'Áudio',
 };
 
 export const tipoLocalLabels = {
@@ -30,6 +50,14 @@ export const tipoLocalLabels = {
   outro: 'Outro',
 };
 
+export const categoriaRecordeLabels = {
+  artilharia: 'Artilharia',
+  tempo: 'Tempo',
+  pontos: 'Pontos',
+  distancia: 'Distância',
+  outro: 'Outro recorde',
+};
+
 export const originLabels = {
   curadoria: 'Prefeitura',
   comunidade: 'Comunidade',
@@ -38,6 +66,7 @@ export const originLabels = {
 export function detectAcervoTipo(file) {
   if (!file?.type) return 'foto';
   if (file.type.startsWith('video/')) return 'video';
+  if (file.type.startsWith('audio/')) return 'audio';
   if (file.type === 'application/pdf' || file.type.includes('document')) return 'documento';
   return 'foto';
 }

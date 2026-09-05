@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MemoriaAcervo;
+use App\Models\MemoriaEquipe;
+use App\Models\MemoriaLocal;
 use App\Models\MemoriaMarco;
 use App\Models\MemoriaPersonalidade;
 use App\Models\Noticia;
@@ -34,6 +37,25 @@ class ShareController extends Controller
         return $this->shareResponse($title, $description, $image, $articleUrl);
     }
 
+    public function memoriaAcervo(string $slug)
+    {
+        $item = MemoriaAcervo::aprovado()
+            ->where(function ($q) use ($slug) {
+                $q->where('slug', $slug)->orWhere('id', $slug);
+            })
+            ->firstOrFail();
+
+        $tenant = $this->resolveTenant($item->prefeitura_id);
+        $tenantName = $tenant?->nome ?: 'SEMEL - Esporte Local';
+        $description = trim((string) (Str::limit(strip_tags((string) ($item->descricao ?: $item->historia ?: '')), 180) ?: 'Peça do Memorial Esportivo municipal.'));
+        $image = $item->tipo === 'foto' ? ($item->arquivo_url ?: ($tenant?->logo_url ?: null)) : ($tenant?->logo_url ?: null);
+        $url = rtrim($this->resolveFrontendUrl($tenant), '/') . '/memoria/acervo/' . ($item->slug ?: $item->id);
+        $year = $item->data_incerta ? 'Data a confirmar' : ($item->ano ?: '');
+        $title = trim($item->titulo . ($year ? ' (' . $year . ')' : '')) . ' | Memorial Esportivo de ' . $tenantName;
+
+        return $this->shareResponse($title, $description, $image, $url);
+    }
+
     public function memoriaMarco(string $slug)
     {
         $marco = MemoriaMarco::publicado()
@@ -64,6 +86,40 @@ class ShareController extends Controller
         $description = trim((string) (Str::limit(strip_tags((string) ($item->mini_bio ?? '')), 180) ?: 'Personalidade da Memória do Esporte municipal.'));
         $image = $item->foto_url ?: ($tenant?->logo_url ?: null);
         $url = rtrim($this->resolveFrontendUrl($tenant), '/') . '/memoria/personalidades/' . ($item->slug ?: $item->id);
+
+        return $this->shareResponse($item->nome . ' | ' . $tenantName, $description, $image, $url);
+    }
+
+    public function memoriaLocal(string $slug)
+    {
+        $item = MemoriaLocal::publicado()
+            ->where(function ($q) use ($slug) {
+                $q->where('slug', $slug)->orWhere('id', $slug);
+            })
+            ->firstOrFail();
+
+        $tenant = $this->resolveTenant($item->prefeitura_id);
+        $tenantName = $tenant?->nome ?: 'SEMEL - Esporte Local';
+        $description = trim((string) ($item->descricao ?: $item->endereco ?: 'Local histórico da Memória do Esporte municipal.'));
+        $image = $item->foto_url ?: $item->foto_depois_url ?: ($tenant?->logo_url ?: null);
+        $url = rtrim($this->resolveFrontendUrl($tenant), '/') . '/memoria/locais/' . ($item->slug ?: $item->id);
+
+        return $this->shareResponse($item->nome . ' | ' . $tenantName, $description, $image, $url);
+    }
+
+    public function memoriaEquipe(string $slug)
+    {
+        $item = MemoriaEquipe::publicado()
+            ->where(function ($q) use ($slug) {
+                $q->where('slug', $slug)->orWhere('id', $slug);
+            })
+            ->firstOrFail();
+
+        $tenant = $this->resolveTenant($item->prefeitura_id);
+        $tenantName = $tenant?->nome ?: 'SEMEL - Esporte Local';
+        $description = trim((string) ($item->descricao ?: $item->historia ?: 'Equipe histórica da Memória do Esporte municipal.'));
+        $image = $item->escudo_url ?: ($tenant?->logo_url ?: null);
+        $url = rtrim($this->resolveFrontendUrl($tenant), '/') . '/memoria/equipes/' . ($item->slug ?: $item->id);
 
         return $this->shareResponse($item->nome . ' | ' . $tenantName, $description, $image, $url);
     }

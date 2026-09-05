@@ -83,6 +83,7 @@
             </div>
         </div>
       </transition>
+      <MemoriaSubnav v-if="isMemoriaRoute" />
     </header>
 
     <!-- Conteúdo -->
@@ -139,10 +140,13 @@
 import { Facebook, Twitter, Instagram, Youtube, Menu, User, X, Home, Newspaper, Trophy, Calendar, Shield, Users, Briefcase, Landmark } from 'lucide-vue-next';
 import { useTheme } from '@/composables/useTheme';
 import { ref, onMounted, computed, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { isTenantDomain } from '@/utils/tenantHelpers';
 import { getMainOrigin } from '@/utils/domainHelpers';
+import MemoriaSubnav from '@/modules/portal/components/MemoriaSubnav.vue';
 
 const { theme } = useTheme();
+const route = useRoute();
 const mobileMenuOpen = ref(false);
 const isTenant = ref(true);
 const logoLoadFailed = ref(false);
@@ -200,6 +204,15 @@ const hasSocialLinks = computed(() => {
     const redes = theme.value?.redes_sociais || {};
     return Boolean(redes.facebook || redes.instagram || redes.youtube || redes.x);
 });
+
+const isMemoriaRoute = computed(() => route.path === '/memoria' || route.path.startsWith('/memoria/'));
+
+watch(
+    () => route.fullPath,
+    () => {
+        mobileMenuOpen.value = false;
+    }
+);
 
 watch(
     () => [theme.value?.logo_url, theme.value?.logo],

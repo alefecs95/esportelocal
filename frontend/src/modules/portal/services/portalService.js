@@ -84,6 +84,22 @@ export default {
     return api.get('/public/memoria/galeria', { params });
   },
 
+  getMemoriaAcervo(slug) {
+    return api.get(`/public/memoria/acervo/${slug}`);
+  },
+
+  corrigirMemoriaAcervo(id, payload) {
+    return api.post(`/public/memoria/acervo/${id}/corrigir`, payload);
+  },
+
+  getMemoriaEquipes(params = {}) {
+    return api.get('/public/memoria/equipes', { params });
+  },
+
+  getMemoriaEquipe(slug) {
+    return api.get(`/public/memoria/equipes/${slug}`);
+  },
+
   getMemoriaPersonalidades(params = {}) {
     return api.get('/public/memoria/personalidades', { params });
   },
@@ -94,6 +110,34 @@ export default {
 
   getMemoriaLocais() {
     return api.get('/public/memoria/locais');
+  },
+
+  getMemoriaLocal(slug) {
+    return api.get(`/public/memoria/locais/${slug}`);
+  },
+
+  getMemoriaMapa() {
+    return api.get('/public/memoria/mapa');
+  },
+
+  votarMemoriaHall(slug) {
+    return api.post(`/public/memoria/personalidades/${slug}/votar`);
+  },
+
+  getMemoriaQuemE() {
+    return api.get('/public/memoria/quem-e');
+  },
+
+  identificarMemoriaAcervo(id, payload) {
+    return api.post(`/public/memoria/acervo/${id}/identificar`, payload);
+  },
+
+  getMemoriaDepoimentos() {
+    return api.get('/public/memoria/depoimentos');
+  },
+
+  getMemoriaRecordes() {
+    return api.get('/public/memoria/recordes');
   },
 
   enviarMemoriaContribuicao(data) {

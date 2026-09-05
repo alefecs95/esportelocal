@@ -7,6 +7,7 @@
       <div class="mt-8 flex flex-wrap justify-center gap-3">
         <router-link to="/memoria" class="bg-slate-900 text-white px-5 py-3 rounded-full font-bold min-h-11">Ver linha do tempo</router-link>
         <router-link to="/memoria/galeria" class="border border-slate-300 px-5 py-3 rounded-full font-bold min-h-11">Ir à galeria</router-link>
+        <router-link to="/memoria/mapa" class="border border-slate-300 px-5 py-3 rounded-full font-bold min-h-11">Mapa da Memória</router-link>
         <router-link to="/memoria/enviar" class="border border-slate-300 px-5 py-3 rounded-full font-bold min-h-11">Enviar uma memória</router-link>
       </div>
     </div>

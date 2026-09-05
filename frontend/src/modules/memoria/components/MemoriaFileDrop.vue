@@ -35,6 +35,10 @@
           <p class="text-sm text-gray-500 mt-1">Clique para trocar o vídeo</p>
         </div>
       </div>
+      <div v-else-if="previewUrl && isAudio" class="flex items-center gap-4">
+        <audio :src="previewUrl" controls class="flex-1" />
+        <p class="text-sm text-gray-500">Clique para trocar o áudio</p>
+      </div>
       <div v-else class="flex items-center gap-4">
         <div class="h-14 w-14 rounded-xl bg-white border flex items-center justify-center text-blue-600 shrink-0">
           <Upload :size="22" />
@@ -71,13 +75,17 @@ const objectUrl = ref('');
 const fileName = computed(() => file.value?.name || '');
 const hasExisting = computed(() => !!props.existingUrl);
 const previewUrl = computed(() => objectUrl.value || props.existingUrl || '');
-const isImage = computed(() => {
-  if (file.value) return file.value.type.startsWith('image/');
-  return !previewUrl.value.match(/\.pdf($|\?)/i) && !previewUrl.value.match(/\.(mp4|webm)($|\?)/i);
-});
 const isVideo = computed(() => {
   if (file.value) return file.value.type.startsWith('video/');
   return !!previewUrl.value.match(/\.(mp4|webm)($|\?)/i);
+});
+const isAudio = computed(() => {
+  if (file.value) return file.value.type.startsWith('audio/');
+  return !!previewUrl.value.match(/\.(mp3|ogg|wav|m4a|weba)($|\?)/i);
+});
+const isImage = computed(() => {
+  if (file.value) return file.value.type.startsWith('image/');
+  return !isVideo.value && !isAudio.value && !previewUrl.value.match(/\.pdf($|\?)/i);
 });
 
 const revoke = () => {

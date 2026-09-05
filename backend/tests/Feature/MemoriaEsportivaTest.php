@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\MemoriaAcervo;
+use App\Models\MemoriaEquipe;
 use App\Models\MemoriaMarco;
 use App\Models\Prefeitura;
 use App\Models\User;
@@ -96,6 +97,61 @@ class MemoriaEsportivaTest extends TestCase
             'status' => 'aprovado',
             'publicado' => 1,
         ]);
+    }
+
+    public function test_ficha_publica_do_acervo_omite_pendente(): void
+    {
+        $tenant = Prefeitura::factory()->create(['slug' => 'memoria-peca']);
+        App::instance('current_tenant', $tenant);
+
+        $publicado = MemoriaAcervo::factory()->create([
+            'titulo' => 'Final de 1998',
+            'status' => 'aprovado',
+            'publicado' => true,
+            'descricao' => 'Time campeão no ginásio.',
+        ]);
+        MemoriaAcervo::factory()->create([
+            'titulo' => 'Ainda não publicado',
+            'status' => 'pendente',
+            'publicado' => false,
+        ]);
+
+        App::forgetInstance('current_tenant');
+
+        $this->withHeaders($this->tenantHeaders($tenant))
+            ->getJson('/api/v1/public/memoria/acervo/' . $publicado->slug)
+            ->assertOk()
+            ->assertJsonFragment(['titulo' => 'Final de 1998'])
+            ->assertJsonMissing(['doador_email']);
+
+        $this->assertGreaterThan(0, $publicado->fresh()->visualizacoes);
+
+        $this->withHeaders($this->tenantHeaders($tenant))
+            ->getJson('/api/v1/public/memoria/acervo/ainda-nao-publicado')
+            ->assertNotFound();
+    }
+
+    public function test_equipe_historica_publica_omite_rascunho(): void
+    {
+        $tenant = Prefeitura::factory()->create(['slug' => 'memoria-clube']);
+        App::instance('current_tenant', $tenant);
+
+        MemoriaEquipe::create([
+            'nome' => 'Comercial FC',
+            'publicado' => true,
+        ]);
+        MemoriaEquipe::create([
+            'nome' => 'Rascunho interno',
+            'publicado' => false,
+        ]);
+
+        App::forgetInstance('current_tenant');
+
+        $this->withHeaders($this->tenantHeaders($tenant))
+            ->getJson('/api/v1/public/memoria/equipes')
+            ->assertOk()
+            ->assertJsonFragment(['nome' => 'Comercial FC'])
+            ->assertJsonMissing(['nome' => 'Rascunho interno']);
     }
 
     public function test_gestor_nao_admin_nao_curadoria(): void

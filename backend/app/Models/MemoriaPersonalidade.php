@@ -18,6 +18,7 @@ class MemoriaPersonalidade extends Model
     protected $fillable = [
         'prefeitura_id',
         'nome',
+        'apelido',
         'slug',
         'papel',
         'mini_bio',
@@ -25,6 +26,7 @@ class MemoriaPersonalidade extends Model
         'data_nascimento',
         'data_falecimento',
         'modalidade_id',
+        'atleta_id',
         'destaque',
         'publicado',
         'created_by',
@@ -91,6 +93,33 @@ class MemoriaPersonalidade extends Model
     public function acervo()
     {
         return $this->hasMany(MemoriaAcervo::class, 'personalidade_id');
+    }
+
+    public function pecas()
+    {
+        return $this->belongsToMany(
+            MemoriaAcervo::class,
+            'memoria_acervo_personalidade',
+            'personalidade_id',
+            'acervo_id'
+        )->withPivot(['papel', 'ordem', 'observacao'])->withTimestamps();
+    }
+
+    public function equipes()
+    {
+        return $this->belongsToMany(MemoriaEquipe::class, 'memoria_equipe_personalidade', 'personalidade_id', 'equipe_id')
+            ->withPivot(['papel', 'ano_inicio', 'ano_fim'])
+            ->withTimestamps();
+    }
+
+    public function atleta()
+    {
+        return $this->belongsTo(Atleta::class);
+    }
+
+    public function votosHall()
+    {
+        return $this->hasMany(MemoriaVotoHall::class, 'personalidade_id');
     }
 
     public function scopePublicado($query)

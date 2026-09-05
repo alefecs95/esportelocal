@@ -19,5 +19,8 @@ Route::get('/', function () {
 });
 
 Route::get('/share/noticias/{slug}', [ShareController::class, 'noticia']);
+Route::get('/share/memoria/acervo/{slug}', [ShareController::class, 'memoriaAcervo']);
 Route::get('/share/memoria/marcos/{slug}', [ShareController::class, 'memoriaMarco']);
 Route::get('/share/memoria/personalidades/{slug}', [ShareController::class, 'memoriaPersonalidade']);
+Route::get('/share/memoria/equipes/{slug}', [ShareController::class, 'memoriaEquipe']);
+Route::get('/share/memoria/locais/{slug}', [ShareController::class, 'memoriaLocal']);

@@ -18,7 +18,7 @@
     <nav class="text-sm text-gray-500 mb-6 flex flex-wrap gap-1">
       <router-link to="/memoria" class="hover:text-blue-700">Memória</router-link>
       <span>/</span>
-      <router-link to="/memoria" class="hover:text-blue-700">Hall da cidade</router-link>
+      <router-link to="/memoria/hall" class="hover:text-blue-700">Hall da cidade</router-link>
       <span>/</span>
       <span class="text-gray-900 truncate max-w-[50vw]">{{ item.nome }}</span>
     </nav>
@@ -32,6 +32,7 @@
           <span v-if="item.modalidade?.nome"> · {{ item.modalidade.nome }}</span>
         </p>
         <h1 class="text-4xl font-extrabold mt-1">{{ item.nome }}</h1>
+        <p v-if="item.apelido" class="text-lg text-slate-500 mt-1">“{{ item.apelido }}”</p>
         <p v-if="item.data_nascimento" class="text-sm text-gray-500 mt-2">
           {{ formatDate(item.data_nascimento) }}
           <span v-if="item.data_falecimento"> — {{ formatDate(item.data_falecimento) }}</span>
@@ -40,10 +41,33 @@
         <p v-if="!item.mini_bio" class="mt-4 text-gray-500 bg-slate-50 border rounded-2xl p-4">
           A biografia ainda está sendo reunida. Se você tem recortes ou fotos, envie para o acervo.
         </p>
-        <div class="mt-5 flex flex-wrap gap-2">
+        <div class="mt-5 bg-amber-50 border border-amber-100 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wide text-amber-800">Hall da cidade</p>
+            <p class="text-2xl font-black text-slate-900 tabular-nums">{{ item.votos_hall || 0 }}</p>
+            <p class="text-sm text-slate-600">voto{{ (item.votos_hall || 0) === 1 ? '' : 's' }} do público</p>
+          </div>
+          <button type="button" class="px-5 py-3 rounded-full bg-yellow-400 text-slate-900 text-sm font-bold min-h-11 disabled:opacity-60" :disabled="voting || voteMsg === 'ok'" @click="votar">
+            {{ voteLabel }}
+          </button>
+        </div>
+        <div class="mt-4 flex flex-wrap gap-2">
           <a :href="whatsappHref" target="_blank" rel="noopener" class="px-4 py-2 rounded-full bg-green-600 text-white text-sm font-bold">WhatsApp</a>
           <a :href="facebookHref" target="_blank" rel="noopener" class="px-4 py-2 rounded-full bg-blue-700 text-white text-sm font-bold">Facebook</a>
         </div>
+      </div>
+    </div>
+    <div v-if="item.equipes?.length" class="mt-12">
+      <h2 class="text-xl font-bold mb-4">Equipes</h2>
+      <div class="flex flex-wrap gap-3">
+        <router-link
+          v-for="e in item.equipes"
+          :key="e.id"
+          :to="{ name: 'PortalMemoriaEquipe', params: { slug: e.slug || e.id } }"
+          class="px-4 py-2 bg-white border rounded-full font-medium hover:border-blue-500 min-h-11 inline-flex items-center"
+        >
+          {{ e.nome }}
+        </router-link>
       </div>
     </div>
     <div v-if="item.marcos?.length" class="mt-12">
@@ -63,11 +87,17 @@
     <div v-if="item.acervo?.length" class="mt-12">
       <h2 class="text-xl font-bold mb-4">Acervo associado</h2>
       <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-        <a v-for="m in item.acervo" :key="m.id" :href="m.arquivo_url" target="_blank" class="rounded-2xl overflow-hidden bg-white border">
+        <router-link
+          v-for="m in item.acervo"
+          :key="m.id"
+          :to="{ name: 'PortalMemoriaAcervo', params: { slug: m.slug || m.id } }"
+          class="rounded-2xl overflow-hidden bg-white border"
+        >
           <img v-if="m.tipo === 'foto'" :src="m.arquivo_url" loading="lazy" class="w-full h-40 object-cover" :alt="m.alt_text || m.titulo" />
           <video v-else-if="m.tipo === 'video'" :src="m.arquivo_url" preload="none" controls class="w-full h-40 bg-black"></video>
+          <audio v-else-if="m.tipo === 'audio'" :src="m.arquivo_url" controls class="w-full mt-8 px-2"></audio>
           <div class="p-3 text-sm font-medium">{{ m.titulo }}</div>
-        </a>
+        </router-link>
       </div>
     </div>
     <div v-if="!item.marcos?.length && !item.acervo?.length" class="mt-12 bg-slate-50 border rounded-2xl p-6 text-center text-gray-600">
@@ -89,10 +119,13 @@ const route = useRoute();
 const item = ref({});
 const loading = ref(true);
 const missing = ref(false);
+const voting = ref(false);
+const voteMsg = ref('');
 
 const shareUrl = computed(() => memoriaShareUrl('personalidades', item.value.slug || route.params.slug));
 const whatsappHref = computed(() => `https://wa.me/?text=${encodeURIComponent(`${item.value.nome || ''} ${shareUrl.value}`)}`);
 const facebookHref = computed(() => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl.value)}`);
+const voteLabel = computed(() => (voteMsg.value === 'ok' ? 'Você já votou' : (voting.value ? 'Registrando...' : 'Votar no Hall')));
 
 const formatDate = (value) => {
   try {
@@ -118,4 +151,21 @@ const load = async () => {
 
 onMounted(load);
 watch(() => route.params.slug, load);
+
+const votar = async () => {
+  if (voteMsg.value === 'ok' || voting.value) return;
+  voting.value = true;
+  try {
+    const { data } = await portalService.votarMemoriaHall(item.value.slug || route.params.slug);
+    item.value.votos_hall = data.votos_hall;
+    voteMsg.value = 'ok';
+  } catch (e) {
+    if (e?.response?.status === 409) {
+      item.value.votos_hall = e.response.data?.votos_hall ?? item.value.votos_hall;
+      voteMsg.value = 'ok';
+    }
+  } finally {
+    voting.value = false;
+  }
+};
 </script>

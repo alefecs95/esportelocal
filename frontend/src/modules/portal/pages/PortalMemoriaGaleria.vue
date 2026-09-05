@@ -1,12 +1,9 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <section class="bg-slate-900 text-white py-10 sm:py-12">
-      <div class="container mx-auto px-4">
-        <router-link to="/memoria" class="text-yellow-400 text-sm font-bold">← Memória</router-link>
-        <h1 class="text-3xl font-extrabold mt-2">Galeria histórica</h1>
-        <p class="text-slate-300 mt-1 max-w-2xl">Fotos, vídeos e documentos. Filtre pela época, pelo tipo de arquivo ou pelo lugar.</p>
-      </div>
-    </section>
+  <div class="min-h-screen bg-slate-50">
+    <MemoriaPageHero
+      title="Galeria histórica"
+      description="Fotos, vídeos, áudios e documentos. Toque para abrir no tamanho da tela."
+    />
     <section class="container mx-auto px-4 py-6">
       <form class="bg-white border rounded-2xl p-4 mb-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-3" @submit.prevent="load">
         <label class="text-sm font-semibold text-gray-700">
@@ -19,9 +16,10 @@
         <label class="text-sm font-semibold text-gray-700">
           Tipo
           <select v-model="filters.tipo" class="mt-1 w-full rounded-xl border-gray-300 min-h-11" @change="load">
-            <option value="">Fotos, vídeos e documentos</option>
+            <option value="">Fotos, vídeos, áudios e documentos</option>
             <option value="foto">Só fotos</option>
             <option value="video">Só vídeos</option>
+            <option value="audio">Só áudios</option>
             <option value="documento">Só documentos</option>
           </select>
         </label>
@@ -30,6 +28,20 @@
           <select v-model="filters.local_id" class="mt-1 w-full rounded-xl border-gray-300 min-h-11" @change="load">
             <option value="">Todos os lugares</option>
             <option v-for="l in locais" :key="l.id" :value="l.id">{{ l.nome }}</option>
+          </select>
+        </label>
+        <label class="text-sm font-semibold text-gray-700">
+          Pessoa
+          <select v-model="filters.personalidade_id" class="mt-1 w-full rounded-xl border-gray-300 min-h-11" @change="load">
+            <option value="">Todas as pessoas</option>
+            <option v-for="p in pessoas" :key="p.id" :value="p.id">{{ p.nome }}</option>
+          </select>
+        </label>
+        <label class="text-sm font-semibold text-gray-700">
+          Equipe
+          <select v-model="filters.equipe_id" class="mt-1 w-full rounded-xl border-gray-300 min-h-11" @change="load">
+            <option value="">Todas as equipes</option>
+            <option v-for="e in equipes" :key="e.id" :value="e.id">{{ e.nome }}</option>
           </select>
         </label>
         <label class="text-sm font-semibold text-gray-700">
@@ -56,34 +68,64 @@
         <router-link to="/memoria/enviar" class="inline-flex mt-4 bg-yellow-400 text-slate-900 px-5 py-3 rounded-full font-bold">Enviar foto</router-link>
       </div>
       <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        <a v-for="item in itens" :key="item.id" :href="item.arquivo_url" target="_blank" class="bg-white rounded-2xl overflow-hidden border hover:shadow-md group">
-          <div class="h-40 bg-gray-100">
+        <article v-for="(item, idx) in itens" :key="item.id" class="bg-white rounded-2xl overflow-hidden border hover:shadow-md group">
+          <button type="button" class="block w-full h-40 bg-gray-100 text-left" @click="lightboxIndex = idx">
             <img v-if="item.tipo === 'foto'" :src="item.arquivo_url" loading="lazy" class="w-full h-full object-cover group-hover:scale-[1.02] transition-transform" :alt="item.alt_text || item.titulo" />
-            <video v-else-if="item.tipo === 'video'" :src="item.arquivo_url" preload="none" muted class="w-full h-full object-cover bg-black" :aria-label="item.alt_text || item.titulo"></video>
+            <video v-else-if="item.tipo === 'video'" :src="item.arquivo_url" preload="none" muted class="w-full h-full object-cover bg-black pointer-events-none" :aria-label="item.alt_text || item.titulo"></video>
+            <div v-else-if="item.tipo === 'audio'" class="h-full flex items-center justify-center text-sm font-semibold text-gray-600">Áudio</div>
             <div v-else class="h-full flex items-center justify-center text-sm font-semibold text-gray-500">
               {{ tipoAcervoLabels[item.tipo] || item.tipo }}
             </div>
-          </div>
+          </button>
           <div class="p-3">
-            <p class="font-semibold text-sm line-clamp-2 text-gray-900">{{ item.titulo }}</p>
-            <p class="text-xs text-gray-500 mt-1">{{ item.ano || 'Ano a confirmar' }}<span v-if="item.local?.nome"> · {{ item.local.nome }}</span></p>
+          <router-link
+            v-if="item.slug || item.id"
+            :to="{ name: 'PortalMemoriaAcervo', params: { slug: item.slug || item.id } }"
+            class="font-semibold text-sm line-clamp-2 text-gray-900 hover:text-blue-700"
+          >{{ item.titulo }}</router-link>
+          <p v-else class="font-semibold text-sm line-clamp-2 text-gray-900">{{ item.titulo }}</p>
+            <p v-if="item.precisa_identificar" class="text-[11px] font-bold uppercase text-amber-700 mt-1">
+              <router-link to="/memoria/quem-e" class="hover:underline">Quem é essa pessoa?</router-link>
+            </p>
+            <p class="text-xs text-gray-500 mt-1">{{ item.ano || 'Ano a confirmar' }}<span v-if="item.local?.nome"> · </span>
+              <router-link
+                v-if="item.local?.nome"
+                :to="{ name: 'PortalMemoriaLocal', params: { slug: item.local.slug || item.local.id } }"
+                class="hover:text-blue-700"
+              >{{ item.local.nome }}</router-link>
+            </p>
           </div>
-        </a>
+        </article>
       </div>
     </section>
+    <MemoriaLightbox :items="itens" :index="lightboxIndex" @update:index="lightboxIndex = $event" @close="lightboxIndex = -1" />
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
 import portalService from '../services/portalService';
 import { tipoAcervoLabels } from '@/modules/memoria/utils/memoriaLabels';
+import MemoriaPageHero from '../components/MemoriaPageHero.vue';
+import MemoriaLightbox from '../components/MemoriaLightbox.vue';
 
+const route = useRoute();
 const loading = ref(true);
 const itens = ref([]);
 const locais = ref([]);
+const pessoas = ref([]);
+const equipes = ref([]);
 const decadas = ref([]);
-const filters = ref({ decada: '', tipo: '', local_id: '', q: '' });
+const lightboxIndex = ref(-1);
+const filters = ref({
+  decada: '',
+  tipo: '',
+  local_id: route.query.local_id || '',
+  personalidade_id: route.query.personalidade_id || '',
+  equipe_id: route.query.equipe_id || '',
+  q: '',
+});
 
 const emptyTitle = computed(() => {
   const local = locais.value.find((l) => String(l.id) === String(filters.value.local_id));
@@ -102,12 +144,16 @@ const load = async () => {
 };
 
 onMounted(async () => {
-  const [locs, tl] = await Promise.all([
+  const [locs, tl, pers, eqs] = await Promise.all([
     portalService.getMemoriaLocais(),
     portalService.getMemoriaTimeline(),
+    portalService.getMemoriaPersonalidades(),
+    portalService.getMemoriaEquipes().catch(() => ({ data: [] })),
   ]);
   locais.value = locs.data || [];
   decadas.value = tl.data?.decadas || [];
+  pessoas.value = Array.isArray(pers.data) ? pers.data : (pers.data?.data || []);
+  equipes.value = eqs.data || [];
   await load();
 });
 </script>

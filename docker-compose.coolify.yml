@@ -44,7 +44,7 @@ services:
       DB_PASSWORD: ${SERVICE_PASSWORD_MYSQL:?}
       CACHE_DRIVER: file
       FILESYSTEM_DISK: public
-      QUEUE_CONNECTION: sync
+      QUEUE_CONNECTION: database
       SESSION_DRIVER: file
       SESSION_LIFETIME: "120"
       DIRECTD_API_URL: ${DIRECTD_API_URL:-}

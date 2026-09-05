@@ -86,6 +86,21 @@
             </button>
           </div>
         </MemoriaField>
+        <MemoriaField label="Equipes históricas" hint="Times da época, não as equipes do campeonato atual.">
+          <p v-if="equipes.length === 0" class="text-sm text-gray-500">Cadastre equipes na aba Equipes da Memória.</p>
+          <div v-else class="flex flex-wrap gap-2">
+            <button
+              v-for="e in equipes"
+              :key="e.id"
+              type="button"
+              class="px-3 py-2 rounded-full text-sm font-medium border min-h-11"
+              :class="form.equipe_ids.includes(String(e.id)) ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300'"
+              @click="toggleEquipe(e.id)"
+            >
+              {{ e.nome }}
+            </button>
+          </div>
+        </MemoriaField>
       </section>
 
       <section class="bg-gray-50 p-5 sm:p-6 rounded-2xl border border-gray-200 grid sm:grid-cols-2 gap-4">
@@ -145,6 +160,7 @@ const existingCapa = ref('');
 const modalidades = ref([]);
 const locais = ref([]);
 const personalidades = ref([]);
+const equipes = ref([]);
 const form = ref({
   titulo: '',
   slug: '',
@@ -156,6 +172,7 @@ const form = ref({
   modalidade_id: '',
   local_id: '',
   personalidade_ids: [],
+  equipe_ids: [],
   destaque: false,
   publicado: true,
 });
@@ -169,12 +186,17 @@ const togglePessoa = (id) => {
   const list = form.value.personalidade_ids;
   form.value.personalidade_ids = list.includes(key) ? list.filter((x) => x !== key) : [...list, key];
 };
+const toggleEquipe = (id) => {
+  const key = String(id);
+  const list = form.value.equipe_ids;
+  form.value.equipe_ids = list.includes(key) ? list.filter((x) => x !== key) : [...list, key];
+};
 
 const buildFormData = () => {
   const fd = new FormData();
   Object.entries(form.value).forEach(([key, value]) => {
-    if (key === 'personalidade_ids') {
-      fd.append('personalidade_ids', JSON.stringify(value || []));
+    if (key === 'personalidade_ids' || key === 'equipe_ids') {
+      fd.append(key, JSON.stringify(value || []));
       return;
     }
     if (typeof value === 'boolean') {
@@ -202,14 +224,16 @@ const submit = async () => {
 };
 
 onMounted(async () => {
-  const [mods, locs, pessoas] = await Promise.all([
+  const [mods, locs, pessoas, eqs] = await Promise.all([
     modalidadeService.getAll(),
     memoriaService.locais(),
     memoriaService.personalidades(),
+    memoriaService.equipes().catch(() => ({ data: [] })),
   ]);
   modalidades.value = mods.data?.data || mods.data || [];
   locais.value = locs.data || [];
   personalidades.value = pessoas.data || [];
+  equipes.value = eqs.data || [];
   if (isEdit) {
     const { data } = await memoriaService.getMarco(route.params.id);
     form.value = {
@@ -223,6 +247,7 @@ onMounted(async () => {
       modalidade_id: data.modalidade_id ? String(data.modalidade_id) : '',
       local_id: data.local_id ? String(data.local_id) : '',
       personalidade_ids: (data.personalidades || []).map((p) => String(p.id)),
+      equipe_ids: (data.equipes || []).map((e) => String(e.id)),
       destaque: !!data.destaque,
       publicado: !!data.publicado,
     };

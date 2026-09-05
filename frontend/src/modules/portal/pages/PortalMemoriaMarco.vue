@@ -25,7 +25,9 @@
           <span v-if="item.modalidade?.nome"> · {{ item.modalidade.nome }}</span>
         </p>
         <h1 class="text-3xl sm:text-5xl font-extrabold leading-tight">{{ item.titulo }}</h1>
-        <p v-if="item.local?.nome" class="text-slate-300 mt-2 text-sm">{{ item.local.nome }}</p>
+        <p v-if="item.local?.nome" class="text-slate-300 mt-2 text-sm">
+          <router-link :to="{ name: 'PortalMemoriaLocal', params: { slug: item.local.slug || item.local.id } }" class="hover:text-yellow-400">{{ item.local.nome }}</router-link>
+        </p>
       </div>
     </section>
     <section class="container mx-auto px-4 py-8 max-w-3xl">
@@ -33,6 +35,12 @@
         <a :href="whatsappHref" target="_blank" rel="noopener" class="px-4 py-2 rounded-full bg-green-600 text-white text-sm font-bold">Compartilhar no WhatsApp</a>
         <a :href="facebookHref" target="_blank" rel="noopener" class="px-4 py-2 rounded-full bg-blue-700 text-white text-sm font-bold">Facebook</a>
         <router-link to="/memoria/galeria" class="px-4 py-2 rounded-full border text-sm font-bold">Galeria</router-link>
+        <button type="button" class="px-4 py-2 rounded-full border text-sm font-bold" @click="printQr">Imprimir QR</button>
+      </div>
+      <div class="mb-8 bg-white border rounded-2xl p-5 print:block">
+        <h2 class="font-bold text-lg mb-2">QR no espaço</h2>
+        <p class="text-sm text-gray-600 mb-4">Imprima e afixe no local do fato. Quem apontar a câmera abre esta página.</p>
+        <img :src="qrSrc" alt="QR code deste fato" class="w-40 h-40 bg-white border rounded-xl" />
       </div>
       <p class="text-lg text-gray-700 leading-relaxed whitespace-pre-line">{{ item.conteudo || item.resumo }}</p>
       <div v-if="!item.conteudo && !item.resumo && !item.acervo?.length" class="mt-6 bg-amber-50 border border-amber-100 rounded-2xl p-5 text-amber-900">
@@ -51,14 +59,33 @@
           </router-link>
         </div>
       </div>
+      <div v-if="item.equipes?.length" class="mt-10">
+        <h2 class="font-bold text-xl mb-4">Equipes deste fato</h2>
+        <div class="flex flex-wrap gap-3">
+          <router-link
+            v-for="e in item.equipes"
+            :key="e.id"
+            :to="{ name: 'PortalMemoriaEquipe', params: { slug: e.slug || e.id } }"
+            class="px-4 py-2 bg-white border rounded-full font-medium hover:border-blue-500 min-h-11 inline-flex items-center"
+          >
+            {{ e.nome }}
+          </router-link>
+        </div>
+      </div>
       <div v-if="item.acervo?.length" class="mt-10">
         <h2 class="font-bold text-xl mb-4">Mídias deste fato</h2>
         <div class="grid grid-cols-2 gap-3">
-          <a v-for="m in item.acervo" :key="m.id" :href="m.arquivo_url" target="_blank" class="block rounded-2xl overflow-hidden bg-white border">
+          <router-link
+            v-for="m in item.acervo"
+            :key="m.id"
+            :to="{ name: 'PortalMemoriaAcervo', params: { slug: m.slug || m.id } }"
+            class="block rounded-2xl overflow-hidden bg-white border"
+          >
             <img v-if="m.tipo === 'foto'" :src="m.arquivo_url" loading="lazy" class="w-full h-40 object-cover" :alt="m.alt_text || m.titulo" />
             <video v-else-if="m.tipo === 'video'" :src="m.arquivo_url" preload="none" controls class="w-full h-40 object-cover bg-black" :aria-label="m.alt_text || m.titulo"></video>
+            <audio v-else-if="m.tipo === 'audio'" :src="m.arquivo_url" controls class="w-full mt-8 px-2"></audio>
             <div class="p-3 text-sm font-medium">{{ m.titulo }}</div>
-          </a>
+          </router-link>
         </div>
       </div>
       <div v-if="item.relacionados?.length" class="mt-10">
@@ -94,8 +121,11 @@ const loading = ref(true);
 const missing = ref(false);
 
 const shareUrl = computed(() => memoriaShareUrl('marcos', item.value.slug || route.params.slug));
+const pageUrl = computed(() => `${window.location.origin}/memoria/marcos/${item.value.slug || route.params.slug}`);
+const qrSrc = computed(() => `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(pageUrl.value)}`);
 const whatsappHref = computed(() => `https://wa.me/?text=${encodeURIComponent(`${item.value.titulo || ''} ${shareUrl.value}`)}`);
 const facebookHref = computed(() => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl.value)}`);
+const printQr = () => window.print();
 
 const load = async () => {
   loading.value = true;

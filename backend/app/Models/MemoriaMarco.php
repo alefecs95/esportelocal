@@ -112,6 +112,16 @@ class MemoriaMarco extends Model
         return $this->hasMany(MemoriaAcervo::class, 'marco_id');
     }
 
+    public function pecas()
+    {
+        return $this->belongsToMany(MemoriaAcervo::class, 'memoria_acervo_marco', 'marco_id', 'acervo_id')->withTimestamps();
+    }
+
+    public function equipes()
+    {
+        return $this->belongsToMany(MemoriaEquipe::class, 'memoria_marco_equipe', 'marco_id', 'equipe_id')->withTimestamps();
+    }
+
     public function scopePublicado($query)
     {
         return $query->where('publicado', true);

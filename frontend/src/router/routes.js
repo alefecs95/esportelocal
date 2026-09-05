@@ -197,10 +197,63 @@ const routes = [
                 meta: { title: 'Galeria histórica' }
             },
             {
+                path: 'memoria/hall',
+                name: 'PortalMemoriaHall',
+                component: () => import('../modules/portal/pages/PortalMemoriaHall.vue'),
+                meta: { title: 'Hall da cidade' }
+            },
+            {
+                path: 'memoria/mapa',
+                name: 'PortalMemoriaMapa',
+                component: () => import('../modules/portal/pages/PortalMemoriaMapa.vue'),
+                meta: { title: 'Mapa da Memória' }
+            },
+            {
+                path: 'memoria/quem-e',
+                name: 'PortalMemoriaQuemE',
+                component: () => import('../modules/portal/pages/PortalMemoriaQuemE.vue'),
+                meta: { title: 'Quem é essa pessoa?' }
+            },
+            {
+                path: 'memoria/depoimentos',
+                name: 'PortalMemoriaDepoimentos',
+                component: () => import('../modules/portal/pages/PortalMemoriaDepoimentos.vue'),
+                meta: { title: 'História oral' }
+            },
+            {
+                path: 'memoria/recordes',
+                name: 'PortalMemoriaRecordes',
+                component: () => import('../modules/portal/pages/PortalMemoriaRecordes.vue'),
+                meta: { title: 'Livro de recordes' }
+            },
+                path: 'memoria/equipes',
+                name: 'PortalMemoriaEquipes',
+                component: () => import('../modules/portal/pages/PortalMemoriaEquipes.vue'),
+                meta: { title: 'Equipes históricas' }
+            },
+            {
+                path: 'memoria/equipes/:slug',
+                name: 'PortalMemoriaEquipe',
+                component: () => import('../modules/portal/pages/PortalMemoriaEquipe.vue'),
+                meta: { title: 'Equipe histórica' }
+            },
+            {
+                path: 'memoria/acervo/:slug',
+                name: 'PortalMemoriaAcervo',
+                component: () => import('../modules/portal/pages/PortalMemoriaAcervo.vue'),
+                meta: { title: 'Peça do acervo' }
+            },
+            {
                 path: 'memoria/enviar',
                 name: 'PortalMemoriaEnviar',
                 component: () => import('../modules/portal/pages/PortalMemoriaEnviar.vue'),
                 meta: { title: 'Enviar para o acervo' }
+            },
+            {
+                path: 'memoria/locais/:slug',
+                name: 'PortalMemoriaLocal',
+                component: () => import('../modules/portal/pages/PortalMemoriaLocal.vue'),
+                meta: { title: 'Local histórico' }
             },
             {
                 path: 'memoria/personalidades/:slug',

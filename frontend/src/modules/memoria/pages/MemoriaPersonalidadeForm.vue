@@ -17,6 +17,9 @@
         <MemoriaField label="Nome completo" required>
           <input v-model="form.nome" required :class="inputClass" placeholder="Como a cidade conhece essa pessoa" maxlength="255" />
         </MemoriaField>
+        <MemoriaField label="Apelido" hint="Como o público chamava. Ex.: Garrincha da Vila.">
+          <input v-model="form.apelido" :class="inputClass" placeholder="Opcional" maxlength="120" />
+        </MemoriaField>
         <MemoriaField label="Endereço da página (slug)" hint="Gerado do nome. Edite se quiser um link curto e estável.">
           <input v-model="form.slug" :class="inputClass" placeholder="deixe em branco para gerar automaticamente" maxlength="255" />
         </MemoriaField>
@@ -105,6 +108,7 @@ const existingFoto = ref('');
 const modalidades = ref([]);
 const form = ref({
   nome: '',
+  apelido: '',
   slug: '',
   papel: 'atleta',
   mini_bio: '',
@@ -144,6 +148,7 @@ onMounted(async () => {
     const { data } = await memoriaService.getPersonalidade(route.params.id);
     form.value = {
       nome: data.nome,
+      apelido: data.apelido || '',
       slug: data.slug || '',
       papel: data.papel || 'atleta',
       mini_bio: data.mini_bio || '',

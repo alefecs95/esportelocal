@@ -22,6 +22,15 @@ class MemoriaCurationService
 
     public function notifyCuradores(MemoriaAcervo $item): void
     {
+        $this->notifyInbox(
+            'Novo envio da comunidade',
+            ($item->doador_nome ?: 'Alguém') . ' enviou “' . $item->titulo . '”.',
+            'envio'
+        );
+    }
+
+    public function notifyInbox(string $titulo, string $mensagem, string $tipo = 'envio'): void
+    {
         $curadores = User::query()
             ->whereIn('perfil', ['ADMIN', 'SUPER_ADMIN', 'REDATOR'])
             ->where('status', 'ATIVO')
@@ -30,9 +39,9 @@ class MemoriaCurationService
         foreach ($curadores as $user) {
             MemoriaNotificacao::create([
                 'user_id' => $user->id,
-                'tipo' => 'envio',
-                'titulo' => 'Novo envio da comunidade',
-                'mensagem' => ($item->doador_nome ?: 'Alguém') . ' enviou “' . $item->titulo . '”.',
+                'tipo' => $tipo,
+                'titulo' => $titulo,
+                'mensagem' => $mensagem,
                 'link' => '/admin/memoria',
                 'lida' => false,
             ]);

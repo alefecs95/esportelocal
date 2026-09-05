@@ -1,12 +1,9 @@
 <template>
   <div class="min-h-screen bg-slate-50">
-    <section class="bg-slate-900 text-white py-10 sm:py-14">
-      <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-        <router-link to="/memoria" class="text-yellow-400 text-sm font-bold">← Voltar à Memória</router-link>
-        <h1 class="text-3xl sm:text-4xl font-extrabold mt-3 leading-tight">Envie uma memória da cidade</h1>
-        <p class="text-slate-300 mt-3 text-base sm:text-lg max-w-3xl">Foto antiga, recorte de jornal ou vídeo. A prefeitura confere antes de publicar — nada entra no ar automaticamente.</p>
-      </div>
-    </section>
+    <MemoriaPageHero
+      title="Envie uma memória da cidade"
+      description="Foto antiga, recorte de jornal, áudio ou vídeo. A prefeitura confere antes de publicar — nada entra no ar automaticamente."
+    />
 
     <section class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div v-if="ok" class="bg-white border border-green-100 rounded-3xl p-8 text-center shadow-sm">
@@ -30,19 +27,19 @@
         <section class="bg-white p-5 sm:p-6 lg:p-8 rounded-3xl border border-gray-200 shadow-sm space-y-4 lg:min-h-[22rem]">
           <p class="text-xs font-bold uppercase tracking-wide text-slate-400">1. Arquivo</p>
           <MemoriaFileDrop
-            label="Sua foto, vídeo ou PDF"
-            hint="Antes de enviar: JPG, PNG, WEBP, GIF, MP4, WEBM ou PDF. Tamanho máximo 20 MB."
-            accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,application/pdf"
+            label="Sua foto, vídeo, áudio ou PDF"
+            hint="Antes de enviar: JPG, PNG, WEBP, GIF, MP4, WEBM, MP3, OGG, WAV ou PDF. Tamanho máximo 20 MB."
+            accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,audio/mpeg,audio/mp4,audio/ogg,audio/webm,audio/wav,application/pdf"
             required
             empty-title="Toque para escolher o arquivo"
-            empty-subtitle="Até 20 MB · foto, vídeo ou PDF"
+            empty-subtitle="Até 20 MB · foto, vídeo, áudio ou PDF"
             @change="onFile"
           />
           <ul class="text-xs text-slate-500 grid sm:grid-cols-2 gap-1">
             <li>Fotos: JPG, PNG, WEBP ou GIF</li>
             <li>Vídeo: MP4 ou WEBM</li>
-            <li>Documento: PDF de recorte ou ata</li>
-            <li>Limite: 20 MB por arquivo</li>
+            <li>Áudio: MP3, OGG ou WAV (história oral)</li>
+            <li>Documento: PDF · limite 20 MB</li>
           </ul>
         </section>
 
@@ -114,6 +111,7 @@ import modalidadeService from '@/modules/modalidades/services/modalidadeService'
 import MemoriaField from '@/modules/memoria/components/MemoriaField.vue';
 import MemoriaFileDrop from '@/modules/memoria/components/MemoriaFileDrop.vue';
 import { detectAcervoTipo, inputClass } from '@/modules/memoria/utils/memoriaLabels';
+import MemoriaPageHero from '../components/MemoriaPageHero.vue';
 
 const currentYear = new Date().getFullYear();
 const saving = ref(false);
