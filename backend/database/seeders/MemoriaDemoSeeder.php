@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\Atleta;
+use App\Models\Campeonato;
 use App\Models\MemoriaAcervo;
 use App\Models\MemoriaAuditoria;
 use App\Models\MemoriaCorrecao;
@@ -15,6 +17,7 @@ use App\Models\MemoriaOpcao;
 use App\Models\MemoriaPersonalidade;
 use App\Models\MemoriaRecorde;
 use App\Models\MemoriaTag;
+use App\Models\MemoriaVotoHall;
 use App\Models\Modalidade;
 use App\Models\Prefeitura;
 use App\Models\User;
@@ -39,6 +42,13 @@ class MemoriaDemoSeeder extends Seeder
 
         App::instance('current_tenant', $prefeitura);
 
+        $stamp = 'catalogo-completo-2026-09-05';
+        if (filter_var(env('SEED_MEMORIA_IF_EMPTY', false), FILTER_VALIDATE_BOOLEAN)
+            && MemoriaOpcao::query()->where('grupo', 'demo_memoria')->where('valor', $stamp)->exists()) {
+            $this->command?->info('Demo da Memória no Padrão já está na versão completa — pulando.');
+            return;
+        }
+
         $this->command?->info("Limpando Memória demo em {$prefeitura->nome}...");
         $this->wipe();
 
@@ -49,24 +59,22 @@ class MemoriaDemoSeeder extends Seeder
         $locais = $this->seedLocais();
         $pessoas = $this->seedPersonalidades($mods, $admin);
         $marcos = $this->seedMarcos($mods, $locais, $pessoas, $admin);
-        $equipe = $this->seedEquipe($mods, $pessoas, $marcos);
+        $equipes = $this->seedEquipes($mods, $pessoas, $marcos);
         $this->seedAcervo($mods, $locais, $pessoas, $marcos, $admin);
-        if ($equipe) {
-            MemoriaAcervo::query()->where('marco_id', $marcos['titulo75']->id)->get()->each(function (MemoriaAcervo $item) use ($equipe) {
-                $item->equipes()->syncWithoutDetaching([$equipe->id]);
-            });
-        }
-        $this->seedRecordes($mods, $pessoas, $marcos);
+        $this->catalogarCampos($mods, $locais, $pessoas, $marcos, $equipes, $admin);
+        $this->seedRecordes($mods, $pessoas, $marcos, $equipes);
         $this->seedAuditoriaNotificacoes($admin, $marcos, $pessoas);
+        MemoriaOpcao::firstOrCreate(['grupo' => 'demo_memoria', 'valor' => $stamp]);
 
-        $this->command?->info('Memória demo pronta: locais, fatos, Hall, galeria, órfãs, envios pendentes e rascunhos.');
-        $this->command?->info('Portal: /memoria  ·  /memoria/equipes  ·  /memoria/quem-e  ·  Admin: /admin/memoria');
+        $this->command?->info('Demo da Memória no Padrão: fatos, Hall, equipes, tags, correções, momentos, transcrições, recordes e fila de curadoria.');
+        $this->command?->info('Portal: /memoria  ·  Admin: /admin/memoria  ·  redator@padrao.local / password');
     }
 
     private function wipe(): void
     {
         MemoriaIdentificacao::query()->delete();
         MemoriaCorrecao::query()->delete();
+        MemoriaVotoHall::query()->delete();
         MemoriaLocalMomento::query()->delete();
         MemoriaRecorde::query()->forceDelete();
         MemoriaAcervo::query()->get()->each(function (MemoriaAcervo $item) {
@@ -172,6 +180,14 @@ class MemoriaDemoSeeder extends Seeder
             ['nome' => 'Piscina Municipal', 'tipo' => 'Piscina', 'endereco' => 'Complexo aquático', 'seed' => 'piscina', 'lat' => -6.62250, 'lng' => -42.14870],
         ];
 
+        $textos = [
+            'ginasio' => 'Primeiro ginásio coberto da cidade. Arquibancada de madeira na inauguração; piso de taco nas escolinhas; palco do Festival desde 2002.',
+            'estadio' => 'Estádio da Vila, palco do título invicto de 1975 e da final de 1988. Gramado e arquibancada que a torcida do Comercial chama de casa.',
+            'quadra' => 'Quadra do Bairro Alto, berço da geração de ouro do vôlei feminino. Iluminação noturna a partir dos anos 90.',
+            'pista' => 'Pista municipal de atletismo no Parque da Cidade. Reforma de 1996 e recorde dos 800 m em 1999.',
+            'campo' => 'Campo da Várzea na beira-rio. Terra batida, campeonato de bairro e final ao entardecer.',
+            'piscina' => 'Piscina semiolímpica do complexo aquático. Entrou no calendário em 2010 com a seletiva de Ana Beatriz.',
+        ];
         $locais = [];
         foreach ($rows as $row) {
             $locais[$row['seed']] = MemoriaLocal::create([
@@ -180,7 +196,7 @@ class MemoriaDemoSeeder extends Seeder
                 'endereco' => $row['endereco'],
                 'lat' => $row['lat'],
                 'lng' => $row['lng'],
-                'descricao' => 'Espaço histórico da cidade usado em campeonatos e escolinhas.',
+                'descricao' => $textos[$row['seed']],
                 'foto' => $this->img($row['seed'], 1400, 900),
                 'foto_antes' => $this->img($row['seed'] . '-antes', 1400, 900),
                 'foto_depois' => $this->img($row['seed'] . '-depois', 1400, 900),
@@ -232,6 +248,7 @@ class MemoriaDemoSeeder extends Seeder
                 'nasc' => '1968-03-12',
                 'falec' => null,
                 'bio' => 'Levantadora da geração de ouro do vôlei municipal. Começou na quadra do Bairro Alto e foi convocada para seletivas estaduais nos anos 80.',
+                'apelido' => 'Neves',
             ],
             [
                 'key' => 'joao',
@@ -254,6 +271,7 @@ class MemoriaDemoSeeder extends Seeder
                 'nasc' => '1972-11-20',
                 'falec' => null,
                 'bio' => 'Técnica das escolinhas municipais. Formou três gerações de atletas no Ginásio Municipal.',
+                'apelido' => 'Tia Helena',
             ],
             [
                 'key' => 'carlos',
@@ -263,8 +281,8 @@ class MemoriaDemoSeeder extends Seeder
                 'destaque' => false,
                 'publicado' => true,
                 'nasc' => '1948-02-02',
-                'falec' => null,
-                'bio' => 'Secretário de Esportes na inauguração do ginásio (1968) e na reforma da pista nos anos 90.',
+                'falec' => '2019-06-11',
+                'bio' => 'Secretário de Esportes na inauguração do ginásio (1968) e na reforma da pista nos anos 90. Falecido em 2019; o Hall mantém o perfil em memória.',
             ],
             [
                 'key' => 'rita',
@@ -316,7 +334,7 @@ class MemoriaDemoSeeder extends Seeder
         foreach ($rows as $row) {
             $pessoas[$row['key']] = MemoriaPersonalidade::create([
                 'nome' => $row['nome'],
-                'apelido' => $row['key'] === 'joao' ? 'Garrincha da Vila' : null,
+                'apelido' => $row['apelido'] ?? ($row['key'] === 'joao' ? 'Garrincha da Vila' : null),
                 'papel' => $row['papel'],
                 'mini_bio' => $row['bio'],
                 'foto' => $this->img('pessoa-' . $row['key'], 800, 1000),
@@ -333,27 +351,75 @@ class MemoriaDemoSeeder extends Seeder
         return $pessoas;
     }
 
-    private function seedEquipe(array $mods, array $pessoas, array $marcos): ?MemoriaEquipe
+    private function seedEquipes(array $mods, array $pessoas, array $marcos): array
     {
-        $equipe = MemoriaEquipe::create([
+        $comercial = MemoriaEquipe::create([
             'nome' => 'Comercial Futebol Clube',
             'apelido' => 'Leão da Vila',
             'nome_anterior' => 'Esporte Clube Vila Nova',
+            'escudo' => $this->img('escudo-comercial', 400, 400),
             'modalidade_id' => $mods['Futebol de Campo']->id,
             'ano_inicio' => 1952,
-            'cidade' => 'Centro',
+            'ano_fim' => null,
+            'cidade' => 'Vila Nova',
             'descricao' => 'O time da Vila que levou a cidade ao título invicto de 1975.',
-            'historia' => 'Surgiu nos campos de terra da Vila Nova. Camisa grená, torcida de bairro e rivalidade boa com o time do Centro.',
+            'historia' => 'Surgiu nos campos de terra da Vila Nova. Camisa grená, torcida de bairro e rivalidade boa com o time do Centro. Ainda joga a várzea municipal.',
             'publicado' => true,
         ]);
-        $equipe->pessoas()->sync([
+        $comercial->pessoas()->sync([
             $pessoas['joao']->id => ['papel' => 'atleta', 'ano_inicio' => 1970, 'ano_fim' => 1982],
+            $pessoas['carlos']->id => ['papel' => 'dirigente', 'ano_inicio' => 1968, 'ano_fim' => 1985],
         ]);
-        if (!empty($marcos['titulo75'])) {
-            $equipe->marcos()->sync([$marcos['titulo75']->id]);
+        $comercial->marcos()->sync(array_filter([
+            $marcos['titulo75']->id ?? null,
+            $marcos['final88']->id ?? null,
+        ]));
+
+        $volei = MemoriaEquipe::create([
+            'nome' => 'Associação Atlética Bairro Alto',
+            'apelido' => 'As Meninas do Alto',
+            'nome_anterior' => 'Clube Recreativo Bairro Alto',
+            'escudo' => $this->img('escudo-volei', 400, 400),
+            'modalidade_id' => $mods['Voleibol']->id,
+            'ano_inicio' => 1986,
+            'ano_fim' => 2001,
+            'cidade' => 'Bairro Alto',
+            'descricao' => 'Geração de ouro do vôlei feminino municipal nos anos 90.',
+            'historia' => 'Treinos na quadra descoberta, depois no ginásio. Encerrou as atividades em 2001; a memória segue na Memória do Esporte.',
+            'publicado' => true,
+        ]);
+        $volei->pessoas()->sync([
+            $pessoas['maria']->id => ['papel' => 'atleta', 'ano_inicio' => 1988, 'ano_fim' => 1998],
+        ]);
+        if (!empty($marcos['geracao94'])) {
+            $volei->marcos()->sync([$marcos['geracao94']->id]);
         }
 
-        return $equipe;
+        $escolinha = MemoriaEquipe::create([
+            'nome' => 'Escolinha Municipal de Futsal',
+            'apelido' => 'As Crias do Ginásio',
+            'modalidade_id' => $mods['Futsal']->id,
+            'ano_inicio' => 1994,
+            'cidade' => 'Centro',
+            'descricao' => 'Projeto da secretaria que virou o Festival das Escolinhas.',
+            'historia' => 'Helena Prado consolidou a metodologia. Turmas de manhã e à tarde no ginásio.',
+            'publicado' => true,
+        ]);
+        $escolinha->pessoas()->sync([
+            $pessoas['helena']->id => ['papel' => 'tecnico', 'ano_inicio' => 1994, 'ano_fim' => null],
+        ]);
+        if (!empty($marcos['festival02'])) {
+            $escolinha->marcos()->sync([$marcos['festival02']->id]);
+        }
+
+        $rascunho = MemoriaEquipe::create([
+            'nome' => 'Time em curadoria',
+            'descricao' => 'Cadastro interno ainda sem publicação.',
+            'publicado' => false,
+            'ano_inicio' => 2020,
+        ]);
+
+        return compact('comercial', 'volei', 'escolinha', 'rascunho');
     }
 
     private function seedMarcos(array $mods, array $locais, array $pessoas, User $admin): array
@@ -606,9 +672,17 @@ class MemoriaDemoSeeder extends Seeder
                 'marco_id' => $marcos[$key]->id,
                 'fonte' => 'Arquivo da Secretaria de Esportes',
                 'fonte_tipo' => 'secretaria',
+                'credito' => 'Acervo audiovisual da Secretaria',
+                'licenca' => 'uso_institucional',
                 'origem' => 'curadoria',
                 'status' => 'aprovado',
                 'publicado' => true,
+                'publicado_em' => now()->subYears(2),
+                'aparece_na_timeline' => $key === 'titulo75',
+                'transcricao' => $key === 'titulo75'
+                    ? 'Locutor: “Gol do Comercial! João Costa na ponta direita, a Vila explode.”'
+                    : null,
+                'visualizacoes' => 40 + $i * 12,
             ]);
         }
 
@@ -630,7 +704,12 @@ class MemoriaDemoSeeder extends Seeder
             'origem' => 'curadoria',
             'status' => 'aprovado',
             'publicado' => true,
+            'publicado_em' => now()->subYears(3),
+            'aparece_na_timeline' => true,
             'transcricao' => 'O ginásio lotava nas escolinhas. A gente treinou geração atrás de geração naquele piso de taco.',
+            'credito' => 'História oral — Secretaria de Esportes',
+            'licenca' => 'doacao',
+            'visualizacoes' => 128,
         ]);
 
         $misterio = MemoriaAcervo::query()
@@ -663,6 +742,11 @@ class MemoriaDemoSeeder extends Seeder
                 'origem' => 'curadoria',
                 'status' => 'aprovado',
                 'publicado' => true,
+                'licenca' => 'arquivo_publico',
+                'credito' => 'Jornal da Cidade / Arquivo Municipal',
+                'transcricao' => $key === 'ginasio68'
+                    ? 'Ata da sessão solene: fica inaugurado o Ginásio Municipal, com a presença do secretário Carlos Eduardo Lima e da comunidade esportiva.'
+                    : 'Recorte: a final de 1988 lotou o Estádio da Vila. Pedro Alencar apitou a decisão.',
             ]);
         }
 
@@ -690,6 +774,7 @@ class MemoriaDemoSeeder extends Seeder
                 'origem' => 'comunidade',
                 'doador_nome' => $p[1],
                 'doador_telefone' => $p[2],
+                'doador_email' => Str::slug($p[1], '.') . '@example.com',
                 'status' => 'pendente',
                 'publicado' => false,
             ]);
@@ -722,6 +807,154 @@ class MemoriaDemoSeeder extends Seeder
             ->each(function (MemoriaAcervo $item) use ($tagFinal) {
                 $item->tags()->syncWithoutDetaching([$tagFinal->id]);
             });
+    }
+
+    private function catalogarCampos(array $mods, array $locais, array $pessoas, array $marcos, array $equipes, User $admin): void
+    {
+        $tags = [];
+        foreach (['final', 'escolinha', 'inauguracao', 'reforma', 'depoimento', 'recorte', 'selecao'] as $nome) {
+            $tags[$nome] = MemoriaTag::query()->firstOrCreate(['nome' => $nome], ['slug' => Str::slug($nome)]);
+        }
+
+        MemoriaAcervo::query()->where('marco_id', $marcos['titulo75']->id)->get()->each(function (MemoriaAcervo $item) use ($equipes, $tags) {
+            $item->equipes()->syncWithoutDetaching([$equipes['comercial']->id]);
+            $item->tags()->syncWithoutDetaching([$tags['final']->id]);
+        });
+        MemoriaAcervo::query()->where('marco_id', $marcos['geracao94']->id)->get()->each(function (MemoriaAcervo $item) use ($equipes, $tags) {
+            $item->equipes()->syncWithoutDetaching([$equipes['volei']->id]);
+        });
+        MemoriaAcervo::query()->where('marco_id', $marcos['festival02']->id)->get()->each(function (MemoriaAcervo $item) use ($equipes, $tags) {
+            $item->equipes()->syncWithoutDetaching([$equipes['escolinha']->id]);
+            $item->tags()->syncWithoutDetaching([$tags['escolinha']->id]);
+        });
+
+        $timePosado = MemoriaAcervo::query()->where('titulo', 'like', 'Time campeão posado%')->first();
+        if ($timePosado) {
+            $timePosado->pessoas()->sync([
+                $pessoas['joao']->id => ['papel' => 'atleta', 'ordem' => 0, 'observacao' => 'Ponta direita, camisa 7'],
+                $pessoas['carlos']->id => ['papel' => 'dirigente', 'ordem' => 1, 'observacao' => 'Ao centro, terno'],
+            ]);
+            $timePosado->marcos()->syncWithoutDetaching([$marcos['titulo75']->id, $marcos['final88']->id]);
+            $timePosado->credito = 'Arquivo do Comercial / Família Costa';
+            $timePosado->fotografo = 'João Batista, fotógrafo da Vila';
+            $timePosado->licenca = 'doacao';
+            $timePosado->data_aproximada = '1975-11-23';
+            $timePosado->publicado_em = now()->subYears(1);
+            $timePosado->visualizacoes = 312;
+            $timePosado->save();
+        }
+
+        $incerta = MemoriaAcervo::query()->where('titulo', 'like', 'Vestiário antigo%')->first();
+        if ($incerta) {
+            $incerta->data_incerta = true;
+            $incerta->ano = 1982;
+            $incerta->licenca = 'nao_informado';
+            $incerta->credito = 'Doação anônima';
+            $incerta->save();
+        }
+
+        MemoriaAcervo::create([
+            'tipo' => 'foto',
+            'titulo' => 'Envio pedindo complemento de ficha',
+            'alt_text' => 'Foto desfocada do ginásio',
+            'descricao' => 'A curadoria pediu ano, local e crédito.',
+            'arquivo' => $this->img('complemento-ficha', 1200, 800),
+            'mime' => 'image/jpeg',
+            'ano' => null,
+            'data_incerta' => true,
+            'origem' => 'comunidade',
+            'doador_nome' => 'Carla Mendes',
+            'doador_email' => 'carla@example.com',
+            'doador_telefone' => '(15) 98888-2002',
+            'status' => 'complemento',
+            'motivo_rejeicao' => 'Falta ano aproximado, local e crédito da foto.',
+            'publicado' => false,
+            'revisado_por' => $admin->id,
+            'revisado_em' => now()->subDay(),
+        ]);
+
+        $alvoCorrecao = MemoriaAcervo::query()->where('publicado', true)->where('tipo', 'foto')->orderByDesc('id')->first();
+        if ($alvoCorrecao) {
+            foreach ([
+                ['tipo' => 'local', 'local_id' => $locais['ginasio']->id, 'comentario' => 'Isso é o ginásio, não o estádio.', 'valor' => null],
+                ['tipo' => 'data', 'ano_sugerido' => 1975, 'comentario' => 'Foi no ano do título.', 'valor' => '1975'],
+                ['tipo' => 'equipe', 'equipe_id' => $equipes['comercial']->id, 'comentario' => 'Camisa do Comercial.', 'valor' => null],
+                ['tipo' => 'marco', 'marco_id' => $marcos['titulo75']->id, 'comentario' => 'É a festa do título.', 'valor' => null],
+                ['tipo' => 'pessoa', 'valor' => 'João Costa na ponta', 'comentario' => 'O da direita é o Garrincha da Vila.'],
+                ['tipo' => 'o_que', 'valor' => 'Comemoração no gramado após o apito final', 'comentario' => null],
+                ['tipo' => 'outro', 'valor' => 'A faixa da torcida diz Leão da Vila', 'comentario' => 'Dá para ler no canto.'],
+            ] as $i => $row) {
+                MemoriaCorrecao::create(array_merge($row, [
+                    'acervo_id' => $alvoCorrecao->id,
+                    'doador_nome' => 'Morador da Vila',
+                    'doador_telefone' => '(15) 98888-300' . $i,
+                    'fingerprint' => hash('sha256', 'demo-correcao-' . $i),
+                    'status' => 'pendente',
+                ]));
+            }
+        }
+
+        $orfas = MemoriaAcervo::query()->where('precisa_identificar', true)->orderBy('id')->get();
+        if ($orfas->count() >= 3) {
+            MemoriaIdentificacao::create([
+                'acervo_id' => $orfas[1]->id,
+                'nome_sugerido' => 'Helena Prado jovem',
+                'comentario' => 'Banco das escolinhas, anos 90.',
+                'doador_nome' => 'Ex-aluna',
+                'fingerprint' => hash('sha256', 'demo-id-aprovada'),
+                'status' => 'aprovado',
+                'personalidade_id' => $pessoas['helena']->id,
+                'revisado_por' => $admin->id,
+                'revisado_em' => now()->subDays(3),
+            ]);
+            MemoriaIdentificacao::create([
+                'acervo_id' => $orfas[2]->id,
+                'nome_sugerido' => 'Nome recusado (piada)',
+                'comentario' => 'Sugestão sem fundamento.',
+                'doador_nome' => 'Anônimo',
+                'fingerprint' => hash('sha256', 'demo-id-rejeitada'),
+                'status' => 'rejeitado',
+                'motivo_rejeicao' => 'Identificação jocosa, sem evidência.',
+                'revisado_por' => $admin->id,
+                'revisado_em' => now()->subDays(2),
+            ]);
+        }
+
+        foreach (['maria' => 48, 'joao' => 73, 'helena' => 31, 'rita' => 22] as $key => $n) {
+            for ($i = 0; $i < $n; $i++) {
+                MemoriaVotoHall::create([
+                    'personalidade_id' => $pessoas[$key]->id,
+                    'fingerprint' => hash('sha256', 'demo-voto-' . $key . '-' . $i),
+                ]);
+            }
+        }
+
+        $atleta = Atleta::query()->orderBy('id')->first();
+        if ($atleta && isset($pessoas['ana'])) {
+            $pessoas['ana']->atleta_id = $atleta->id;
+            $pessoas['ana']->save();
+        }
+
+        $dupHash = hash('sha256', 'demo-arquivo-duplicado');
+        MemoriaAcervo::query()->where('origem', 'curadoria')->where('tipo', 'foto')->limit(2)->get()->each(function (MemoriaAcervo $item) use ($dupHash) {
+            $item->hash_arquivo = $dupHash;
+            $item->save();
+        });
+
+        $momentoGinasio = MemoriaLocalMomento::query()
+            ->where('local_id', $locais['ginasio']->id)
+            ->where('ano', 1968)
+            ->first();
+        $fotoInaug = MemoriaAcervo::query()->where('marco_id', $marcos['ginasio68']->id)->where('tipo', 'foto')->first();
+        if ($momentoGinasio && $fotoInaug) {
+            $momentoGinasio->acervo_id = $fotoInaug->id;
+            $momentoGinasio->descricao = 'Liga este momento à peça da inauguração no acervo.';
+            $momentoGinasio->save();
+        }
+
+        $marcos['titulo75']->equipes()->syncWithoutDetaching([$equipes['comercial']->id]);
+        $marcos['geracao94']->equipes()->syncWithoutDetaching([$equipes['volei']->id]);
+        $marcos['festival02']->equipes()->syncWithoutDetaching([$equipes['escolinha']->id]);
     }
 
     private function seedAuditoriaNotificacoes(User $admin, array $marcos, array $pessoas): void
@@ -758,8 +991,10 @@ class MemoriaDemoSeeder extends Seeder
         }
     }
 
-    private function seedRecordes(array $mods, array $pessoas, array $marcos): void
+    private function seedRecordes(array $mods, array $pessoas, array $marcos, array $equipes): void
     {
+        $campeonato = Campeonato::query()->orderBy('id')->first();
+
         MemoriaRecorde::create([
             'titulo' => 'Recorde municipal dos 800 m adulto',
             'categoria' => 'tempo',
@@ -784,9 +1019,47 @@ class MemoriaDemoSeeder extends Seeder
             'personalidade_id' => $pessoas['joao']->id,
             'marco_id' => $marcos['titulo75']->id,
             'atleta_nome' => 'João Costa',
-            'descricao' => 'Gols no campeonato municipal que antecedeu o título no Estádio da Vila.',
+            'descricao' => 'Gols no campeonato municipal que antecedeu o título no Estádio da Vila. Time: Comercial FC.',
             'vigente' => false,
             'publicado' => true,
+        ]);
+        MemoriaRecorde::create([
+            'titulo' => '50 m livre — primeira marca da piscina',
+            'categoria' => 'tempo',
+            'valor' => '28.12',
+            'unidade' => 's',
+            'ano' => 2010,
+            'modalidade_id' => $mods['Natação']->id,
+            'personalidade_id' => $pessoas['ana']->id,
+            'marco_id' => $marcos['natacao10']->id,
+            'campeonato_id' => $campeonato?->id,
+            'atleta_nome' => 'Ana Beatriz Souza',
+            'descricao' => 'Primeira atleta da casa em seletiva nacional.',
+            'vigente' => false,
+            'publicado' => true,
+        ]);
+        MemoriaRecorde::create([
+            'titulo' => 'Pontos em uma final de vôlei municipal',
+            'categoria' => 'pontos',
+            'valor' => '27',
+            'unidade' => 'pontos',
+            'ano' => 1994,
+            'modalidade_id' => $mods['Voleibol']->id,
+            'personalidade_id' => $pessoas['maria']->id,
+            'marco_id' => $marcos['geracao94']->id,
+            'atleta_nome' => 'Maria das Neves',
+            'descricao' => 'Final no Bairro Alto, geração de ouro.',
+            'vigente' => false,
+            'publicado' => true,
+        ]);
+        MemoriaRecorde::create([
+            'titulo' => 'Rascunho de recorde (não publicado)',
+            'categoria' => 'outro',
+            'valor' => '—',
+            'ano' => 2024,
+            'descricao' => 'Aguardando homologação da secretaria.',
+            'vigente' => false,
+            'publicado' => false,
         ]);
     }
 
@@ -808,11 +1081,21 @@ class MemoriaDemoSeeder extends Seeder
             'pessoas_envolvidas' => $d['pessoa'] ? null : 'Arquivo municipal',
             'fonte' => 'Arquivo da Secretaria de Esportes',
             'fonte_tipo' => $d['fonte_tipo'],
+            'credito' => $d['fonte_tipo'] === 'jornal' ? 'Jornal da Cidade' : 'Arquivo da Secretaria de Esportes',
+            'fotografo' => in_array($d['fonte_tipo'], ['jornal', 'clube'], true) ? 'Arquivo fotográfico local' : null,
+            'licenca' => match ($d['fonte_tipo']) {
+                'arquivo_publico' => 'arquivo_publico',
+                'jornal' => 'direitos_reservados',
+                'clube' => 'doacao',
+                default => 'uso_institucional',
+            },
             'origem' => $d['origem'],
             'status' => $d['status'],
             'publicado' => $d['publicado'],
+            'publicado_em' => !empty($d['publicado']) && ($d['status'] ?? '') === 'aprovado' ? now()->subMonths(6) : null,
             'precisa_identificar' => (bool) ($d['precisa_identificar'] ?? false),
             'aparece_na_timeline' => !empty($d['marco']) && !empty($d['publicado']),
+            'visualizacoes' => !empty($d['publicado']) ? random_int(3, 90) : 0,
         ]);
         if (!empty($d['pessoa'])) {
             $item->pessoas()->syncWithoutDetaching([

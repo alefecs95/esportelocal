@@ -248,6 +248,12 @@ run_migrations_if_needed() {
 
     echo "Executando migrations..."
     php artisan migrate --force || echo "Aviso: migrations falharam (container continua)." >&2
+
+    if [ "${SEED_MEMORIA_DEMO:-true}" = "true" ]; then
+        echo "Populando Memória da Prefeitura Padrão (demo)..."
+        SEED_MEMORIA_IF_EMPTY=true php artisan db:seed --class=MemoriaDemoSeeder --force \
+            || echo "Aviso: seeder da Memória falhou (container continua)." >&2
+    fi
 }
 
 cache_configuration_if_needed() {

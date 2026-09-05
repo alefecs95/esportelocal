@@ -53,6 +53,7 @@ services:
       SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL:-superadmin@example.com}
       SUPER_ADMIN_PASSWORD: ${SUPER_ADMIN_PASSWORD:-}
       RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
+      SEED_MEMORIA_DEMO: ${SEED_MEMORIA_DEMO:-true}
       IMPORT_DB_ON_START: ${IMPORT_DB_ON_START:-false}
       FORCE_IMPORT_DB: ${FORCE_IMPORT_DB:-false}
       IMPORT_DB_FILE: ${IMPORT_DB_FILE:-/opt/seed/backup.sql}
