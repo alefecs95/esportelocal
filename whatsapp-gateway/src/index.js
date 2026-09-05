@@ -1,8 +1,9 @@
 import { Boom } from '@hapi/boom'
-import makeWASocket, {
+import {
     DisconnectReason,
     fetchLatestBaileysVersion,
     makeCacheableSignalKeyStore,
+    makeWASocket,
     useMultiFileAuthState,
 } from '@whiskeysockets/baileys'
 import express from 'express'
