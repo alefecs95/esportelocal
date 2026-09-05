@@ -1,10 +1,9 @@
 import { Boom } from '@hapi/boom'
-import {
+import makeWASocket, {
     Browsers,
     DisconnectReason,
     fetchLatestBaileysVersion,
     makeCacheableSignalKeyStore,
-    makeWASocket,
     useMultiFileAuthState,
 } from '@whiskeysockets/baileys'
 import express from 'express'
@@ -73,7 +72,7 @@ function brazilVariants(digits) {
     return [thirteen, twelve].filter(Boolean)
 }
 
-function waitForAck(session, messageId, timeoutMs = 12000) {
+function waitForAck(session, messageId, timeoutMs = 15000) {
     if (!messageId) {
         return Promise.resolve(null)
     }
@@ -119,7 +118,18 @@ async function resolveRecipient(sock, number) {
             }
 
             const pnJid = asJid(found.jid, 's.whatsapp.net')
-            const lidJid = asJid(found.lid, 'lid')
+            let lidJid = asJid(found.lid, 'lid')
+
+            // Baileys 7: onWhatsApp não devolve LID — buscar no mapeamento/USync
+            if (!lidJid && pnJid && sock.signalRepository?.lidMapping?.getLIDForPN) {
+                try {
+                    lidJid = await sock.signalRepository.lidMapping.getLIDForPN(pnJid)
+                } catch (error) {
+                    logger.warn({ err: error, pnJid }, 'Falha ao resolver LID a partir do PN')
+                }
+            }
+
+            // Preferir LID (WhatsApp atual); PN só como fallback
             const jid = lidJid || pnJid
             if (jid) {
                 logger.info({ candidate, jid, pnJid, lidJid, exists: found.exists }, 'JID resolvido')
@@ -135,6 +145,14 @@ async function resolveRecipient(sock, number) {
         pnJid: `${variants[0]}@s.whatsapp.net`,
         lidJid: null,
     }
+}
+
+function sendTargets(recipient) {
+    // Se há LID, envia só para LID (enviar PN com LID mapeado costuma falhar/silenciar)
+    if (recipient.lidJid) {
+        return [recipient.lidJid]
+    }
+    return [recipient.pnJid].filter(Boolean)
 }
 
 function authPath(sessionId) {
@@ -184,7 +202,7 @@ async function startSession(sessionId, { reset = false } = {}) {
     const { version } = await fetchLatestBaileysVersion()
     const sock = makeWASocket({
         version,
-        logger: pino({ level: 'silent' }),
+        logger: pino({ level: process.env.BAILEYS_LOG_LEVEL || 'silent' }),
         printQRInTerminal: false,
         markOnlineOnConnect: true,
         syncFullHistory: false,
@@ -193,6 +211,7 @@ async function startSession(sessionId, { reset = false } = {}) {
             creds: state.creds,
             keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' })),
         },
+        getMessage: async () => undefined,
     })
 
     session.sock = sock
@@ -204,13 +223,38 @@ async function startSession(sessionId, { reset = false } = {}) {
         for (const item of updates) {
             const id = item?.key?.id
             const status = item?.update?.status
-            if (!id || status === undefined) {
+            const stubParams = item?.update?.messageStubParameters
+            if (!id) {
                 continue
             }
 
-            logger.info({ sessionId, id, status, jid: item?.key?.remoteJid }, 'Status da mensagem')
+            if (status === undefined && !stubParams) {
+                continue
+            }
+
+            logger.info({
+                sessionId,
+                id,
+                status,
+                jid: item?.key?.remoteJid,
+                alt: item?.key?.remoteJidAlt,
+                stubParams,
+            }, 'Status da mensagem')
+
             const waiter = session.acks.get(id)
-            if (waiter && status >= 1) {
+            if (!waiter) {
+                continue
+            }
+
+            // ERROR = 0
+            if (status === 0) {
+                session.acks.delete(id)
+                waiter(null)
+                continue
+            }
+
+            // SERVER_ACK (2) ou superior = servidor aceitou
+            if (typeof status === 'number' && status >= 2) {
                 session.acks.delete(id)
                 waiter(status)
             }
@@ -219,12 +263,19 @@ async function startSession(sessionId, { reset = false } = {}) {
 
     sock.ev.on('message-receipt.update', (updates) => {
         for (const item of updates) {
+            const id = item?.key?.id
             logger.info({
                 sessionId,
-                id: item?.key?.id,
+                id,
                 jid: item?.key?.remoteJid,
-                receipt: item?.receipt?.receiptTimestamp ? 'delivered' : 'pending',
+                receipt: item?.receipt,
             }, 'Recibo da mensagem')
+
+            const waiter = id ? session.acks.get(id) : null
+            if (waiter && (item?.receipt?.receiptTimestamp || item?.receipt?.readTimestamp)) {
+                session.acks.delete(id)
+                waiter(3)
+            }
         }
     })
 
@@ -246,7 +297,7 @@ async function startSession(sessionId, { reset = false } = {}) {
         if (connection === 'open') {
             current.status = 'connected'
             current.qr = null
-            current.phone = sock.user?.id?.split(':')[0] || null
+            current.phone = sock.user?.id?.split(':')[0] || sock.user?.id || null
             logger.info({ sessionId, phone: current.phone }, 'WhatsApp conectado')
         }
 
@@ -423,7 +474,7 @@ app.post('/send/text', async (req, res) => {
             })
         }
 
-        const targets = [...new Set([recipient.pnJid, recipient.lidJid].filter(Boolean))]
+        const targets = sendTargets(recipient)
         let lastError = null
 
         for (const jid of targets) {
@@ -431,7 +482,13 @@ app.post('/send/text', async (req, res) => {
                 logger.info({ sessionId, number, jid, lid: recipient.lidJid, pn: recipient.pnJid }, 'Enviando texto')
                 const sent = await session.sock.sendMessage(jid, { text })
                 const messageId = sent?.key?.id
-                logger.info({ sessionId, jid, messageId }, 'Texto entregue ao servidor')
+                logger.info({
+                    sessionId,
+                    jid,
+                    messageId,
+                    remoteJid: sent?.key?.remoteJid,
+                    remoteJidAlt: sent?.key?.remoteJidAlt,
+                }, 'Texto entregue ao servidor')
 
                 const status = await waitForAck(session, messageId)
                 logger.info({ sessionId, jid, messageId, status }, 'Ack do WhatsApp')
