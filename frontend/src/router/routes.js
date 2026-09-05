@@ -226,6 +226,7 @@ const routes = [
                 component: () => import('../modules/portal/pages/PortalMemoriaRecordes.vue'),
                 meta: { title: 'Livro de recordes' }
             },
+            {
                 path: 'memoria/equipes',
                 name: 'PortalMemoriaEquipes',
                 component: () => import('../modules/portal/pages/PortalMemoriaEquipes.vue'),
