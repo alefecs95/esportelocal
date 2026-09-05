@@ -58,9 +58,6 @@ class InstitucionalController extends Controller
             'integracoes' => 'nullable|array',
             'integracoes.whatsapp' => 'nullable|array',
             'integracoes.whatsapp.enabled' => 'nullable|boolean',
-            'integracoes.whatsapp.base_url' => 'nullable|string|max:255',
-            'integracoes.whatsapp.device_token' => 'nullable|string|max:255',
-            'integracoes.whatsapp.clear_device_token' => 'nullable|boolean',
         ];
 
         // Apenas valida arquivo se for enviado um arquivo
@@ -141,19 +138,77 @@ class InstitucionalController extends Controller
         return response()->json($result, $result['ok'] ? 200 : 422);
     }
 
+    public function connectWhatsApp(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user->prefeitura_id) {
+            return response()->json(['message' => 'Usuário não vinculado a uma prefeitura'], 400);
+        }
+
+        $prefeitura = Prefeitura::findOrFail($user->prefeitura_id);
+        app()->instance('current_tenant', $prefeitura);
+
+        $result = $this->whatsAppGatewayService->connectSession((bool) $request->boolean('reset'));
+
+        return response()->json($result, ($result['ok'] ?? false) ? 200 : 422);
+    }
+
+    public function disconnectWhatsApp(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user->prefeitura_id) {
+            return response()->json(['message' => 'Usuário não vinculado a uma prefeitura'], 400);
+        }
+
+        $prefeitura = Prefeitura::findOrFail($user->prefeitura_id);
+        app()->instance('current_tenant', $prefeitura);
+
+        $result = $this->whatsAppGatewayService->logoutSession();
+
+        return response()->json($result, ($result['ok'] ?? false) ? 200 : 422);
+    }
+
+    public function whatsAppStatus(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user->prefeitura_id) {
+            return response()->json(['message' => 'Usuário não vinculado a uma prefeitura'], 400);
+        }
+
+        $prefeitura = Prefeitura::findOrFail($user->prefeitura_id);
+        app()->instance('current_tenant', $prefeitura);
+
+        $status = $this->whatsAppGatewayService->sessionStatus();
+
+        return response()->json([
+            'ok' => (bool) ($status['ok'] ?? false),
+            'enabled' => (bool) ($status['enabled'] ?? false),
+            'status' => $status['connection'] ?? 'disconnected',
+            'phone' => $status['phone'] ?? null,
+            'qr' => $status['qr'] ?? null,
+            'message' => $status['message'] ?? null,
+        ]);
+    }
+
     private function buildPrefeituraResponse(Prefeitura $prefeitura): array
     {
         $payload = $prefeitura->toArray();
         $integracoes = $prefeitura->configuracoes_integracoes ?? [];
         $whatsApp = $integracoes['whatsapp'] ?? [];
-        $deviceToken = $whatsApp['device_token'] ?? '';
+
+        app()->instance('current_tenant', $prefeitura);
+        $session = $this->whatsAppGatewayService->sessionStatus();
 
         $payload['integracoes'] = [
             'whatsapp' => [
                 'enabled' => (bool) ($whatsApp['enabled'] ?? false),
-                'base_url' => $whatsApp['base_url'] ?? '',
-                'has_device_token' => !empty($deviceToken),
-                'device_token_mask' => $this->maskToken($deviceToken),
+                'status' => $session['connection'] ?? 'disconnected',
+                'phone' => $session['phone'] ?? null,
+                'qr' => $session['qr'] ?? null,
+                'gateway_ok' => (bool) ($session['ok'] ?? false),
             ],
         ];
 
@@ -169,37 +224,11 @@ class InstitucionalController extends Controller
         $whatsAppIncoming = $incoming['whatsapp'] ?? [];
 
         if (array_key_exists('enabled', $whatsAppIncoming)) {
-            $whatsAppCurrent['enabled'] = (bool) $whatsAppIncoming['enabled'];
-        }
-
-        if (array_key_exists('base_url', $whatsAppIncoming)) {
-            $whatsAppCurrent['base_url'] = trim((string) $whatsAppIncoming['base_url']);
-        }
-
-        if (!empty($whatsAppIncoming['device_token'])) {
-            $whatsAppCurrent['device_token'] = trim((string) $whatsAppIncoming['device_token']);
-        }
-
-        if (!empty($whatsAppIncoming['clear_device_token'])) {
-            $whatsAppCurrent['device_token'] = '';
+            $whatsAppCurrent['enabled'] = filter_var($whatsAppIncoming['enabled'], FILTER_VALIDATE_BOOLEAN);
         }
 
         $config['whatsapp'] = $whatsAppCurrent;
 
         return $config;
-    }
-
-    private function maskToken(?string $token): ?string
-    {
-        if (!$token) {
-            return null;
-        }
-
-        $size = strlen($token);
-        if ($size <= 4) {
-            return str_repeat('*', $size);
-        }
-
-        return str_repeat('*', $size - 4) . substr($token, -4);
     }
 }

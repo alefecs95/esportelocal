@@ -274,19 +274,19 @@
                 </div>
 
                 <div>
-                    <h3 class="text-lg font-medium leading-6 text-gray-900 border-b pb-2 mb-4">Integrações de API</h3>
+                    <h3 class="text-lg font-medium leading-6 text-gray-900 border-b pb-2 mb-4">Integrações</h3>
                     <div class="border border-gray-200 rounded-xl p-4 bg-gradient-to-br from-white to-gray-50 space-y-5">
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                             <div>
-                                <h4 class="text-base font-semibold text-gray-900">WhatsApp Gateway</h4>
-                                <p class="text-sm text-gray-600">A integração começa desativada e sem token padrão.</p>
+                                <h4 class="text-base font-semibold text-gray-900">WhatsApp no servidor</h4>
+                                <p class="text-sm text-gray-600">Conecte o número da prefeitura pelo QR Code. A sessão fica no nosso servidor e reconecta sozinha.</p>
                             </div>
                             <div class="flex items-center gap-3">
                                 <span
                                     class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold"
                                     :class="form.integracoes.whatsapp.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'"
                                 >
-                                    {{ form.integracoes.whatsapp.enabled ? 'Ativo' : 'Inativo' }}
+                                    {{ form.integracoes.whatsapp.enabled ? 'Envios ativos' : 'Envios desligados' }}
                                 </span>
                                 <button
                                     type="button"
@@ -302,54 +302,51 @@
                             </div>
                         </div>
 
-                        <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-                            Use no campo abaixo apenas o token do dispositivo. A API Key de gerenciamento não envia mensagens.
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span
+                                class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold"
+                                :class="whatsAppStatusClass"
+                            >
+                                {{ whatsAppStatusLabel }}
+                            </span>
+                            <span v-if="form.integracoes.whatsapp.phone" class="text-sm text-gray-700">
+                                Número: {{ form.integracoes.whatsapp.phone }}
+                            </span>
                         </div>
 
-                        <div class="grid grid-cols-1 gap-y-5 gap-x-4 sm:grid-cols-6">
-                            <div class="sm:col-span-3">
-                                <label for="whatsapp_base_url" class="block text-sm font-medium text-gray-700">WhatsApp Base URL</label>
-                                <div class="mt-1">
-                                    <input
-                                        type="text"
-                                        v-model="form.integracoes.whatsapp.base_url"
-                                        id="whatsapp_base_url"
-                                        :disabled="!form.integracoes.whatsapp.enabled"
-                                        class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border disabled:bg-gray-100 disabled:text-gray-500"
-                                        placeholder="https://dropestore.com/wp-json/wdm/v1"
-                                    >
-                                </div>
-                            </div>
-                            <div class="sm:col-span-3">
-                                <label for="whatsapp_device_token" class="block text-sm font-medium text-gray-700">Device Token</label>
-                                <div class="mt-1">
-                                    <input
-                                        type="password"
-                                        v-model="form.integracoes.whatsapp.device_token"
-                                        id="whatsapp_device_token"
-                                        :disabled="!form.integracoes.whatsapp.enabled"
-                                        class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border disabled:bg-gray-100 disabled:text-gray-500"
-                                        placeholder="Cole o token do dispositivo"
-                                    >
-                                </div>
-                                <p v-if="form.integracoes.whatsapp.has_device_token && !form.integracoes.whatsapp.device_token" class="mt-1 text-xs text-gray-500">
-                                    Token cadastrado: {{ form.integracoes.whatsapp.device_token_mask }}
-                                </p>
-                            </div>
+                        <div v-if="form.integracoes.whatsapp.qr" class="flex flex-col items-start gap-2">
+                            <p class="text-sm text-gray-700">Abra o WhatsApp no celular → Aparelhos conectados → Conectar um aparelho e escaneie:</p>
+                            <img :src="form.integracoes.whatsapp.qr" alt="QR Code WhatsApp" class="w-56 h-56 rounded-lg border border-gray-200 bg-white p-2">
                         </div>
 
                         <div class="flex flex-wrap items-center gap-3">
                             <button
                                 type="button"
-                                @click="testWhatsAppConnection"
-                                :disabled="testingConnection || !form.integracoes.whatsapp.enabled"
+                                @click="connectWhatsApp(false)"
+                                :disabled="whatsappBusy"
+                                class="inline-flex items-center justify-center px-4 py-2 border border-green-200 rounded-md text-sm font-medium text-green-800 bg-green-50 hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <span v-if="connectingWhatsApp">Conectando...</span>
+                                <span v-else>Conectar / gerar QR</span>
+                            </button>
+                            <button
+                                type="button"
+                                @click="refreshWhatsAppStatus"
+                                :disabled="whatsappBusy"
                                 class="inline-flex items-center justify-center px-4 py-2 border border-blue-200 rounded-md text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                <span v-if="testingConnection">Testando conexão...</span>
-                                <span v-else>Testar conexão</span>
+                                Atualizar status
                             </button>
-                            <p class="text-xs text-gray-500">O token só passa a existir se você cadastrar manualmente.</p>
+                            <button
+                                type="button"
+                                @click="disconnectWhatsApp"
+                                :disabled="whatsappBusy || form.integracoes.whatsapp.status === 'disconnected'"
+                                class="inline-flex items-center justify-center px-4 py-2 border border-red-200 rounded-md text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Desconectar
+                            </button>
                         </div>
+                        <p class="text-xs text-gray-500">Salve as alterações para ligar ou desligar o envio de mensagens. A conexão do aparelho é independente e permanece no servidor.</p>
                     </div>
                 </div>
 
@@ -371,7 +368,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import api from '@/services/api';
 import { useToast } from 'vue-toastification';
 import { useTheme } from '@/composables/useTheme';
@@ -379,7 +376,8 @@ import { useTheme } from '@/composables/useTheme';
 const toast = useToast();
 const { updateTheme } = useTheme();
 const loading = ref(false);
-const testingConnection = ref(false);
+const connectingWhatsApp = ref(false);
+const whatsappBusy = computed(() => loading.value || connectingWhatsApp.value);
 const previewLogo = ref(null);
 const previewLogoRodape = ref(null);
 const previewBannerPortal = ref(null);
@@ -414,10 +412,9 @@ const form = ref({
     integracoes: {
         whatsapp: {
             enabled: false,
-            base_url: '',
-            device_token: '',
-            has_device_token: false,
-            device_token_mask: null
+            status: 'disconnected',
+            phone: null,
+            qr: null
         }
     }
 });
@@ -452,11 +449,7 @@ const fetchSettings = async () => {
         }
 
         const whatsApp = data.integracoes?.whatsapp || {};
-        form.value.integracoes.whatsapp.enabled = !!whatsApp.enabled;
-        form.value.integracoes.whatsapp.base_url = whatsApp.base_url || '';
-        form.value.integracoes.whatsapp.device_token = '';
-        form.value.integracoes.whatsapp.has_device_token = !!whatsApp.has_device_token;
-        form.value.integracoes.whatsapp.device_token_mask = whatsApp.device_token_mask || null;
+        applyWhatsAppState(whatsApp, true);
 
         if (data.logo_url) previewLogo.value = data.logo_url;
         if (data.logo_rodape_url) previewLogoRodape.value = data.logo_rodape_url;
@@ -518,10 +511,6 @@ const save = async () => {
         });
 
         formData.append('integracoes[whatsapp][enabled]', form.value.integracoes.whatsapp.enabled ? '1' : '0');
-        formData.append('integracoes[whatsapp][base_url]', form.value.integracoes.whatsapp.base_url || '');
-        if (form.value.integracoes.whatsapp.device_token) {
-            formData.append('integracoes[whatsapp][device_token]', form.value.integracoes.whatsapp.device_token);
-        }
 
         if (form.value.logo instanceof File) formData.append('logo', form.value.logo);
         if (form.value.logo_rodape instanceof File) formData.append('logo_rodape', form.value.logo_rodape);
@@ -554,20 +543,100 @@ const save = async () => {
     }
 };
 
-const testWhatsAppConnection = async () => {
-    testingConnection.value = true;
+const applyWhatsAppState = (whatsApp = {}, syncEnabled = false) => {
+    if (syncEnabled && whatsApp.enabled !== undefined) {
+        form.value.integracoes.whatsapp.enabled = !!whatsApp.enabled;
+    }
+    form.value.integracoes.whatsapp.status = whatsApp.status || 'disconnected';
+    form.value.integracoes.whatsapp.phone = whatsApp.phone || null;
+    form.value.integracoes.whatsapp.qr = whatsApp.qr || null;
+    syncWhatsAppPolling();
+};
+
+const whatsAppStatusLabel = computed(() => {
+    const status = form.value.integracoes.whatsapp.status;
+    if (status === 'connected') return 'Conectado';
+    if (status === 'qr') return 'Aguardando QR Code';
+    if (status === 'connecting' || status === 'reconnecting') return 'Reconectando';
+    return 'Desconectado';
+});
+
+const whatsAppStatusClass = computed(() => {
+    const status = form.value.integracoes.whatsapp.status;
+    if (status === 'connected') return 'bg-green-100 text-green-700';
+    if (status === 'qr') return 'bg-amber-100 text-amber-800';
+    if (status === 'connecting' || status === 'reconnecting') return 'bg-blue-100 text-blue-700';
+    return 'bg-gray-100 text-gray-600';
+});
+
+let whatsAppPoll = null;
+
+const stopWhatsAppPolling = () => {
+    if (whatsAppPoll) {
+        clearInterval(whatsAppPoll);
+        whatsAppPoll = null;
+    }
+};
+
+const syncWhatsAppPolling = () => {
+    const status = form.value.integracoes.whatsapp.status;
+    const shouldPoll = ['qr', 'connecting', 'reconnecting'].includes(status);
+    if (shouldPoll && !whatsAppPoll) {
+        whatsAppPoll = setInterval(refreshWhatsAppStatus, 2500);
+    }
+    if (!shouldPoll) {
+        stopWhatsAppPolling();
+    }
+};
+
+const refreshWhatsAppStatus = async () => {
     try {
-        const { data } = await api.post('/institucional/integracoes/whatsapp/testar');
-        toast.success(data.message || 'Conexão testada com sucesso.');
+        const { data } = await api.get('/institucional/integracoes/whatsapp/status');
+        applyWhatsAppState(data);
     } catch (error) {
-        const message = error.response?.data?.message || 'Falha ao testar conexão com WhatsApp.';
+        console.error('Erro ao consultar status do WhatsApp:', error);
+    }
+};
+
+const connectWhatsApp = async (reset = false) => {
+    connectingWhatsApp.value = true;
+    try {
+        const { data } = await api.post('/institucional/integracoes/whatsapp/conectar', { reset });
+        applyWhatsAppState(data);
+        toast.success(data.message || 'Conexão iniciada. Escaneie o QR Code se aparecer.');
+    } catch (error) {
+        const payload = error.response?.data || {};
+        applyWhatsAppState(payload);
+        toast.error(payload.message || 'Falha ao conectar o WhatsApp.');
+    } finally {
+        connectingWhatsApp.value = false;
+    }
+};
+
+const disconnectWhatsApp = async () => {
+    connectingWhatsApp.value = true;
+    try {
+        const { data } = await api.post('/institucional/integracoes/whatsapp/desconectar');
+        applyWhatsAppState({
+            ...form.value.integracoes.whatsapp,
+            status: data.status || 'disconnected',
+            phone: null,
+            qr: null,
+        });
+        toast.success(data.message || 'WhatsApp desconectado.');
+    } catch (error) {
+        const message = error.response?.data?.message || 'Falha ao desconectar o WhatsApp.';
         toast.error(message);
     } finally {
-        testingConnection.value = false;
+        connectingWhatsApp.value = false;
     }
 };
 
 onMounted(() => {
     fetchSettings();
+});
+
+onUnmounted(() => {
+    stopWhatsAppPolling();
 });
 </script>

@@ -91,6 +91,9 @@ Route::prefix('v1')->group(function () {
         Route::get('institucional', [InstitucionalController::class, 'show']);
         Route::post('institucional', [InstitucionalController::class, 'update']);
         Route::post('institucional/integracoes/whatsapp/testar', [InstitucionalController::class, 'testWhatsAppConnection']);
+        Route::get('institucional/integracoes/whatsapp/status', [InstitucionalController::class, 'whatsAppStatus']);
+        Route::post('institucional/integracoes/whatsapp/conectar', [InstitucionalController::class, 'connectWhatsApp']);
+        Route::post('institucional/integracoes/whatsapp/desconectar', [InstitucionalController::class, 'disconnectWhatsApp']);
         Route::apiResource('diretoria', DiretoriaController::class);
     });
 

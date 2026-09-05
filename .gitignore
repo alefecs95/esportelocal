@@ -21,6 +21,8 @@ deploy.zip
 backend/.env
 backend/.env.production
 deploy/backend/.env
+whatsapp-gateway/node_modules/
+whatsapp-gateway/sessions/
 
 # Scripts operacionais (não vão para produção)
 frontend/public/run-migrations.php

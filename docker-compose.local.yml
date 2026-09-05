@@ -9,6 +9,10 @@ services:
       SERVICE_PASSWORD_MYSQL: ${MYSQL_PASSWORD:-semel}
       DB_PASSWORD: ${MYSQL_PASSWORD:-semel}
 
+  whatsapp:
+    ports:
+      - "${WHATSAPP_PORT:-3000}:3000"
+
   mysql:
     ports:
       - "${MYSQL_PORT:-3306}:3306"

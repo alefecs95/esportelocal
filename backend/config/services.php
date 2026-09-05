@@ -32,8 +32,8 @@ return [
     ],
 
     'whatsapp' => [
-        'base_url' => env('WHATSAPP_API_BASE_URL'),
-        'device_token' => env('WHATSAPP_DEVICE_TOKEN'),
+        'gateway_url' => env('WHATSAPP_GATEWAY_URL', 'http://whatsapp:3000'),
+        'gateway_token' => env('WHATSAPP_GATEWAY_TOKEN'),
     ],
 
     'consultas' => [

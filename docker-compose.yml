@@ -61,12 +61,16 @@ services:
       IMPORT_STORAGE_FILE: ${IMPORT_STORAGE_FILE:-}
       FORCE_IMPORT_STORAGE: ${FORCE_IMPORT_STORAGE:-false}
       RUN_CONFIG_CACHE: ${RUN_CONFIG_CACHE:-true}
+      WHATSAPP_GATEWAY_URL: ${WHATSAPP_GATEWAY_URL:-http://whatsapp:3000}
+      WHATSAPP_GATEWAY_TOKEN: ${WHATSAPP_GATEWAY_TOKEN:-semel-internal-whatsapp}
     volumes:
       - app_storage:/var/www/html/backend/storage
       - db_import:/docker/database/import
     depends_on:
       mysql:
         condition: service_healthy
+      whatsapp:
+        condition: service_started
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/health"]
       interval: 15s
@@ -97,8 +101,30 @@ services:
       start_period: 40s
     restart: unless-stopped
 
+  whatsapp:
+    build:
+      context: ./whatsapp-gateway
+      dockerfile: Dockerfile
+    expose:
+      - "3000"
+    environment:
+      PORT: "3000"
+      AUTH_DIR: /data/sessions
+      GATEWAY_TOKEN: ${WHATSAPP_GATEWAY_TOKEN:-semel-internal-whatsapp}
+      LOG_LEVEL: ${WHATSAPP_LOG_LEVEL:-info}
+    volumes:
+      - whatsapp_sessions:/data/sessions
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
 volumes:
   app_storage:
   mysql_data:
   mysql_init:
   db_import:
+  whatsapp_sessions:

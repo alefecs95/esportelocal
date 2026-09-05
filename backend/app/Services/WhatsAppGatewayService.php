@@ -12,32 +12,27 @@ class WhatsAppGatewayService
 {
     public function sendText(string $phone, string $message): bool
     {
-        [$baseUrl, $deviceToken, $enabled] = $this->resolveConfig();
+        [$enabled, $sessionId] = $this->resolveSession();
 
-        if (!$enabled || !$baseUrl || !$deviceToken) {
+        if (!$enabled) {
             Log::warning('WhatsApp não configurado. Mensagem não enviada.', [
                 'phone' => $phone,
             ]);
             return false;
         }
 
-        $url = $baseUrl . '/send/text';
+        $response = $this->request('post', '/send/text', [
+            'session' => $sessionId,
+            'number' => $phone,
+            'text' => $message,
+        ]);
 
-        $response = Http::timeout(15)
-            ->withHeaders([
-                'token' => $deviceToken,
-                'Accept' => 'application/json',
-            ])
-            ->post($url, [
-                'number' => $phone,
-                'text' => $message,
-            ]);
-
-        if (!$response->successful()) {
+        if (!$response['ok']) {
             Log::error('Falha ao enviar mensagem WhatsApp', [
                 'phone' => $phone,
-                'status' => $response->status(),
-                'response' => $response->body(),
+                'session' => $sessionId,
+                'status' => $response['status'],
+                'response' => $response['body'],
             ]);
             return false;
         }
@@ -47,65 +42,204 @@ class WhatsAppGatewayService
 
     public function testConnection(): array
     {
-        [$baseUrl, $deviceToken, $enabled] = $this->resolveConfig();
+        $status = $this->sessionStatus();
 
-        if (!$enabled) {
+        if (!($status['ok'] ?? false)) {
             return [
                 'ok' => false,
-                'message' => 'A integração com WhatsApp está desativada.',
+                'message' => $status['message'] ?? 'Falha de conexão com o gateway WhatsApp.',
+                'status' => $status['connection'] ?? 'disconnected',
+                'phone' => $status['phone'] ?? null,
+                'qr' => $status['qr'] ?? null,
             ];
         }
 
-        if (!$baseUrl || !$deviceToken) {
+        $connection = $status['connection'] ?? 'disconnected';
+
+        if ($connection === 'connected') {
+            return [
+                'ok' => true,
+                'message' => $status['phone']
+                    ? "WhatsApp conectado no número {$status['phone']}."
+                    : 'WhatsApp conectado e sessão persistente ativa.',
+                'status' => $connection,
+                'phone' => $status['phone'] ?? null,
+                'qr' => null,
+            ];
+        }
+
+        return [
+            'ok' => false,
+            'message' => $this->statusMessage($connection),
+            'status' => $connection,
+            'phone' => $status['phone'] ?? null,
+            'qr' => $status['qr'] ?? null,
+        ];
+    }
+
+    public function sessionStatus(): array
+    {
+        [$enabled, $sessionId] = $this->resolveSession(false);
+
+        if (!$sessionId) {
             return [
                 'ok' => false,
-                'message' => 'Informe Base URL e o token do dispositivo para testar a conexão.',
+                'message' => 'Tenant não identificado para a sessão WhatsApp.',
+                'connection' => 'disconnected',
+            ];
+        }
+
+        $response = $this->request('get', "/sessions/{$sessionId}");
+
+        if (!$response['ok']) {
+            return [
+                'ok' => false,
+                'enabled' => $enabled,
+                'message' => $response['message'] ?? 'Gateway WhatsApp indisponível.',
+                'connection' => 'disconnected',
+                'phone' => null,
+                'qr' => null,
+            ];
+        }
+
+        $payload = $response['json'] ?? [];
+
+        return [
+            'ok' => true,
+            'enabled' => $enabled,
+            'connection' => $payload['status'] ?? 'disconnected',
+            'phone' => $payload['phone'] ?? null,
+            'qr' => $payload['qr'] ?? null,
+        ];
+    }
+
+    public function connectSession(bool $reset = false): array
+    {
+        [$enabled, $sessionId] = $this->resolveSession(false);
+
+        if (!$sessionId) {
+            return [
+                'ok' => false,
+                'message' => 'Tenant não identificado para a sessão WhatsApp.',
+            ];
+        }
+
+        $response = $this->request('post', "/sessions/{$sessionId}/connect", [
+            'reset' => $reset,
+        ]);
+
+        if (!$response['ok']) {
+            return [
+                'ok' => false,
+                'message' => $response['message'] ?? 'Não foi possível iniciar a sessão WhatsApp.',
+                'status' => $response['json']['status'] ?? 'disconnected',
+                'phone' => $response['json']['phone'] ?? null,
+                'qr' => $response['json']['qr'] ?? null,
+            ];
+        }
+
+        $payload = $response['json'] ?? [];
+
+        return [
+            'ok' => true,
+            'enabled' => $enabled,
+            'message' => $this->statusMessage($payload['status'] ?? 'connecting'),
+            'status' => $payload['status'] ?? 'connecting',
+            'phone' => $payload['phone'] ?? null,
+            'qr' => $payload['qr'] ?? null,
+        ];
+    }
+
+    public function logoutSession(): array
+    {
+        [, $sessionId] = $this->resolveSession(false);
+
+        if (!$sessionId) {
+            return [
+                'ok' => false,
+                'message' => 'Tenant não identificado para a sessão WhatsApp.',
+            ];
+        }
+
+        $response = $this->request('post', "/sessions/{$sessionId}/logout");
+
+        if (!$response['ok']) {
+            return [
+                'ok' => false,
+                'message' => $response['message'] ?? 'Não foi possível desconectar o WhatsApp.',
+            ];
+        }
+
+        return [
+            'ok' => true,
+            'message' => 'WhatsApp desconectado. A sessão persistida foi removida.',
+            'status' => 'disconnected',
+            'phone' => null,
+            'qr' => null,
+        ];
+    }
+
+    private function statusMessage(string $status): string
+    {
+        return match ($status) {
+            'connected' => 'WhatsApp conectado. A sessão será mantida neste servidor.',
+            'qr' => 'Escaneie o QR Code no WhatsApp do celular para conectar.',
+            'connecting', 'reconnecting' => 'Estabelecendo conexão com o WhatsApp...',
+            default => 'WhatsApp desconectado. Clique em conectar e escaneie o QR Code.',
+        };
+    }
+
+    private function request(string $method, string $path, array $payload = []): array
+    {
+        $baseUrl = rtrim((string) config('services.whatsapp.gateway_url'), '/');
+        $token = trim((string) config('services.whatsapp.gateway_token'));
+
+        if (!$baseUrl) {
+            return [
+                'ok' => false,
+                'status' => 0,
+                'message' => 'WHATSAPP_GATEWAY_URL não configurada.',
+                'body' => null,
+                'json' => [],
             ];
         }
 
         try {
-            $response = Http::timeout(12)
-                ->withHeaders([
-                    'token' => $deviceToken,
-                    'Accept' => 'application/json',
-                ])
-                ->get($baseUrl);
+            $http = Http::timeout(20)
+                ->acceptJson()
+                ->withHeaders($token ? [
+                    'Authorization' => 'Bearer ' . $token,
+                    'X-Gateway-Token' => $token,
+                ] : []);
 
-            if ($response->successful()) {
-                return [
-                    'ok' => true,
-                    'message' => 'Conexão com WhatsApp estabelecida com sucesso.',
-                    'status' => $response->status(),
-                ];
-            }
+            $response = strtolower($method) === 'get'
+                ? $http->get($baseUrl . $path)
+                : $http->post($baseUrl . $path, $payload);
 
-            if (in_array($response->status(), [401, 403], true)) {
-                return [
-                    'ok' => false,
-                    'message' => 'Conectou ao serviço, mas o token foi rejeitado. Verifique se você usou o token do dispositivo e não a API Key.',
-                    'status' => $response->status(),
-                ];
-            }
+            $json = $response->json() ?? [];
 
             return [
-                'ok' => false,
-                'message' => 'Não foi possível validar a conexão. Verifique Base URL.',
+                'ok' => $response->successful() && (($json['ok'] ?? true) !== false),
                 'status' => $response->status(),
+                'message' => $json['message'] ?? null,
+                'body' => $response->body(),
+                'json' => $json,
             ];
         } catch (Throwable $e) {
             return [
                 'ok' => false,
-                'message' => 'Falha de conexão com o serviço WhatsApp.',
-                'error' => $e->getMessage(),
+                'status' => 0,
+                'message' => 'Falha de conexão com o gateway WhatsApp local.',
+                'body' => $e->getMessage(),
+                'json' => [],
             ];
         }
     }
 
-    private function resolveConfig(): array
+    private function resolveSession(bool $requireEnabled = true): array
     {
-        $baseUrl = null;
-        $deviceToken = null;
         $enabled = false;
+        $tenantId = null;
 
         if (App::has('current_tenant')) {
             $tenant = App::get('current_tenant');
@@ -115,18 +249,18 @@ class WhatsAppGatewayService
 
             $integracoes = $tenant?->configuracoes_integracoes ?? [];
             $whatsApp = $integracoes['whatsapp'] ?? [];
-            $baseUrl = $whatsApp['base_url'] ?? null;
-            $deviceToken = $whatsApp['device_token'] ?? null;
             $enabled = (bool) ($whatsApp['enabled'] ?? false);
+            $tenantId = $tenant?->id;
         }
 
-        $resolvedBaseUrl = trim((string) $baseUrl);
-        $resolvedBaseUrl = trim($resolvedBaseUrl, " \t\n\r\0\x0B`'\"");
-        $resolvedBaseUrl = rtrim($resolvedBaseUrl, '/');
+        if ($requireEnabled && !$enabled) {
+            return [false, null];
+        }
 
-        $resolvedDeviceToken = trim((string) $deviceToken);
-        $resolvedDeviceToken = trim($resolvedDeviceToken, " \t\n\r\0\x0B`'\"");
+        if (!$tenantId) {
+            return [$enabled, null];
+        }
 
-        return [$resolvedBaseUrl, $resolvedDeviceToken, $enabled];
+        return [$enabled, 'tenant-' . $tenantId];
     }
 }
