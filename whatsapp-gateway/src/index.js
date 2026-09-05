@@ -73,8 +73,22 @@ function brazilVariants(digits) {
     return [thirteen, twelve].filter(Boolean)
 }
 
-function delay(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms))
+function waitForAck(session, messageId, timeoutMs = 12000) {
+    if (!messageId) {
+        return Promise.resolve(null)
+    }
+
+    return new Promise((resolve) => {
+        const timer = setTimeout(() => {
+            session.acks.delete(messageId)
+            resolve(null)
+        }, timeoutMs)
+
+        session.acks.set(messageId, (status) => {
+            clearTimeout(timer)
+            resolve(status)
+        })
+    })
 }
 
 function asJid(value, fallbackDomain) {
@@ -162,6 +176,7 @@ async function startSession(sessionId, { reset = false } = {}) {
         qr: null,
         reconnectTimer: null,
         starting: true,
+        acks: new Map(),
     }
     sessions.set(sessionId, session)
 
@@ -184,6 +199,34 @@ async function startSession(sessionId, { reset = false } = {}) {
     session.starting = false
 
     sock.ev.on('creds.update', saveCreds)
+
+    sock.ev.on('messages.update', (updates) => {
+        for (const item of updates) {
+            const id = item?.key?.id
+            const status = item?.update?.status
+            if (!id || status === undefined) {
+                continue
+            }
+
+            logger.info({ sessionId, id, status, jid: item?.key?.remoteJid }, 'Status da mensagem')
+            const waiter = session.acks.get(id)
+            if (waiter && status >= 1) {
+                session.acks.delete(id)
+                waiter(status)
+            }
+        }
+    })
+
+    sock.ev.on('message-receipt.update', (updates) => {
+        for (const item of updates) {
+            logger.info({
+                sessionId,
+                id: item?.key?.id,
+                jid: item?.key?.remoteJid,
+                receipt: item?.receipt?.receiptTimestamp ? 'delivered' : 'pending',
+            }, 'Recibo da mensagem')
+        }
+    })
 
     sock.ev.on('connection.update', async (update) => {
         const current = sessions.get(sessionId)
@@ -380,38 +423,39 @@ app.post('/send/text', async (req, res) => {
             })
         }
 
-        const pnFirst = recipient.pnJid && recipient.pnJid.includes('@s.whatsapp.net')
-            ? [recipient.pnJid, recipient.lidJid]
-            : [recipient.lidJid, recipient.jid, recipient.pnJid]
-        const targets = [...new Set(pnFirst.filter(Boolean))]
-        const sentTo = []
+        const targets = [...new Set([recipient.pnJid, recipient.lidJid].filter(Boolean))]
         let lastError = null
 
         for (const jid of targets) {
             try {
-                try {
-                    await session.sock.presenceSubscribe(jid)
-                    await session.sock.sendPresenceUpdate('composing', jid)
-                    await delay(400)
-                } catch {
-                    // ignore presence errors
+                logger.info({ sessionId, number, jid, lid: recipient.lidJid, pn: recipient.pnJid }, 'Enviando texto')
+                const sent = await session.sock.sendMessage(jid, { text })
+                const messageId = sent?.key?.id
+                logger.info({ sessionId, jid, messageId }, 'Texto entregue ao servidor')
+
+                const status = await waitForAck(session, messageId)
+                logger.info({ sessionId, jid, messageId, status }, 'Ack do WhatsApp')
+
+                if (status === null) {
+                    lastError = new Error('WhatsApp não confirmou o recebimento da mensagem.')
+                    continue
                 }
 
-                logger.info({ sessionId, number, jid, lid: recipient.lidJid, pn: recipient.pnJid }, 'Enviando texto')
-                await session.sock.sendMessage(jid, { text })
-                sentTo.push(jid)
-                logger.info({ sessionId, jid }, 'Texto enviado')
+                return res.json({
+                    ok: true,
+                    jid,
+                    messageId,
+                    status,
+                    lid: recipient.lidJid,
+                    pn: recipient.pnJid,
+                })
             } catch (error) {
                 lastError = error
                 logger.warn({ sessionId, jid, err: error }, 'Falha neste JID, tentando o próximo')
             }
         }
 
-        if (!sentTo.length) {
-            throw lastError || new Error('Não foi possível enviar a mensagem.')
-        }
-
-        return res.json({ ok: true, jid: sentTo[0], sentTo, lid: recipient.lidJid, pn: recipient.pnJid })
+        throw lastError || new Error('Não foi possível enviar a mensagem.')
     } catch (error) {
         logger.error({ err: error, sessionId, number }, 'Falha ao enviar mensagem')
         return res.status(500).json({
