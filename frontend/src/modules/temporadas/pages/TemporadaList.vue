@@ -18,11 +18,29 @@
       Carregando...
     </div>
 
+    <EmptyState
+      v-else-if="!temporadas.length"
+      title="Nenhuma temporada cadastrada"
+      description="Crie uma temporada para organizar competições, ranking e inscrições."
+    >
+      <template #action>
+        <button @click="showCreateModal = true" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">Nova Temporada</button>
+      </template>
+    </EmptyState>
+
     <TemporadaTable 
       v-else 
       :temporadas="temporadas" 
       @ativar="handleAtivar" 
       @delete="handleDelete"
+    />
+
+    <ConfirmDialog
+      :is-open="confirm.isOpen.value"
+      :title="confirm.title.value"
+      :message="confirm.message.value"
+      @confirm="confirm.confirm"
+      @cancel="confirm.cancel"
     />
 
     <!-- Modal de Criação -->
@@ -42,10 +60,16 @@
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
+import { useToast } from 'vue-toastification';
 import { useTemporadaStore } from '../store/temporadaStore';
 import TemporadaTable from '../components/TemporadaTable.vue';
 import TemporadaForm from '../components/TemporadaForm.vue';
+import EmptyState from '@/components/ui/EmptyState.vue';
+import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
+import { useConfirmDialog } from '@/composables/useConfirmDialog';
 
+const toast = useToast();
+const confirm = useConfirmDialog();
 const store = useTemporadaStore();
 const temporadas = computed(() => store.temporadas);
 const loading = computed(() => store.loading);
@@ -77,22 +101,24 @@ const handleCreate = async (data) => {
 };
 
 const handleAtivar = async (temporada) => {
-  if (confirm(`Deseja realmente ativar a temporada "${temporada.nome}"? Isso encerrará a temporada atual.`)) {
-    try {
-      await store.ativarTemporada(temporada.id);
-    } catch (e) {
-      alert(store.error || 'Erro ao ativar temporada.');
-    }
+  const ok = await confirm.ask(`Ativar a temporada "${temporada.nome}" encerra a temporada atual.`, 'Ativar temporada');
+  if (!ok) return;
+  try {
+    await store.ativarTemporada(temporada.id);
+    toast.success('Temporada ativada.');
+  } catch (e) {
+    toast.error(store.error || 'Erro ao ativar temporada.');
   }
 };
 
 const handleDelete = async (temporada) => {
-  if (confirm(`Tem certeza que deseja excluir a temporada "${temporada.nome}"?`)) {
-    try {
-      await store.deleteTemporada(temporada.id);
-    } catch (e) {
-      alert(store.error || 'Erro ao excluir temporada.');
-    }
+  const ok = await confirm.ask(`Excluir a temporada "${temporada.nome}"?`, 'Excluir temporada');
+  if (!ok) return;
+  try {
+    await store.deleteTemporada(temporada.id);
+    toast.success('Temporada excluída.');
+  } catch (e) {
+    toast.error(store.error || 'Erro ao excluir temporada.');
   }
 };
 </script>

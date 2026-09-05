@@ -9,6 +9,7 @@ use App\Models\Campeonato;
 use App\Models\Entidade;
 use App\Models\Partida;
 use App\Models\Inscricao;
+use App\Models\MemoriaAcervo;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\App;
@@ -31,6 +32,15 @@ class DashboardController extends Controller
             ->orderBy('data_jogo', 'asc')
             ->limit(5)
             ->get();
+
+        $jogosSemLocal = Partida::whereIn('status', ['agendada', 'em_andamento'])
+            ->where(function ($query) {
+                $query->whereNull('local')->orWhere('local', '');
+            })
+            ->count();
+
+        $atletasTsePendentes = Atleta::where('validacao_eleitoral_pendente', true)->count();
+        $memoriaFila = MemoriaAcervo::naFila()->count();
 
         // 3. Inscrições Recentes (Últimos 7 dias)
         $inscricoesRecentes = Inscricao::where('created_at', '>=', Carbon::now()->subDays(7))->count();
@@ -70,7 +80,11 @@ class DashboardController extends Controller
                 'clubes' => $totalClubes,
                 'campeonatos_ativos' => $campeonatosAtivos,
                 'inscricoes_abertas' => $campeonatosInscricoes,
-                'inscricoes_recentes' => $inscricoesRecentes
+                'inscricoes_recentes' => $inscricoesRecentes,
+                'jogos_sem_sumula' => $jogosSemSumula,
+                'atletas_tse_pendentes' => $atletasTsePendentes,
+                'memoria_fila' => $memoriaFila,
+                'jogos_sem_local' => $jogosSemLocal,
             ],
             'proximos_jogos' => $proximosJogos,
             'inscricoes_pendentes' => $inscricoesPendentes,

@@ -1,11 +1,12 @@
 <template>
   <div class="container mx-auto px-4 py-8">
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold text-gray-800">Atletas</h1>
-      <router-link :to="{ name: 'AtletaCreate' }" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-        + Novo Atleta
-      </router-link>
-    </div>
+    <PageHeader title="Atletas" description="Cadastro, acesso e validação eleitoral dos atletas.">
+      <template #actions>
+        <router-link :to="{ name: 'AtletaCreate' }" class="bg-blue-600 hover:bg-blue-700 text-white font-bold min-h-11 py-2 px-4 rounded inline-flex items-center">
+          + Novo Atleta
+        </router-link>
+      </template>
+    </PageHeader>
 
     <div class="bg-white border rounded-lg p-4 mb-4 space-y-4">
       <div>
@@ -89,28 +90,28 @@
       <table class="min-w-full leading-normal">
         <thead>
           <tr>
-            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">
               Nome
             </th>
-            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">
               CPF
             </th>
-            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">
               Idade
             </th>
-            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">
               Cidade/UF
             </th>
-            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">
               Dados Eleitorais
             </th>
-            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">
               Acesso
             </th>
-            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">
               Competições
             </th>
-            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">
               Ações
             </th>
           </tr>
@@ -121,7 +122,7 @@
               <p class="text-gray-900 whitespace-no-wrap">{{ atleta.nome }}</p>
             </td>
             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-              <p class="text-gray-900 whitespace-no-wrap">{{ formatCpf(atleta.cpf) }}</p>
+              <p class="text-gray-900 whitespace-no-wrap">{{ formatCpfDisplay(atleta.cpf) }}</p>
             </td>
             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
               <p class="text-gray-900 whitespace-no-wrap">{{ calcularIdade(atleta.data_nascimento) }} anos</p>
@@ -228,13 +229,25 @@
             </td>
           </tr>
           <tr v-if="store.atletas.length === 0">
-            <td colspan="8" class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">
-              Nenhum atleta encontrado.
+            <td colspan="8" class="px-5 py-8">
+              <EmptyState title="Nenhum atleta encontrado" description="Ajuste os filtros ou cadastre o primeiro atleta da secretaria.">
+                <template #action>
+                  <router-link :to="{ name: 'AtletaCreate' }" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">Novo Atleta</router-link>
+                </template>
+              </EmptyState>
             </td>
           </tr>
         </tbody>
       </table>
       </div>
+
+      <ConfirmDialog
+        :is-open="confirm.isOpen.value"
+        :title="confirm.title.value"
+        :message="confirm.message.value"
+        @confirm="confirm.confirm"
+        @cancel="confirm.cancel"
+      />
       
       <div class="px-5 py-5 bg-white border-t flex flex-col xs:flex-row items-center xs:justify-between          ">
         <span class="text-xs xs:text-sm text-gray-900">
@@ -262,9 +275,17 @@
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue';
 import { FileText, Pencil, Trash2, UserX, UserCheck, ShieldCheck, ShieldOff, RefreshCw, Check, Key, UserPlus } from 'lucide-vue-next';
+import { useToast } from 'vue-toastification';
 import { useAtletaStore } from '../store/atletaStore';
 import atletaService from '../services/atletaService';
+import { formatCpfDisplay } from '@/utils/formatCpf';
+import PageHeader from '@/components/ui/PageHeader.vue';
+import EmptyState from '@/components/ui/EmptyState.vue';
+import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
+import { useConfirmDialog } from '@/composables/useConfirmDialog';
 
+const toast = useToast();
+const confirm = useConfirmDialog();
 const store = useAtletaStore();
 const search = ref('');
 const filters = ref({
@@ -343,13 +364,6 @@ const atletasPendentes = computed(() =>
   store.atletas.filter((atleta) => Boolean(atleta.validacao_eleitoral_pendente))
 );
 
-const formatCpf = (cpf) => {
-  if (!cpf) return '-';
-  const digits = String(cpf).replace(/\D/g, '');
-  if (digits.length !== 11) return cpf;
-  return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-};
-
 const baixarFicha = async (atleta) => {
   try {
     pdfLoadingId.value = atleta.id;
@@ -364,7 +378,7 @@ const baixarFicha = async (atleta) => {
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
   } catch (error) {
-    alert(error.response?.data?.message || 'Erro ao gerar ficha do atleta.');
+    toast.error(error.response?.data?.message || 'Erro ao gerar ficha do atleta.');
   } finally {
     pdfLoadingId.value = null;
   }
@@ -376,7 +390,7 @@ const alternarAcesso = async (atleta) => {
     pode_participar_competicoes: atleta.pode_participar_competicoes
   });
   if (!ok && store.error) {
-    alert(store.error);
+    toast.error(store.error);
   }
 };
 
@@ -386,16 +400,18 @@ const alternarCompeticao = async (atleta) => {
     pode_participar_competicoes: !atleta.pode_participar_competicoes
   });
   if (!ok && store.error) {
-    alert(store.error);
+    toast.error(store.error);
   }
 };
 
 const deletarAtleta = async (id) => {
-  if (confirm('Tem certeza que deseja excluir este atleta?')) {
-    const ok = await store.deleteAtleta(id);
-    if (!ok && store.error) {
-      alert(store.error);
-    }
+  const accepted = await confirm.ask('Excluir este atleta? Esta ação não pode ser desfeita.', 'Excluir atleta');
+  if (!accepted) return;
+  const ok = await store.deleteAtleta(id);
+  if (!ok && store.error) {
+    toast.error(store.error);
+  } else {
+    toast.success('Atleta excluído.');
   }
 };
 
@@ -403,9 +419,9 @@ const revalidarTitulo = async (atleta) => {
   validandoTituloId.value = atleta.id;
   const resultado = await store.revalidarTitulo(atleta.id);
   if (resultado) {
-    alert('Título validado com sucesso.');
+    toast.success('Título validado com sucesso.');
   } else if (store.error) {
-    alert(store.error);
+    toast.error(store.error);
   }
   validandoTituloId.value = null;
 };
@@ -413,31 +429,31 @@ const revalidarTitulo = async (atleta) => {
 const aprovarDadosEleitoraisManual = async (atleta) => {
   const resultado = await store.aprovarDadosEleitoraisManual(atleta.id);
   if (resultado) {
-    alert('Dados eleitorais aprovados manualmente com sucesso.');
+    toast.success('Dados eleitorais aprovados manualmente.');
   } else if (store.error) {
-    alert(store.error);
+    toast.error(store.error);
   }
 };
 
 const resetPassword = async (atleta) => {
-  if (confirm(`Tem certeza que deseja resetar a senha do atleta "${atleta.nome}"?\n\nA nova senha será os últimos 4 dígitos do CPF.`)) {
-    const resultado = await store.resetPassword(atleta.id);
-    if (resultado) {
-      alert(`Senha resetada com sucesso.\n\nNova senha: ${resultado.nova_senha}`);
-    } else if (store.error) {
-      alert(store.error);
-    }
+  const accepted = await confirm.ask(`Resetar a senha de "${atleta.nome}"? A nova senha será os últimos 4 dígitos do CPF.`, 'Resetar senha');
+  if (!accepted) return;
+  const resultado = await store.resetPassword(atleta.id);
+  if (resultado) {
+    toast.success(`Senha resetada. Nova senha: ${resultado.nova_senha}`);
+  } else if (store.error) {
+    toast.error(store.error);
   }
 };
 
 const gerarUsuario = async (atleta) => {
-  if (confirm(`Tem certeza que deseja gerar o usuário do atleta "${atleta.nome}"?\n\nA senha inicial será os últimos 4 dígitos do CPF.`)) {
-    const resultado = await store.gerarUsuario(atleta.id);
-    if (resultado) {
-      alert(`Usuário gerado com sucesso.\n\nSenha inicial: ${resultado.nova_senha}`);
-    } else if (store.error) {
-      alert(store.error);
-    }
+  const accepted = await confirm.ask(`Gerar usuário para "${atleta.nome}"? A senha inicial será os últimos 4 dígitos do CPF.`, 'Gerar usuário');
+  if (!accepted) return;
+  const resultado = await store.gerarUsuario(atleta.id);
+  if (resultado) {
+    toast.success(`Usuário gerado. Senha inicial: ${resultado.nova_senha}`);
+  } else if (store.error) {
+    toast.error(store.error);
   }
 };
 </script>

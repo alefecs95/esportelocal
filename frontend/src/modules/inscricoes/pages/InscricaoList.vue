@@ -1,11 +1,12 @@
 <template>
   <div class="container mx-auto px-4 py-8">
-    <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-      <h1 class="text-2xl font-bold text-gray-800">Gestão de Inscrições</h1>
-      <router-link to="/admin/inscricoes/nova" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-        + Nova Inscrição
-      </router-link>
-    </div>
+    <PageHeader title="Inscrições" description="Aprove equipes e acompanhe as inscrições das competições.">
+      <template #actions>
+        <router-link to="/admin/inscricoes/nova" class="bg-blue-600 hover:bg-blue-700 text-white font-bold min-h-11 py-2 px-4 rounded inline-flex items-center">
+          + Nova Inscrição
+        </router-link>
+      </template>
+    </PageHeader>
 
     <!-- Filtro de Campeonato -->
     <div class="bg-white p-4 rounded-lg shadow mb-6">
@@ -31,13 +32,21 @@
     </div>
 
     <!-- Estado Vazio -->
-    <div v-else-if="selectedCampeonatoId && isEmpty" class="bg-blue-50 text-blue-700 p-4 rounded">
-        Nenhuma inscrição encontrada para este campeonato.
-    </div>
+    <EmptyState
+      v-else-if="selectedCampeonatoId && isEmpty"
+      title="Nenhuma inscrição nesta competição"
+      description="Ainda não há equipes ou atletas inscritos. Você pode registrar uma inscrição agora."
+    >
+      <template #action>
+        <router-link to="/admin/inscricoes/nova" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">Nova Inscrição</router-link>
+      </template>
+    </EmptyState>
 
-    <div v-else-if="!selectedCampeonatoId" class="text-center text-gray-500 py-8">
-        Selecione um campeonato acima.
-    </div>
+    <EmptyState
+      v-else-if="!selectedCampeonatoId"
+      title="Selecione uma competição"
+      description="Escolha a competição acima para ver as inscrições."
+    />
 
     <!-- Tabela de Equipes (Se for competição de equipes) -->
     <div v-else-if="isTeamCompetition" class="bg-white shadow-md rounded-lg overflow-hidden">
@@ -47,19 +56,19 @@
         <table class="min-w-full leading-normal">
             <thead>
                 <tr>
-                    <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">
                         Equipe
                     </th>
-                    <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">
                         Responsável
                     </th>
-                    <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">
                         Atletas
                     </th>
-                    <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">
                         Status
                     </th>
-                    <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">
                         Ações
                     </th>
                 </tr>
@@ -78,9 +87,7 @@
                         {{ equipe.atletas_count || 0 }}
                     </td>
                     <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                        <span :class="statusClassEquipe(equipe.status_inscricao)" class="px-2 py-1 font-semibold leading-tight rounded-full text-xs">
-                            {{ equipe.status_inscricao || 'pendente' }}
-                        </span>
+                        <StatusBadge :status="equipe.status_inscricao || 'pendente'" />
                     </td>
                     <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                         <div class="flex flex-col gap-1">
@@ -98,7 +105,7 @@
                             >
                                 Rejeitar
                             </button>
-                            <router-link :to="`/equipes/${equipe.id}`" class="text-blue-600 hover:text-blue-900 text-xs mt-1">
+                            <router-link :to="`/admin/equipes/${equipe.id}`" class="text-blue-600 hover:text-blue-900 text-xs mt-1 min-h-11 inline-flex items-center">
                                 Ver Detalhes
                             </router-link>
                         </div>
@@ -117,19 +124,19 @@
       <table class="min-w-full leading-normal">
         <thead>
           <tr>
-            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">
               Atleta
             </th>
-            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">
               Data
             </th>
-            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">
               Status
             </th>
-            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">
               Pagamento
             </th>
-            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">
               Ações
             </th>
           </tr>
@@ -144,14 +151,10 @@
               {{ new Date(inscricao.created_at).toLocaleDateString() }}
             </td>
             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-              <span :class="statusClass(inscricao.status)" class="px-2 py-1 font-semibold leading-tight rounded-full text-xs">
-                {{ inscricao.status }}
-              </span>
+              <StatusBadge :status="inscricao.status" />
             </td>
             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-               <span :class="pagamentoClass(inscricao.status_pagamento)" class="px-2 py-1 font-semibold leading-tight rounded-full text-xs">
-                {{ inscricao.status_pagamento.replace('_', ' ') }}
-              </span>
+               <StatusBadge :status="inscricao.status_pagamento" />
               <div v-if="inscricao.valor_pago" class="text-xs text-gray-500 mt-1">
                   R$ {{ inscricao.valor_pago }}
               </div>
@@ -185,6 +188,13 @@
         </tbody>
       </table>
     </div>
+    <ConfirmDialog
+      :is-open="confirm.isOpen.value"
+      :title="confirm.title.value"
+      :message="confirm.message.value"
+      @confirm="confirm.confirm"
+      @cancel="confirm.cancel"
+    />
   </div>
 </template>
 
@@ -193,6 +203,13 @@ import { ref, onMounted, computed } from 'vue';
 import { useInscricaoStore } from '../store/inscricaoStore';
 import { useCampeonatoStore } from '../../campeonatos/store/campeonatoStore';
 import { useEquipeStore } from '@/modules/equipes/store/equipeStore';
+import PageHeader from '@/components/ui/PageHeader.vue';
+import EmptyState from '@/components/ui/EmptyState.vue';
+import StatusBadge from '@/components/ui/StatusBadge.vue';
+import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
+import { useConfirmDialog } from '@/composables/useConfirmDialog';
+
+const confirm = useConfirmDialog();
 
 const inscricaoStore = useInscricaoStore();
 const campeonatoStore = useCampeonatoStore();
@@ -227,9 +244,6 @@ onMounted(async () => {
 
 const carregarInscricoes = () => {
     if (selectedCampeonatoId.value) {
-        // Se for campeonato de equipes, buscar equipes
-        // Se não, buscar inscrições de atletas
-        // Como o selectedCampeonato pode demorar a atualizar (computed), usamos o find direto
         const camp = campeonatos.value.find(c => c.id === selectedCampeonatoId.value);
         if (camp && camp.tipo_competicao === 'equipe') {
              equipeStore.fetchEquipes(selectedCampeonatoId.value);
@@ -239,44 +253,16 @@ const carregarInscricoes = () => {
     }
 };
 
-const statusClass = (status) => {
-    switch(status) {
-        case 'confirmada': return 'text-green-900 bg-green-200';
-        case 'pendente': return 'text-yellow-900 bg-yellow-200';
-        case 'cancelada': return 'text-gray-900 bg-gray-200';
-        case 'rejeitada': return 'text-red-900 bg-red-200';
-        default: return 'text-gray-900 bg-gray-200';
-    }
-};
-
-const statusClassEquipe = (status) => {
-    switch(status) {
-        case 'aprovada': return 'text-green-900 bg-green-200';
-        case 'pendente': return 'text-yellow-900 bg-yellow-200';
-        case 'rejeitada': return 'text-red-900 bg-red-200';
-        default: return 'text-gray-900 bg-gray-200';
-    }
-};
-
-const pagamentoClass = (status) => {
-    switch(status) {
-        case 'pago': return 'text-green-900 bg-green-200';
-        case 'isento': return 'text-blue-900 bg-blue-200';
-        case 'nao_pago': return 'text-red-900 bg-red-200';
-        default: return 'text-gray-900 bg-gray-200';
-    }
-};
-
 const atualizarStatus = async (inscricao, novoStatus) => {
-    if (confirm(`Deseja alterar o status para ${novoStatus}?`)) {
-        await inscricaoStore.updateInscricao(inscricao.id, { status: novoStatus });
-    }
+    const ok = await confirm.ask(`Alterar o status para ${novoStatus}?`, 'Atualizar inscrição');
+    if (!ok) return;
+    await inscricaoStore.updateInscricao(inscricao.id, { status: novoStatus });
 };
 
 const atualizarStatusEquipe = async (equipe, novoStatus) => {
-    if (confirm(`Deseja alterar o status da equipe para ${novoStatus}?`)) {
-        await equipeStore.updateStatus(equipe.id, novoStatus);
-    }
+    const ok = await confirm.ask(`Alterar o status da equipe para ${novoStatus}?`, 'Atualizar equipe');
+    if (!ok) return;
+    await equipeStore.updateStatus(equipe.id, novoStatus);
 };
 
 const confirmarPagamento = async (inscricao) => {

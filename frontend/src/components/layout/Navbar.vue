@@ -47,10 +47,10 @@
         <button class="flex items-center space-x-2 text-gray-700 hover:text-gray-900 focus:outline-none">
           <img
             class="h-8 w-8 rounded-full object-cover"
-            src="https://ui-avatars.com/api/?name=Admin+User&background=random"
-            alt="User avatar"
+            :src="avatarUrl"
+            alt="Avatar do usuário"
           />
-          <span class="font-medium hidden sm:inline">Admin</span>
+          <span class="font-medium hidden sm:inline truncate max-w-[10rem]">{{ displayName }}</span>
         </button>
         
         <button 
@@ -76,7 +76,13 @@ import memoriaService from '../../modules/memoria/services/memoriaService';
 const emit = defineEmits(['toggle-sidebar']);
 const route = useRoute();
 const router = useRouter();
-const title = computed(() => route.meta.title || 'Dashboard');
+const title = computed(() => route.meta.title || 'Painel');
+const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+const displayName = computed(() => currentUser.name || currentUser.nome || 'Usuário');
+const avatarUrl = computed(() => {
+  const name = encodeURIComponent(displayName.value);
+  return `https://ui-avatars.com/api/?name=${name}&background=random`;
+});
 const bellOpen = ref(false);
 const unread = ref(0);
 const notices = ref([]);

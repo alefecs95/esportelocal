@@ -10,6 +10,28 @@
     </div>
 
     <div v-else class="space-y-6">
+      <div v-if="error" class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
+        {{ error }}
+      </div>
+
+      <div v-if="pendencias > 0" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <router-link to="/admin/atletas" class="bg-amber-50 border border-amber-200 rounded-xl p-4 hover:bg-amber-100">
+          <p class="text-sm font-semibold text-amber-900">Validação TSE pendente</p>
+          <p class="text-2xl font-bold text-amber-800 mt-1">{{ stats.cards?.atletas_tse_pendentes || 0 }}</p>
+        </router-link>
+        <router-link to="/admin/memoria" class="bg-blue-50 border border-blue-200 rounded-xl p-4 hover:bg-blue-100">
+          <p class="text-sm font-semibold text-blue-900">Fila da Memória</p>
+          <p class="text-2xl font-bold text-blue-800 mt-1">{{ stats.cards?.memoria_fila || 0 }}</p>
+        </router-link>
+        <router-link to="/admin/calendario" class="bg-orange-50 border border-orange-200 rounded-xl p-4 hover:bg-orange-100">
+          <p class="text-sm font-semibold text-orange-900">Jogos sem local</p>
+          <p class="text-2xl font-bold text-orange-800 mt-1">{{ stats.cards?.jogos_sem_local || 0 }}</p>
+        </router-link>
+      </div>
+
+      <div v-if="stats.cards?.jogos_sem_sumula" class="bg-white border border-gray-100 rounded-xl p-4 text-sm text-gray-700">
+        Há <strong>{{ stats.cards.jogos_sem_sumula }}</strong> jogos finalizados sem placar/súmula.
+      </div>
       <!-- Stats Cards -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
@@ -133,7 +155,7 @@
                   </div>
                 </div>
               </div>
-              <router-link :to="`/partidas/${jogo.id}`" class="p-2 text-gray-400 hover:text-blue-600 transition-colors">
+              <router-link :to="`/admin/partidas/${jogo.id}`" class="p-2 text-gray-400 hover:text-blue-600 transition-colors">
                 <ArrowRight :size="18" />
               </router-link>
             </div>
@@ -167,17 +189,30 @@
         </div>
       </div>
     </div>
+    <ConfirmDialog
+      :is-open="confirm.isOpen.value"
+      :title="confirm.title.value"
+      :message="confirm.message.value"
+      @confirm="confirm.confirm"
+      @cancel="confirm.cancel"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
+import { useToast } from 'vue-toastification';
 import dashboardService from '../services/dashboardService';
 import managerService from '../../manager/services/managerService';
 import { Users, Trophy, Shield, FileText, Calendar, MapPin, ArrowRight, BarChart3, TrendingUp, AlertCircle } from 'lucide-vue-next';
+import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
+import { useConfirmDialog } from '@/composables/useConfirmDialog';
 
+const toast = useToast();
+const confirm = useConfirmDialog();
 const stats = ref({});
 const loading = ref(true);
+const error = ref('');
 
 const currentDate = new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
@@ -186,13 +221,19 @@ const maxAtletas = computed(() => {
   return Math.max(...stats.value.graficos.atletas_modalidade.map(i => i.total));
 });
 
+const pendencias = computed(() => {
+  const cards = stats.value.cards || {};
+  return (cards.atletas_tse_pendentes || 0) + (cards.memoria_fila || 0) + (cards.jogos_sem_local || 0);
+});
+
 const loadStats = async () => {
   loading.value = true;
+  error.value = '';
   try {
     const response = await dashboardService.getStats();
     stats.value = response.data || {};
   } catch (e) {
-    console.error('Erro ao carregar dashboard', e);
+    error.value = 'Não foi possível carregar o painel. Tente novamente.';
   } finally {
     loading.value = false;
   }
@@ -209,22 +250,26 @@ const formatTime = (dateString) => {
 };
 
 const approveInscricao = async (id) => {
-  if (!confirm('Deseja aprovar esta inscrição?')) return;
+  const ok = await confirm.ask('Aprovar esta inscrição de equipe?', 'Aprovar inscrição');
+  if (!ok) return;
   try {
     await managerService.updateTeamStatus(id, 'aprovada');
+    toast.success('Inscrição aprovada.');
     await loadStats();
   } catch (e) {
-    alert('Erro ao aprovar inscrição');
+    toast.error('Erro ao aprovar inscrição.');
   }
 };
 
 const rejectInscricao = async (id) => {
-  if (!confirm('Deseja rejeitar esta inscrição?')) return;
+  const ok = await confirm.ask('Rejeitar esta inscrição de equipe?', 'Rejeitar inscrição');
+  if (!ok) return;
   try {
     await managerService.updateTeamStatus(id, 'rejeitada');
+    toast.success('Inscrição rejeitada.');
     await loadStats();
   } catch (e) {
-    alert('Erro ao rejeitar inscrição');
+    toast.error('Erro ao rejeitar inscrição.');
   }
 };
 

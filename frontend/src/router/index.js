@@ -36,18 +36,22 @@ router.beforeEach((to, from, next) => {
 
             if (to.path.startsWith('/admin')) {
                 const perfil = user.perfil;
+                if (to.path === '/admin/acesso-negado') {
+                    next();
+                    return;
+                }
                 if (perfil === 'ARBITRO') {
                     if (!to.path.startsWith('/admin/arbitro/')) {
-                        next('/admin/arbitro/minhas-partidas');
+                        next('/admin/acesso-negado');
                         return;
                     }
                 } else if (perfil === 'REDATOR') {
                     if (!to.path.startsWith('/admin/noticias') && !to.path.startsWith('/admin/memoria')) {
-                        next('/admin/noticias');
+                        next('/admin/acesso-negado');
                         return;
                     }
                 } else if (perfil !== 'ADMIN' && perfil !== 'SUPER_ADMIN') {
-                    next(homeForUser(user));
+                    next('/admin/acesso-negado');
                     return;
                 }
             }

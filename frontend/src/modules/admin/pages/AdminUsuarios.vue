@@ -30,9 +30,9 @@
         </div>
         <select v-model="filtros.perfil" class="px-3 py-2 border border-gray-300 rounded-lg">
           <option value="">Todos os perfis</option>
-          <option value="ADMIN">Admin</option>
+          <option value="ADMIN">Administrador</option>
           <option value="ARBITRO">Árbitro</option>
-          <option value="RESPONSAVEL">Responsável</option>
+          <option value="RESPONSAVEL">Responsável do clube</option>
           <option value="REDATOR">Redator</option>
           <option value="ATLETA">Atleta</option>
         </select>
@@ -46,50 +46,30 @@
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
       <div v-if="loading" class="p-8 text-center text-gray-500">Carregando usuários...</div>
-      <div v-else-if="usuarios.length === 0" class="p-8 text-center text-gray-500">Nenhum usuário encontrado.</div>
-      <div v-else class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Nome</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">CPF</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">E-mail</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Perfil</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-              <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Ações</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100">
-            <tr v-for="usuario in usuarios" :key="usuario.id">
-              <td class="px-4 py-3 text-sm font-semibold text-gray-800">{{ usuario.name }}</td>
-              <td class="px-4 py-3 text-sm text-gray-600">{{ formatCpf(usuario.cpf) }}</td>
-              <td class="px-4 py-3 text-sm text-gray-600">{{ usuario.email || '-' }}</td>
-              <td class="px-4 py-3">
-                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold" :class="perfilBadge(usuario.perfil)">
-                  {{ perfilLabel(usuario.perfil) }}
-                </span>
-              </td>
-              <td class="px-4 py-3">
-                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold" :class="usuario.status === 'ATIVO' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'">
-                  {{ usuario.status === 'ATIVO' ? 'Ativo' : 'Inativo' }}
-                </span>
-              </td>
-              <td class="px-4 py-3">
-                <div class="flex justify-end gap-2">
-                  <button @click="abrirModal(usuario)" class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-md border border-blue-200 text-blue-700 hover:bg-blue-50">
-                    <Pencil :size="14" />
-                    Editar
-                  </button>
-                  <button @click="deletarUsuario(usuario)" class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-md border border-red-200 text-red-700 hover:bg-red-50">
-                    <Trash2 :size="14" />
-                    Deletar
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <EmptyState v-else-if="usuarios.length === 0" title="Nenhum usuário encontrado" description="Cadastre um usuário da secretaria para começar." />
+      <BaseTable v-else :headers="headers" :items="usuarios" actions>
+        <template #cpf="{ item }">{{ formatCpfDisplay(item.cpf) }}</template>
+        <template #perfil="{ item }">
+          <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold" :class="perfilBadge(item.perfil)">
+            {{ perfilLabel(item.perfil) }}
+          </span>
+        </template>
+        <template #status="{ item }">
+          <StatusBadge :status="item.status === 'ATIVO' ? 'ativo' : 'inativo'" />
+        </template>
+        <template #actions="{ item }">
+          <div class="flex justify-end gap-2">
+            <button @click="abrirModal(item)" class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-md border border-blue-200 text-blue-700 hover:bg-blue-50">
+              <Pencil :size="14" />
+              Editar
+            </button>
+            <button @click="deletarUsuario(item)" class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-md border border-red-200 text-red-700 hover:bg-red-50">
+              <Trash2 :size="14" />
+              Deletar
+            </button>
+          </div>
+        </template>
+      </BaseTable>
     </div>
 
     <div v-if="modal.aberto" class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
@@ -110,7 +90,7 @@
             </div>
             <div>
               <label class="text-sm font-medium text-gray-700">CPF</label>
-              <input v-model="form.cpf" type="text" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg" />
+              <input v-model="form.cpf" type="text" maxlength="14" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg" @input="form.cpf = formatCpf($event.target.value)" />
               <p v-if="errors.cpf" class="mt-1 text-xs text-red-600">{{ errors.cpf }}</p>
             </div>
           </div>
@@ -132,9 +112,9 @@
             <div>
               <label class="text-sm font-medium text-gray-700">Perfil</label>
               <select v-model="form.perfil" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg">
-                <option value="ADMIN">Admin</option>
+                <option value="ADMIN">Administrador</option>
                 <option value="ARBITRO">Árbitro</option>
-                <option value="RESPONSAVEL">Responsável</option>
+                <option value="RESPONSAVEL">Responsável do clube</option>
                 <option value="REDATOR">Redator</option>
                 <option value="ATLETA">Atleta</option>
               </select>
@@ -165,6 +145,14 @@
         </form>
       </div>
     </div>
+
+    <ConfirmDialog
+      :is-open="confirmDlg.isOpen.value"
+      :title="confirmDlg.title.value"
+      :message="confirmDlg.message.value"
+      @confirm="confirmDlg.confirm"
+      @cancel="confirmDlg.cancel"
+    />
   </div>
 </template>
 
@@ -173,8 +161,23 @@ import { ref, reactive, onMounted, watch } from 'vue';
 import { Plus, Users, Search, Pencil, Trash2, X } from 'lucide-vue-next';
 import { useToast } from 'vue-toastification';
 import api from '@/services/api';
+import { formatCpf, formatCpfDisplay } from '@/utils/formatCpf';
+import { perfilLabel } from '@/utils/perfilLabels';
+import BaseTable from '@/components/ui/BaseTable.vue';
+import EmptyState from '@/components/ui/EmptyState.vue';
+import StatusBadge from '@/components/ui/StatusBadge.vue';
+import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
+import { useConfirmDialog } from '@/composables/useConfirmDialog';
 
 const toast = useToast();
+const confirmDlg = useConfirmDialog();
+const headers = [
+  { key: 'name', label: 'Nome' },
+  { key: 'cpf', label: 'CPF' },
+  { key: 'email', label: 'E-mail' },
+  { key: 'perfil', label: 'Perfil' },
+  { key: 'status', label: 'Status' },
+];
 const loading = ref(true);
 const salvando = ref(false);
 const usuarios = ref([]);
@@ -306,9 +309,8 @@ const salvar = async () => {
 };
 
 const deletarUsuario = async (usuario) => {
-  if (!confirm(`Tem certeza que deseja deletar o usuário "${usuario.name}"?`)) {
-    return;
-  }
+  const ok = await confirmDlg.ask(`Deletar o usuário "${usuario.name}"?`, 'Deletar usuário');
+  if (!ok) return;
   try {
     await api.delete(`/usuarios/${usuario.id}`);
     toast.success('Usuário deletado com sucesso.');
@@ -316,20 +318,6 @@ const deletarUsuario = async (usuario) => {
   } catch (error) {
     toast.error(error.response?.data?.message || 'Erro ao deletar usuário.');
   }
-};
-
-const formatCpf = (cpf) => {
-  const digits = String(cpf || '').replace(/\D/g, '').padStart(11, '0').slice(-11);
-  return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-};
-
-const perfilLabel = (perfil) => {
-  if (perfil === 'ADMIN') return 'Admin';
-  if (perfil === 'ARBITRO') return 'Árbitro';
-  if (perfil === 'RESPONSAVEL') return 'Responsável';
-  if (perfil === 'REDATOR') return 'Redator';
-  if (perfil === 'ATLETA') return 'Atleta';
-  return perfil;
 };
 
 const perfilBadge = (perfil) => {

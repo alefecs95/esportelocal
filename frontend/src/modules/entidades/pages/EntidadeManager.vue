@@ -2,8 +2,8 @@
   <div class="p-6">
     <div class="mb-6 flex justify-between items-center">
       <div>
-        <h1 class="text-2xl font-bold text-gray-800">Base de Clubes/Entidades</h1>
-        <p class="text-gray-500 mt-1">Gerencie os clubes que participam dos campeonatos.</p>
+        <h1 class="text-2xl font-bold text-gray-800">Clubes</h1>
+        <p class="text-gray-500 mt-1">Gerencie os clubes que participam das competições.</p>
       </div>
       <button 
         @click="showCreateModal = true"

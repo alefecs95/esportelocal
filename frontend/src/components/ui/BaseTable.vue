@@ -1,7 +1,7 @@
 <template>
   <div class="overflow-x-auto shadow-md sm:rounded-lg">
-    <table class="w-full text-sm text-left text-gray-500">
-      <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+    <table class="w-full text-sm text-left text-gray-800">
+      <thead class="text-xs text-gray-800 uppercase bg-gray-100">
         <tr>
           <th v-for="header in headers" :key="header.key" scope="col" class="px-6 py-3">
             {{ header.label }}
@@ -27,8 +27,8 @@
           </td>
         </tr>
         <tr v-if="!items || items.length === 0">
-          <td :colspan="headers.length + (actions ? 1 : 0)" class="px-6 py-4 text-center">
-            Nenhum registro encontrado.
+          <td :colspan="headers.length + (actions ? 1 : 0)" class="px-6 py-8 text-center text-gray-600">
+            <slot name="empty">Nenhum registro encontrado.</slot>
           </td>
         </tr>
       </tbody>

@@ -3,7 +3,7 @@
     <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
       <h1 class="text-2xl font-bold text-gray-800">Competições</h1>
       <BaseButton variant="primary" @click="$router.push('/admin/competicoes/novo')">
-        Novo Campeonato
+        Nova Competição
       </BaseButton>
     </div>
 
@@ -50,6 +50,17 @@
         <span class="block sm:inline">{{ error }}</span>
       </div>
 
+      <div v-else-if="!campeonatos.length">
+        <EmptyState
+          title="Nenhuma competição cadastrada"
+          description="Crie a primeira competição da temporada para abrir inscrições e gerar a tabela."
+        >
+          <template #action>
+            <BaseButton variant="primary" @click="$router.push('/admin/competicoes/novo')">Nova Competição</BaseButton>
+          </template>
+        </EmptyState>
+      </div>
+
       <div v-else>
         <CampeonatoTable
           :items="campeonatos"
@@ -83,6 +94,7 @@ import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseCard from '@/components/ui/BaseCard.vue';
 import BaseModal from '@/components/ui/BaseModal.vue';
 import CampeonatoTable from '../components/CampeonatoTable.vue';
+import EmptyState from '@/components/ui/EmptyState.vue';
 
 const router = useRouter();
 const store = useCampeonatoStore();

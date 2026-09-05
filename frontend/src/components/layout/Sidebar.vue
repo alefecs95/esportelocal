@@ -11,167 +11,181 @@
     </div>
 
     <nav class="flex-1 py-6 px-3 space-y-1" @click="handleNavigate">
-      
-      <!-- MENU EXCLUSIVO PARA ARBITRO -->
       <template v-if="isArbitro">
-          <router-link to="/admin/arbitro/minhas-partidas" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors" active-class="bg-gray-800 text-white font-medium">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-whistle"><path d="M12 2v2"/><path d="M12 2c2.76 0 5 2.24 5 5v1c0 2.76-2.24 5-5 5S7 10.76 7 16a5 5 0 0 0 5 5"/><path d="M12 21a5 5 0 0 0 5-5v-1c0-2.76-2.24-5-5-5"/><path d="M14.5 2C15.8 2 17 3.2 17 4.5V9a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2V4.5C7 3.2 8.2 2 9.5 2Z"/></svg>
-            Painel do Árbitro
-          </router-link>
+        <router-link to="/admin/arbitro/minhas-partidas" class="nav-link" active-class="bg-gray-800 text-white font-medium">
+          <Trophy :size="20" />
+          Painel do Árbitro
+        </router-link>
       </template>
 
       <template v-else-if="isRedator">
-        <router-link to="/admin/noticias" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors" active-class="bg-gray-800 text-white font-medium">
+        <router-link to="/admin/noticias" class="nav-link" active-class="bg-gray-800 text-white font-medium">
           <FileText :size="20" />
           Notícias
         </router-link>
-        <router-link to="/admin/memoria" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors" active-class="bg-gray-800 text-white font-medium">
+        <router-link to="/admin/memoria" class="nav-link" active-class="bg-gray-800 text-white font-medium">
           <Landmark :size="20" />
           Memória
         </router-link>
       </template>
 
-      <!-- MENU PARA ADMIN (original) -->
       <template v-else>
-        <router-link to="/admin/dashboard" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors" active-class="bg-gray-800 text-white font-medium">
+        <p class="section-label">Início</p>
+        <router-link to="/admin/dashboard" class="nav-link" active-class="bg-gray-800 text-white font-medium">
           <LayoutDashboard :size="20" />
-          Dashboard
+          Painel
         </router-link>
-
-        <router-link to="/admin/calendario" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors" active-class="bg-gray-800 text-white font-medium">
+        <router-link to="/admin/calendario" class="nav-link" active-class="bg-gray-800 text-white font-medium">
           <Calendar :size="20" />
           Calendário
         </router-link>
 
-        <div class="pt-4 pb-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-          Gestão
-        </div>
-
-        <router-link to="/admin/temporadas" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors" active-class="bg-gray-800 text-white font-medium">
-          <History :size="20" />
-          Temporadas
-        </router-link>
-
-        <router-link to="/admin/atletas" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors" active-class="bg-gray-800 text-white font-medium">
+        <p class="section-label">Esportes</p>
+        <router-link to="/admin/atletas" class="nav-link" active-class="bg-gray-800 text-white font-medium">
           <Users :size="20" />
           Atletas
         </router-link>
-
-        <router-link to="/admin/entidades" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors" active-class="bg-gray-800 text-white font-medium">
+        <router-link to="/admin/entidades" class="nav-link" active-class="bg-gray-800 text-white font-medium">
           <Shield :size="20" />
-          Clubes/Entidades
+          Clubes
+        </router-link>
+        <router-link to="/admin/competicoes" class="nav-link" active-class="bg-gray-800 text-white font-medium">
+          <Trophy :size="20" />
+          Competições
+        </router-link>
+        <router-link to="/admin/inscricoes" class="nav-link" active-class="bg-gray-800 text-white font-medium">
+          <ClipboardList :size="20" />
+          Inscrições
         </router-link>
 
-        <router-link to="/admin/noticias" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors" active-class="bg-gray-800 text-white font-medium">
+        <button
+          type="button"
+          class="nav-link w-full justify-between"
+          @click.stop="configurarAberto = !configurarAberto"
+        >
+          <span class="flex items-center gap-3">
+            <Settings :size="20" />
+            Configurar
+          </span>
+          <ChevronDown :size="16" class="transition-transform" :class="configurarAberto ? 'rotate-180' : ''" />
+        </button>
+        <div v-if="configurarAberto" class="ml-4 space-y-1">
+          <router-link to="/admin/temporadas" class="nav-link text-sm" active-class="bg-gray-800 text-white font-medium">
+            <History :size="18" />
+            Temporadas
+          </router-link>
+          <router-link to="/admin/modalidades" class="nav-link text-sm" active-class="bg-gray-800 text-white font-medium">
+            <Dumbbell :size="18" />
+            Modalidades
+          </router-link>
+        </div>
+
+        <p class="section-label">Comunicação</p>
+        <router-link to="/admin/noticias" class="nav-link" active-class="bg-gray-800 text-white font-medium">
           <FileText :size="20" />
           Notícias
         </router-link>
-
-        <router-link to="/admin/memoria" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors" active-class="bg-gray-800 text-white font-medium">
+        <router-link to="/admin/memoria" class="nav-link" active-class="bg-gray-800 text-white font-medium">
           <Landmark :size="20" />
           Memória
         </router-link>
 
-        <div class="pt-4 pb-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-          Competições
-        </div>
-
-        <router-link to="/admin/modalidades" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors" active-class="bg-gray-800 text-white font-medium">
-          <Dumbbell :size="20" />
-          Modalidades
-        </router-link>
-
-        <router-link to="/admin/competicoes" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors" active-class="bg-gray-800 text-white font-medium">
-          <Trophy :size="20" />
-          Competições
-        </router-link>
-
-        <router-link to="/admin/arbitro/minhas-partidas" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors" active-class="bg-gray-800 text-white font-medium">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-whistle"><path d="M12 2v2"/><path d="M12 2c2.76 0 5 2.24 5 5v1c0 2.76-2.24 5-5 5S7 10.76 7 16a5 5 0 0 0 5 5"/><path d="M12 21a5 5 0 0 0 5-5v-1c0-2.76-2.24-5-5-5"/><path d="M14.5 2C15.8 2 17 3.2 17 4.5V9a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2V4.5C7 3.2 8.2 2 9.5 2Z"/></svg>
-          Painel do Árbitro
-        </router-link>
-
-        <router-link to="/admin/inscricoes" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors" active-class="bg-gray-800 text-white font-medium">
-          <FileText :size="20" />
-          Inscrições
-        </router-link>
-
-        <div class="pt-4 pb-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-          Relatórios
-        </div>
-
-        <router-link to="/admin/ranking" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors" active-class="bg-gray-800 text-white font-medium">
+        <p class="section-label">Relatórios</p>
+        <router-link to="/admin/ranking" class="nav-link" active-class="bg-gray-800 text-white font-medium">
           <BarChart3 :size="20" />
-          Ranking Geral
+          Ranking
         </router-link>
 
-        <router-link to="/admin/ranking/modalidade" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors" active-class="bg-gray-800 text-white font-medium">
-          <TrendingUp :size="20" />
-          Ranking Mod.
-        </router-link>
-
-        <div class="pt-4 pb-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-          Configurações
-        </div>
-
-        <router-link to="/admin/usuarios" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors" active-class="bg-gray-800 text-white font-medium">
+        <p class="section-label">Configurações</p>
+        <router-link to="/admin/usuarios" class="nav-link" active-class="bg-gray-800 text-white font-medium">
           <Users :size="20" />
           Usuários
         </router-link>
-
-        <router-link to="/admin/diretoria" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors" active-class="bg-gray-800 text-white font-medium">
+        <router-link to="/admin/diretoria" class="nav-link" active-class="bg-gray-800 text-white font-medium">
           <Briefcase :size="20" />
           Diretoria
         </router-link>
-
-        <router-link to="/admin/institucional" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors" active-class="bg-gray-800 text-white font-medium">
+        <router-link to="/admin/institucional" class="nav-link" active-class="bg-gray-800 text-white font-medium">
           <Building :size="20" />
           Institucional
         </router-link>
       </template>
     </nav>
-    
+
     <div class="p-4 border-t border-gray-800">
-      <router-link to="/" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+      <router-link to="/" class="nav-link text-gray-400">
         <LogOut :size="20" />
-        Sair para Portal
+        Ver portal
       </router-link>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { 
-  LayoutDashboard, 
-  Calendar, 
-  History, 
-  Users, 
-  Shield, 
-  Dumbbell, 
-  Trophy, 
-  FileText, 
-  BarChart3, 
-  TrendingUp,
+import { computed, ref } from 'vue';
+import { useRoute } from 'vue-router';
+import {
+  LayoutDashboard,
+  Calendar,
+  History,
+  Users,
+  Shield,
+  Dumbbell,
+  Trophy,
+  FileText,
+  BarChart3,
   LogOut,
   Building,
   Briefcase,
-  Landmark
+  Landmark,
+  ClipboardList,
+  Settings,
+  ChevronDown,
 } from 'lucide-vue-next';
 
 defineProps({
   mobileOpen: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 });
 const emit = defineEmits(['close']);
+const route = useRoute();
 
 const user = JSON.parse(localStorage.getItem('user') || '{}');
 const isArbitro = computed(() => user?.perfil === 'ARBITRO');
 const isRedator = computed(() => user?.perfil === 'REDATOR');
+const configurarAberto = ref(
+  route.path.startsWith('/admin/temporadas') || route.path.startsWith('/admin/modalidades')
+);
 
-const handleNavigate = () => {
-  emit('close');
+const handleNavigate = (event) => {
+  if (event.target.closest('a')) {
+    emit('close');
+  }
 };
 </script>
+
+<style scoped>
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.5rem;
+  color: #d1d5db;
+  transition: background-color 0.15s, color 0.15s;
+}
+.nav-link:hover {
+  background-color: #1f2937;
+  color: #fff;
+}
+.section-label {
+  padding: 1rem 0.75rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+</style>

@@ -4,11 +4,30 @@
             <h1 class="text-2xl font-bold text-gray-900">Institucional e Personalização</h1>
         </div>
 
+        <div class="flex gap-2 border-b border-gray-200">
+            <button
+                type="button"
+                class="px-4 py-2 text-sm font-semibold border-b-2"
+                :class="aba === 'institucional' ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500'"
+                @click="aba = 'institucional'"
+            >
+                Institucional
+            </button>
+            <button
+                type="button"
+                class="px-4 py-2 text-sm font-semibold border-b-2"
+                :class="aba === 'whatsapp' ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500'"
+                @click="aba = 'whatsapp'"
+            >
+                WhatsApp
+            </button>
+        </div>
+
         <div class="bg-white shadow rounded-lg p-6">
             <form @submit.prevent="save" class="space-y-8">
                 
                 <!-- Identidade Visual -->
-                <div>
+                <div v-show="aba === 'institucional'">
                     <h3 class="text-lg font-medium leading-6 text-gray-900 border-b pb-2 mb-4">Identidade Visual</h3>
                     <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
                         
@@ -117,7 +136,7 @@
                 </div>
 
                 <!-- Cores e Estilo -->
-                <div>
+                <div v-show="aba === 'institucional'">
                     <h3 class="text-lg font-medium leading-6 text-gray-900 border-b pb-2 mb-4">Cores e Estilo</h3>
                     <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
                         
@@ -184,7 +203,7 @@
                 </div>
 
                 <!-- Informações da Instituição -->
-                <div>
+                <div v-show="aba === 'institucional'">
                     <h3 class="text-lg font-medium leading-6 text-gray-900 border-b pb-2 mb-4">Informações da Organização</h3>
                     <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
                         
@@ -219,7 +238,7 @@
                     </div>
                 </div>
 
-                <div>
+                <div v-show="aba === 'institucional'">
                     <h3 class="text-lg font-medium leading-6 text-gray-900 border-b pb-2 mb-4">Rodapé do Portal</h3>
                     <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
                         <div class="sm:col-span-3">
@@ -273,7 +292,7 @@
                     </div>
                 </div>
 
-                <div>
+                <div v-show="aba === 'whatsapp'">
                     <h3 class="text-lg font-medium leading-6 text-gray-900 border-b pb-2 mb-4">Integrações</h3>
                     <div class="border border-gray-200 rounded-xl p-4 bg-gradient-to-br from-white to-gray-50 space-y-5">
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
@@ -375,6 +394,7 @@ import { useTheme } from '@/composables/useTheme';
 
 const toast = useToast();
 const { updateTheme } = useTheme();
+const aba = ref('institucional');
 const loading = ref(false);
 const connectingWhatsApp = ref(false);
 const whatsappBusy = computed(() => loading.value || connectingWhatsApp.value);

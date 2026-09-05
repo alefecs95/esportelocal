@@ -329,6 +329,12 @@ const routes = [
         meta: { requiresAuth: true },
         children: [
             {
+                path: 'acesso-negado',
+                name: 'AdminForbidden',
+                component: () => import('../modules/admin/pages/ForbiddenPage.vue'),
+                meta: { title: 'Acesso restrito' }
+            },
+            {
                 path: 'dashboard',
                 name: 'Dashboard',
                 component: () => import('../modules/dashboard/pages/AdminDashboard.vue'),
@@ -548,13 +554,11 @@ const routes = [
                 path: 'ranking',
                 name: 'RankingGeral',
                 component: () => import('../modules/ranking/pages/RankingGeral.vue'),
-                meta: { title: 'Ranking Geral' }
+                meta: { title: 'Ranking' }
             },
             {
                 path: 'ranking/modalidade',
-                name: 'RankingModalidade',
-                component: () => import('../modules/ranking/pages/RankingModalidade.vue'),
-                meta: { title: 'Ranking por Modalidade' }
+                redirect: { path: '/admin/ranking', query: { tab: 'modalidade' } }
             }
         ]
     }
