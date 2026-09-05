@@ -29,15 +29,27 @@ class WhatsAppNotificationService
             return null;
         }
 
-        if (strlen($digits) === 10 || strlen($digits) === 11) {
-            $digits = '55' . $digits;
+        if (strlen($digits) === 13 && str_starts_with($digits, '55')) {
+            return $digits;
         }
 
-        if (strlen($digits) < 12 || strlen($digits) > 13) {
-            return null;
+        if (strlen($digits) === 12 && str_starts_with($digits, '55')) {
+            $ddd = substr($digits, 2, 2);
+            $subscriber = substr($digits, 4);
+            return '55' . $ddd . '9' . $subscriber;
         }
 
-        return $digits;
+        if (strlen($digits) === 11) {
+            return '55' . $digits;
+        }
+
+        if (strlen($digits) === 10) {
+            $ddd = substr($digits, 0, 2);
+            $subscriber = substr($digits, 2);
+            return '55' . $ddd . '9' . $subscriber;
+        }
+
+        return null;
     }
 
     public function dispatchMessage(string $phone, string $type, string $message, ?int $userId = null, bool $force = false): void

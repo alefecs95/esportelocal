@@ -1,5 +1,6 @@
 import { Boom } from '@hapi/boom'
 import {
+    Browsers,
     DisconnectReason,
     fetchLatestBaileysVersion,
     makeCacheableSignalKeyStore,
@@ -49,22 +50,31 @@ function normalizeDigits(number) {
 }
 
 function brazilVariants(digits) {
-    const variants = new Set([digits])
-    if (digits.startsWith('55') && digits.length === 13) {
-        const ddd = digits.slice(2, 4)
+    if (!digits.startsWith('55') || (digits.length !== 12 && digits.length !== 13)) {
+        return [digits]
+    }
+
+    const ddd = digits.slice(2, 4)
+    let thirteen = null
+    let twelve = null
+
+    if (digits.length === 13) {
+        thirteen = digits
         const subscriber = digits.slice(4)
         if (subscriber.startsWith('9') && subscriber.length === 9) {
-            variants.add(`55${ddd}${subscriber.slice(1)}`)
+            twelve = `55${ddd}${subscriber.slice(1)}`
         }
-    }
-    if (digits.startsWith('55') && digits.length === 12) {
-        const ddd = digits.slice(2, 4)
+    } else {
+        twelve = digits
         const subscriber = digits.slice(4)
-        if (!subscriber.startsWith('9')) {
-            variants.add(`55${ddd}9${subscriber}`)
-        }
+        thirteen = `55${ddd}9${subscriber}`
     }
-    return [...variants]
+
+    return [thirteen, twelve].filter(Boolean)
+}
+
+function delay(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 function asJid(value, fallbackDomain) {
@@ -89,7 +99,7 @@ async function resolveRecipient(sock, number) {
         try {
             const result = await sock.onWhatsApp(candidate)
             const hits = Array.isArray(result) ? result : [result]
-            const found = hits.find((item) => item && (item.exists || item.jid || item.lid))
+            const found = hits.find((item) => item && item.exists)
             if (!found) {
                 continue
             }
@@ -161,9 +171,9 @@ async function startSession(sessionId, { reset = false } = {}) {
         version,
         logger: pino({ level: 'silent' }),
         printQRInTerminal: false,
-        markOnlineOnConnect: false,
+        markOnlineOnConnect: true,
         syncFullHistory: false,
-        browser: ['SEMEL', 'Chrome', '120.0.0'],
+        browser: Browsers.ubuntu('Chrome'),
         auth: {
             creds: state.creds,
             keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' })),
@@ -370,28 +380,38 @@ app.post('/send/text', async (req, res) => {
             })
         }
 
-        const targets = [...new Set([recipient.lidJid, recipient.jid, recipient.pnJid].filter(Boolean))]
-        let sentTo = null
+        const pnFirst = recipient.pnJid && recipient.pnJid.includes('@s.whatsapp.net')
+            ? [recipient.pnJid, recipient.lidJid]
+            : [recipient.lidJid, recipient.jid, recipient.pnJid]
+        const targets = [...new Set(pnFirst.filter(Boolean))]
+        const sentTo = []
         let lastError = null
 
         for (const jid of targets) {
             try {
+                try {
+                    await session.sock.presenceSubscribe(jid)
+                    await session.sock.sendPresenceUpdate('composing', jid)
+                    await delay(400)
+                } catch {
+                    // ignore presence errors
+                }
+
                 logger.info({ sessionId, number, jid, lid: recipient.lidJid, pn: recipient.pnJid }, 'Enviando texto')
                 await session.sock.sendMessage(jid, { text })
-                sentTo = jid
+                sentTo.push(jid)
                 logger.info({ sessionId, jid }, 'Texto enviado')
-                break
             } catch (error) {
                 lastError = error
                 logger.warn({ sessionId, jid, err: error }, 'Falha neste JID, tentando o próximo')
             }
         }
 
-        if (!sentTo) {
+        if (!sentTo.length) {
             throw lastError || new Error('Não foi possível enviar a mensagem.')
         }
 
-        return res.json({ ok: true, jid: sentTo, lid: recipient.lidJid, pn: recipient.pnJid })
+        return res.json({ ok: true, jid: sentTo[0], sentTo, lid: recipient.lidJid, pn: recipient.pnJid })
     } catch (error) {
         logger.error({ err: error, sessionId, number }, 'Falha ao enviar mensagem')
         return res.status(500).json({
