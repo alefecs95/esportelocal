@@ -67,7 +67,18 @@ function brazilVariants(digits) {
     return [...variants]
 }
 
-async function resolveJid(sock, number) {
+function asJid(value, fallbackDomain) {
+    if (!value) {
+        return null
+    }
+    const raw = String(value)
+    if (raw.includes('@')) {
+        return raw
+    }
+    return `${raw}@${fallbackDomain}`
+}
+
+async function resolveRecipient(sock, number) {
     const digits = normalizeDigits(number)
     if (!digits) {
         return null
@@ -78,16 +89,28 @@ async function resolveJid(sock, number) {
         try {
             const result = await sock.onWhatsApp(candidate)
             const hits = Array.isArray(result) ? result : [result]
-            const found = hits.find((item) => item?.exists && item?.jid)
-            if (found?.jid) {
-                return found.jid
+            const found = hits.find((item) => item && (item.exists || item.jid || item.lid))
+            if (!found) {
+                continue
+            }
+
+            const pnJid = asJid(found.jid, 's.whatsapp.net')
+            const lidJid = asJid(found.lid, 'lid')
+            const jid = lidJid || pnJid
+            if (jid) {
+                logger.info({ candidate, jid, pnJid, lidJid, exists: found.exists }, 'JID resolvido')
+                return { jid, pnJid, lidJid }
             }
         } catch (error) {
             logger.warn({ err: error, candidate }, 'Falha ao consultar JID no WhatsApp')
         }
     }
 
-    return `${variants[0]}@s.whatsapp.net`
+    return {
+        jid: `${variants[0]}@s.whatsapp.net`,
+        pnJid: `${variants[0]}@s.whatsapp.net`,
+        lidJid: null,
+    }
 }
 
 function authPath(sessionId) {
@@ -339,18 +362,36 @@ app.post('/send/text', async (req, res) => {
     }
 
     try {
-        const jid = await resolveJid(session.sock, number)
-        if (!jid) {
+        const recipient = await resolveRecipient(session.sock, number)
+        if (!recipient?.jid) {
             return res.status(422).json({
                 ok: false,
                 message: 'Número de WhatsApp inválido.',
             })
         }
 
-        logger.info({ sessionId, number, jid }, 'Enviando texto')
-        await session.sock.sendMessage(jid, { text })
-        logger.info({ sessionId, jid }, 'Texto enviado')
-        return res.json({ ok: true, jid })
+        const targets = [...new Set([recipient.lidJid, recipient.jid, recipient.pnJid].filter(Boolean))]
+        let sentTo = null
+        let lastError = null
+
+        for (const jid of targets) {
+            try {
+                logger.info({ sessionId, number, jid, lid: recipient.lidJid, pn: recipient.pnJid }, 'Enviando texto')
+                await session.sock.sendMessage(jid, { text })
+                sentTo = jid
+                logger.info({ sessionId, jid }, 'Texto enviado')
+                break
+            } catch (error) {
+                lastError = error
+                logger.warn({ sessionId, jid, err: error }, 'Falha neste JID, tentando o próximo')
+            }
+        }
+
+        if (!sentTo) {
+            throw lastError || new Error('Não foi possível enviar a mensagem.')
+        }
+
+        return res.json({ ok: true, jid: sentTo, lid: recipient.lidJid, pn: recipient.pnJid })
     } catch (error) {
         logger.error({ err: error, sessionId, number }, 'Falha ao enviar mensagem')
         return res.status(500).json({
