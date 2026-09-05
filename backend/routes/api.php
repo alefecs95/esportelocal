@@ -202,7 +202,7 @@ Route::prefix('v1')->group(function () {
         Route::get('users/arbitros', [UserController::class, 'getArbitros']);
         Route::get('atletas/consulta-cpf/{cpf}', [AtletaController::class, 'consultarCpf']);
         Route::post('atletas/consulta-titulo', [AtletaController::class, 'consultarTitulo']);
-        Route::apiResource('atletas', AtletaController::class);
+        Route::apiResource('atletas', AtletaController::class)->parameters(['atletas' => 'id']);
         Route::apiResource('modalidades', ModalidadeController::class)->except(['index']);
         Route::get('filtros/cidades-eleitorais', [FiltroController::class, 'cidadesEleitorais']);
         Route::get('filtros/bairros-eleitorais', [FiltroController::class, 'bairrosEleitorais']);

@@ -96,9 +96,28 @@ class AtletaService
     public function find(int $id): ?Atleta
     {
         $atleta = $this->atletaRepository->find($id);
-        if ($atleta) {
-            $atleta->load(['arquivos', 'modalidades']);
+        if (!$atleta) {
+            return null;
         }
+
+        try {
+            $atleta->load(['arquivos']);
+        } catch (Exception $e) {
+            Log::warning('Falha ao carregar arquivos do atleta', [
+                'atleta_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        try {
+            $atleta->load(['modalidades']);
+        } catch (Exception $e) {
+            Log::warning('Falha ao carregar modalidades do atleta', [
+                'atleta_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
         return $atleta;
     }
 

@@ -4,9 +4,10 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Atleta;
+use App\Models\User;
 use App\Http\Requests\StoreAtletaRequest;
 use App\Http\Requests\UpdateAtletaRequest;
-use App\Models\User;
+use App\Models\WhatsAppNotification;
 use App\Scopes\TenantScope;
 use App\Services\AtletaService;
 use App\Services\CpfService;
@@ -166,31 +167,27 @@ class AtletaController extends Controller
 
     public function show(Request $request): JsonResponse
     {
-        $id = $this->resolveAtletaRouteId($request);
-        $atleta = $id ? $this->atletaService->find($id) : null;
-        if (!$atleta) {
-            return $this->response(false, 'Atleta não encontrado', [], 404);
-        }
+        try {
+            $id = $this->resolveAtletaRouteId($request);
+            $atleta = $id ? $this->atletaService->find($id) : null;
+            if (!$atleta) {
+                return $this->response(false, 'Atleta não encontrado', [], 404);
+            }
 
-        $phone = $this->whatsAppNotificationService->normalizePhone($atleta->telefone);
-        $userAtleta = $this->findAtletaUser($atleta);
-        $preference = null;
-        if ($phone || $userAtleta?->id) {
-            $preference = \App\Models\WhatsAppNotification::query()
-                ->where('prefeitura_id', $atleta->prefeitura_id)
-                ->where(function ($query) use ($phone, $userAtleta) {
-                    if ($phone) {
-                        $query->orWhere('phone', $phone);
-                    }
-                    if ($userAtleta?->id) {
-                        $query->orWhere('user_id', $userAtleta->id);
-                    }
-                })
-                ->first();
-        }
-        $atleta->setAttribute('receive_notifications', $preference?->receive_notifications ?? true);
+            $atleta->setAttribute(
+                'receive_notifications',
+                $this->resolveWhatsAppPreference($atleta)
+            );
 
-        return $this->response(true, 'Atleta encontrado com sucesso', $atleta);
+            return $this->response(true, 'Atleta encontrado com sucesso', $atleta);
+        } catch (\Throwable $e) {
+            Log::error('Erro ao carregar atleta', [
+                'id' => $request->route('atleta') ?? $request->route('id'),
+                'error' => $e->getMessage(),
+            ]);
+
+            return $this->response(false, 'Erro ao carregar atleta: ' . $e->getMessage(), [], 500);
+        }
     }
 
     public function update(UpdateAtletaRequest $request): JsonResponse
@@ -654,6 +651,38 @@ class AtletaController extends Controller
         }
 
         return $candidatos->first();
+    }
+
+    private function resolveWhatsAppPreference(Atleta $atleta): bool
+    {
+        try {
+            $phone = $this->whatsAppNotificationService->normalizePhone($atleta->telefone);
+            $userAtleta = $this->findAtletaUser($atleta);
+            if (!$phone && !$userAtleta?->id) {
+                return true;
+            }
+
+            $preference = WhatsAppNotification::query()
+                ->where('prefeitura_id', $atleta->prefeitura_id)
+                ->where(function ($query) use ($phone, $userAtleta) {
+                    if ($phone) {
+                        $query->orWhere('phone', $phone);
+                    }
+                    if ($userAtleta?->id) {
+                        $query->orWhere('user_id', $userAtleta->id);
+                    }
+                })
+                ->first();
+
+            return (bool) ($preference?->receive_notifications ?? true);
+        } catch (\Throwable $e) {
+            Log::warning('Falha ao consultar preferência de WhatsApp do atleta', [
+                'atleta_id' => $atleta->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return true;
+        }
     }
 
     private function resolveAtletaRouteId(Request $request): ?int

@@ -43,7 +43,6 @@ class Atleta extends Model
     ];
 
     protected $casts = [
-        'data_nascimento' => 'date',
         'acesso_ativo' => 'boolean',
         'pode_participar_competicoes' => 'boolean',
         'titulo_verificado' => 'boolean',
@@ -51,6 +50,24 @@ class Atleta extends Model
     ];
 
     protected $appends = ['foto_url'];
+
+    protected function serializeDate(\DateTimeInterface $date): string
+    {
+        return $date->format('Y-m-d');
+    }
+
+    public function getDataNascimentoAttribute($value): ?string
+    {
+        if (!$value || $value === '0000-00-00' || $value === '0000-00-00 00:00:00') {
+            return null;
+        }
+
+        try {
+            return \Carbon\Carbon::parse($value)->format('Y-m-d');
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
 
     public function getFotoUrlAttribute()
     {
