@@ -164,19 +164,40 @@ class AtletaController extends Controller
         }
     }
 
-    public function show(string $id): JsonResponse
+    public function show(Request $request): JsonResponse
     {
-        $atleta = $this->atletaService->find($id);
+        $id = $this->resolveAtletaRouteId($request);
+        $atleta = $id ? $this->atletaService->find($id) : null;
         if (!$atleta) {
             return $this->response(false, 'Atleta não encontrado', [], 404);
         }
+
+        $phone = $this->whatsAppNotificationService->normalizePhone($atleta->telefone);
+        $userAtleta = $this->findAtletaUser($atleta);
+        $preference = null;
+        if ($phone || $userAtleta?->id) {
+            $preference = \App\Models\WhatsAppNotification::query()
+                ->where('prefeitura_id', $atleta->prefeitura_id)
+                ->where(function ($query) use ($phone, $userAtleta) {
+                    if ($phone) {
+                        $query->orWhere('phone', $phone);
+                    }
+                    if ($userAtleta?->id) {
+                        $query->orWhere('user_id', $userAtleta->id);
+                    }
+                })
+                ->first();
+        }
+        $atleta->setAttribute('receive_notifications', $preference?->receive_notifications ?? true);
+
         return $this->response(true, 'Atleta encontrado com sucesso', $atleta);
     }
 
-    public function update(UpdateAtletaRequest $request, string $id): JsonResponse
+    public function update(UpdateAtletaRequest $request): JsonResponse
     {
         try {
-            $atletaAntes = $this->atletaService->find((int) $id);
+            $id = $this->resolveAtletaRouteId($request);
+            $atletaAntes = $id ? $this->atletaService->find($id) : null;
             if (!$atletaAntes) {
                 return $this->response(false, 'Atleta não encontrado', [], 404);
             }
@@ -196,18 +217,30 @@ class AtletaController extends Controller
             }
             $data['arquivos'] = $arquivos;
 
+            $receiveNotifications = array_key_exists('receive_notifications', $data)
+                ? filter_var($data['receive_notifications'], FILTER_VALIDATE_BOOLEAN)
+                : null;
+            unset($data['receive_notifications']);
+
             $atleta = $this->atletaService->update($id, $data);
             $this->syncAtletaUserCpf($atleta, $cpfAnterior);
             $this->syncAtletaUserStatus($atleta, (bool) $atleta->acesso_ativo);
+            if ($receiveNotifications !== null) {
+                $this->whatsAppNotificationService->syncAthletePreference($atleta, $receiveNotifications);
+            }
             return $this->response(true, 'Atleta atualizado com sucesso', $atleta);
         } catch (\Exception $e) {
             return $this->response(false, 'Erro ao atualizar atleta: ' . $e->getMessage(), [], 500);
         }
     }
 
-    public function destroy(string $id): JsonResponse
+    public function destroy(Request $request): JsonResponse
     {
         try {
+            $id = $this->resolveAtletaRouteId($request);
+            if (!$id) {
+                return $this->response(false, 'Atleta não encontrado', [], 404);
+            }
             $this->atletaService->delete($id);
             return $this->response(true, 'Atleta removido com sucesso', []);
         } catch (\Exception $e) {
@@ -423,9 +456,16 @@ class AtletaController extends Controller
 
             $novaSenha = substr($cpfDigits, -4);
             $userAtleta->password = Hash::make($novaSenha);
+            $userAtleta->forcar_troca_senha = true;
             $userAtleta->save();
 
-            return $this->response(true, 'Senha resetada com sucesso.', ['nova_senha' => $novaSenha]);
+            $this->whatsAppNotificationService->notifyTemporaryPassword(
+                $userAtleta,
+                (string) $atleta->telefone,
+                $novaSenha
+            );
+
+            return $this->response(true, 'Senha resetada e enviada no WhatsApp.', ['nova_senha' => $novaSenha]);
         } catch (\Exception $e) {
             Log::error('Erro ao resetar senha', ['id' => $id, 'error' => $e->getMessage()]);
             return $this->response(false, 'Erro ao resetar senha: ' . $e->getMessage(), [], 500);
@@ -473,7 +513,13 @@ class AtletaController extends Controller
                 $userMesmoNome->forcar_troca_senha = true;
                 $userMesmoNome->save();
 
-                return $this->response(true, 'Usuário existente atualizado e vinculado com sucesso.', ['nova_senha' => $novaSenha]);
+                $this->whatsAppNotificationService->notifyTemporaryPassword(
+                    $userMesmoNome,
+                    (string) $atleta->telefone,
+                    $novaSenha
+                );
+
+                return $this->response(true, 'Usuário existente atualizado. Senha enviada no WhatsApp.', ['nova_senha' => $novaSenha]);
             }
 
             $this->atletaService->criarUsuarioParaAtleta(
@@ -483,7 +529,16 @@ class AtletaController extends Controller
                 $atleta->prefeitura_id
             );
 
-            return $this->response(true, 'Usuário gerado com sucesso.', ['nova_senha' => substr($cpfDigits, -4)]);
+            $userCriado = $this->findAtletaUser($atleta);
+            if ($userCriado) {
+                $this->whatsAppNotificationService->notifyTemporaryPassword(
+                    $userCriado,
+                    (string) $atleta->telefone,
+                    substr($cpfDigits, -4)
+                );
+            }
+
+            return $this->response(true, 'Usuário gerado. Senha enviada no WhatsApp.', ['nova_senha' => substr($cpfDigits, -4)]);
         } catch (\Exception $e) {
             Log::error('Erro ao gerar usuário para atleta', ['id' => $id, 'error' => $e->getMessage()]);
             return $this->response(false, 'Erro ao gerar usuário: ' . $e->getMessage(), [], 500);
@@ -599,6 +654,17 @@ class AtletaController extends Controller
         }
 
         return $candidatos->first();
+    }
+
+    private function resolveAtletaRouteId(Request $request): ?int
+    {
+        $raw = $request->route('id') ?? $request->route('atleta');
+        if (is_object($raw) && isset($raw->id)) {
+            $raw = $raw->id;
+        }
+
+        $id = (int) $raw;
+        return $id > 0 ? $id : null;
     }
 
     private function findAtletaUser(Atleta $atleta): ?User

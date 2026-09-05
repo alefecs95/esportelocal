@@ -70,9 +70,10 @@ export const useAtletaStore = defineStore('atleta', {
         async fetchAtleta(id) {
             this.loading = true;
             this.error = null;
+            this.atleta = null;
             try {
                 const response = await atletaService.getAtleta(id);
-                this.atleta = response.data.data;
+                this.atleta = response.data?.data ?? response.data;
             } catch (error) {
                 this.error = error.response?.data?.message || 'Erro ao carregar atleta';
             } finally {

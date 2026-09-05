@@ -10,11 +10,11 @@ use Throwable;
 
 class WhatsAppGatewayService
 {
-    public function sendText(string $phone, string $message): bool
+    public function sendText(string $phone, string $message, bool $requireEnabled = true): bool
     {
-        [$enabled, $sessionId] = $this->resolveSession();
+        [$enabled, $sessionId] = $this->resolveSession($requireEnabled);
 
-        if (!$enabled) {
+        if (!$sessionId || ($requireEnabled && !$enabled)) {
             Log::warning('WhatsApp não configurado. Mensagem não enviada.', [
                 'phone' => $phone,
             ]);

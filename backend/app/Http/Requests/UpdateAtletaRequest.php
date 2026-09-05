@@ -26,7 +26,7 @@ class UpdateAtletaRequest extends FormRequest
     public function rules(): array
     {
         // Pega o ID do atleta da rota
-        $atletaId = $this->route('atleta');
+        $atletaId = $this->route('atleta') ?? $this->route('id');
         
         // Se for um objeto (Model Binding), pega o ID
         if (is_object($atletaId)) {
@@ -81,6 +81,7 @@ class UpdateAtletaRequest extends FormRequest
             'titulo_verificado' => 'nullable|boolean',
             'validacao_eleitoral_pendente' => 'nullable|boolean',
             'telefone' => 'nullable|string|max:20',
+            'receive_notifications' => 'nullable|boolean',
             'email' => 'nullable|email|max:255',
             'arquivos.*' => 'nullable|file|max:10240',
             'nomes_arquivos.*' => 'nullable|string|max:255',

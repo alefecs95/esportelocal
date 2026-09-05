@@ -733,15 +733,20 @@ onMounted(async () => {
     loading.value = true;
     try {
         await store.fetchAtleta(id);
-        
-        if (store.atleta) {
-            // Populate form
+        const atleta = store.atleta?.data ?? store.atleta;
+
+        if (store.error && !atleta) {
+            alert(store.error);
+            return;
+        }
+
+        if (atleta) {
             Object.keys(form).forEach(key => {
-                if (store.atleta[key] !== undefined && store.atleta[key] !== null) {
-                    if (key === 'data_nascimento' && store.atleta[key]) {
-                        form[key] = normalizeDateInput(store.atleta[key]);
+                if (atleta[key] !== undefined && atleta[key] !== null) {
+                    if (key === 'data_nascimento' && atleta[key]) {
+                        form[key] = normalizeDateInput(atleta[key]);
                     } else {
-                        form[key] = store.atleta[key];
+                        form[key] = atleta[key];
                     }
                 }
             });
@@ -752,7 +757,7 @@ onMounted(async () => {
             possuiTituloMenorAteOutubro.value = Boolean(form.titulo_eleitor || form.zona_eleitoral || form.secao_eleitoral || form.bairro_eleitoral || form.cidade_eleitoral || form.uf_eleitoral);
 
             // Populate existing files list (visual only, can't edit existing files easily yet)
-            if (store.atleta.arquivos && store.atleta.arquivos.length > 0) {
+            if (atleta.arquivos && atleta.arquivos.length > 0) {
                 // We can't put them in 'arquivos' reactive array because that's for NEW uploads
                 // But we could display them separately or add a property to show existing files
                 // For now, let's just log or handle if needed.

@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Atleta;
 use App\Models\Entidade;
 use App\Models\WhatsAppNotification;
+use App\Scopes\TenantScope;
 use App\Services\WhatsAppNotificationService;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\App;
@@ -180,12 +181,18 @@ class AuthController extends Controller
             $login = preg_replace('/[^0-9]/', '', $login);
         }
 
-        $user = User::where($field, $login)->first();
+        $userQuery = App::has('current_tenant')
+            ? User::query()
+            : User::withoutGlobalScope(TenantScope::class);
+
+        $user = $userQuery->where($field, $login)->first();
         if (!$user) {
             return response()->json([
                 'message' => 'Se os dados estiverem corretos, enviaremos a recuperação via WhatsApp.'
             ]);
         }
+
+        $this->whatsAppNotificationService->bindTenantFromUser($user);
 
         $atleta = Atleta::where('cpf', preg_replace('/[^0-9]/', '', (string) $user->cpf))->first();
         $phone = $atleta?->telefone;

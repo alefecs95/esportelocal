@@ -150,9 +150,71 @@ class WhatsAppNotificationService
             return;
         }
 
-        $tenantName = $this->getTenantDisplayName();
+        $this->bindTenantFromUser($user);
+        $tenantName = $this->getTenantDisplayName($user->prefeitura_id);
         $message = "🔑 *Recuperação de senha — {$tenantName}*\n\nClique no link abaixo para redefinir sua senha:\n{$resetLink}\n\n⏱️ Este link expira em 30 minutos.";
         $this->dispatchMessage($normalizedPhone, 'password_recovery', $message, $user->id, true);
+    }
+
+    public function notifyTemporaryPassword(User $user, string $phone, string $password): void
+    {
+        $normalizedPhone = $this->normalizePhone($phone);
+        if (!$normalizedPhone) {
+            return;
+        }
+
+        $this->bindTenantFromUser($user);
+        $frontendUrl = $this->getTenantFrontendUrl();
+        $loginUrl = $frontendUrl . '/login';
+        $tenantName = $this->getTenantDisplayName($user->prefeitura_id);
+        $message = "🔐 *Acesso — {$tenantName}*\n\nSua senha temporária é: *{$password}*\n\nUse o CPF como login:\n{$loginUrl}\n\nNo primeiro acesso será pedida uma senha nova.";
+        $this->dispatchMessage($normalizedPhone, 'password_reset_admin', $message, $user->id, true);
+    }
+
+    public function syncAthletePreference(Atleta $atleta, bool $receiveNotifications): void
+    {
+        $phone = $this->normalizePhone($atleta->telefone);
+        if (!$phone) {
+            return;
+        }
+
+        $user = User::withoutGlobalScopes()
+            ->where('cpf', preg_replace('/\D+/', '', (string) $atleta->cpf))
+            ->where('prefeitura_id', $atleta->prefeitura_id)
+            ->first();
+
+        $preference = WhatsAppNotification::firstOrCreate(
+            [
+                'prefeitura_id' => $atleta->prefeitura_id,
+                'phone' => $phone,
+            ],
+            [
+                'user_id' => $user?->id,
+                'receive_notifications' => $receiveNotifications,
+                'unsubscribe_token' => Str::random(64),
+            ]
+        );
+
+        $preference->receive_notifications = $receiveNotifications;
+        if ($user?->id && !$preference->user_id) {
+            $preference->user_id = $user->id;
+        }
+        $preference->save();
+    }
+
+    public function bindTenantFromUser(User $user): void
+    {
+        if (!$user->prefeitura_id) {
+            return;
+        }
+
+        $tenant = Prefeitura::find($user->prefeitura_id);
+        if (!$tenant) {
+            return;
+        }
+
+        App::instance('current_tenant', $tenant);
+        config(['app.name' => $tenant->nome]);
     }
 
     public function getTenantFrontendUrl(): string

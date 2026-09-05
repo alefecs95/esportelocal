@@ -77,7 +77,7 @@ class SendWhatsAppNotification implements ShouldQueue
             $message .= "\n\n—\n📍 *{$tenantName}*\n🔕 Para parar notificações, clique:\n{$unsubscribeUrl}";
         }
 
-        $sent = $this->gatewayService->sendText($phone, $message);
+        $sent = $this->gatewayService->sendText($phone, $message, !$event->force);
 
         if ($sent) {
             $preference->last_notified_at = now();
