@@ -37,11 +37,13 @@
         <router-link to="/memoria/galeria" class="px-4 py-2 rounded-full border text-sm font-bold">Galeria</router-link>
         <button type="button" class="px-4 py-2 rounded-full border text-sm font-bold" @click="printQr">Imprimir QR</button>
       </div>
-      <div class="mb-8 bg-white border rounded-2xl p-5 print:block">
-        <h2 class="font-bold text-lg mb-2">QR no espaço</h2>
-        <p class="text-sm text-gray-600 mb-4">Imprima e afixe no local do fato. Quem apontar a câmera abre esta página.</p>
-        <img :src="qrSrc" alt="QR code deste fato" class="w-40 h-40 bg-white border rounded-xl" />
-      </div>
+      <MemoriaQrCard
+        class="mb-8"
+        title="QR no espaço"
+        hint="Imprima e afixe no local do fato. Quem apontar a câmera abre esta página."
+        :path="`/memoria/marcos/${item.slug || route.params.slug}`"
+        alt="QR code deste fato"
+      />
       <p class="text-lg text-gray-700 leading-relaxed whitespace-pre-line">{{ item.conteudo || item.resumo }}</p>
       <div v-if="!item.conteudo && !item.resumo && !item.acervo?.length" class="mt-6 bg-amber-50 border border-amber-100 rounded-2xl p-5 text-amber-900">
         Este fato já está na linha do tempo, mas a secretaria ainda está reunindo o relato e as fotos. Volte em breve ou envie o que você tiver.
@@ -114,6 +116,7 @@ import portalService from '../services/portalService';
 import { tipoMarcoLabels } from '@/modules/memoria/utils/memoriaLabels';
 import { memoriaShareUrl } from '@/modules/memoria/utils/share';
 import MemoriaEmpty from '../components/MemoriaEmpty.vue';
+import MemoriaQrCard from '@/modules/memoria/components/MemoriaQrCard.vue';
 
 const route = useRoute();
 const item = ref({});
@@ -121,8 +124,6 @@ const loading = ref(true);
 const missing = ref(false);
 
 const shareUrl = computed(() => memoriaShareUrl('marcos', item.value.slug || route.params.slug));
-const pageUrl = computed(() => `${window.location.origin}/memoria/marcos/${item.value.slug || route.params.slug}`);
-const qrSrc = computed(() => `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(pageUrl.value)}`);
 const whatsappHref = computed(() => `https://wa.me/?text=${encodeURIComponent(`${item.value.titulo || ''} ${shareUrl.value}`)}`);
 const facebookHref = computed(() => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl.value)}`);
 const printQr = () => window.print();

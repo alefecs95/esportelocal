@@ -275,6 +275,13 @@
             <button v-if="editingLocalId" type="button" class="px-4 py-2.5 rounded-xl border font-semibold min-h-11" @click="resetLocalForm">Cancelar</button>
           </div>
         </form>
+        <MemoriaQrCard
+          v-if="localQrPath"
+          title="QR no local"
+          hint="Imprima e afixe no espaço. Quem apontar a câmera abre esta página da Memória."
+          :path="localQrPath"
+          :unpublished="localUnpublished"
+        />
         <div v-if="editingLocalId" class="bg-white border rounded-2xl p-4 space-y-3">
           <p class="text-sm font-semibold text-gray-800">Momentos deste espaço</p>
           <p class="text-xs text-gray-500">Várias épocas, não só um par antes/depois. A página pública monta o comparativo com o mais antigo e o mais recente.</p>
@@ -352,6 +359,13 @@
           </label>
           <button class="bg-blue-600 text-white px-4 py-2.5 rounded-xl font-semibold min-h-11">{{ editingEquipeId ? 'Salvar equipe' : 'Adicionar equipe' }}</button>
         </form>
+        <MemoriaQrCard
+          v-if="equipeQrPath"
+          title="QR da equipe"
+          hint="Imprima e afixe no clube ou no ginásio. Quem apontar a câmera abre a página histórica desta equipe."
+          :path="equipeQrPath"
+          :unpublished="editingEquipeId && !equipeForm.publicado"
+        />
         <ul v-if="equipes.length" class="divide-y">
           <li v-for="item in equipes" :key="item.id" class="py-3 flex justify-between gap-3 items-center">
             <div>
@@ -487,6 +501,7 @@ import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import memoriaService from '../services/memoriaService';
 import MemoriaField from '../components/MemoriaField.vue';
+import MemoriaQrCard from '../components/MemoriaQrCard.vue';
 import MemoriaChoicePicker from '../components/MemoriaChoicePicker.vue';
 import { originLabels, papelLabels, tipoAcervoLabels, tipoLocalLabels, tipoMarcoLabels, categoriaRecordeLabels } from '../utils/memoriaLabels';
 import campeonatoService from '@/modules/campeonatos/services/campeonatoService';
@@ -577,6 +592,21 @@ const recordes = ref([]);
 const campeonatos = ref([]);
 const recordeForm = ref(emptyRecordeForm());
 const editingRecordeId = ref(null);
+const localQrPath = computed(() => (
+  editingLocalId.value && localForm.value.slug
+    ? `/memoria/locais/${localForm.value.slug}`
+    : ''
+));
+const localUnpublished = computed(() => {
+  if (!editingLocalId.value) return false;
+  const item = locais.value.find((l) => l.id === editingLocalId.value);
+  return item?.publicado === false;
+});
+const equipeQrPath = computed(() => {
+  if (!editingEquipeId.value) return '';
+  const item = equipes.value.find((e) => e.id === editingEquipeId.value);
+  return item?.slug ? `/memoria/equipes/${item.slug}` : '';
+});
 const rejectingId = ref(null);
 const rejectReason = ref('');
 

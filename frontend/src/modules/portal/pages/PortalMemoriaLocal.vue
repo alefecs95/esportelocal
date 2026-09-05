@@ -81,13 +81,12 @@
         </div>
       </div>
 
-      <div class="mt-10 bg-white border rounded-2xl p-5 print:block">
-        <h2 class="font-bold text-xl mb-2">QR no local</h2>
-        <p class="text-sm text-gray-600 mb-4">Imprima e afixe no espaço. Quem apontar a câmera abre esta página da Memória.</p>
-        <div class="flex flex-col sm:flex-row items-center gap-4">
-          <img :src="qrSrc" alt="QR code desta página" class="w-40 h-40 bg-white border rounded-xl" />
-          <p class="text-xs text-gray-500 break-all">{{ pageUrl }}</p>
-        </div>
+      <div class="mt-10">
+        <MemoriaQrCard
+          title="QR no local"
+          hint="Imprima e afixe no espaço. Quem apontar a câmera abre esta página da Memória."
+          :path="`/memoria/locais/${item.slug || route.params.slug}`"
+        />
       </div>
 
       <div v-if="item.marcos?.length" class="mt-10">
@@ -134,6 +133,7 @@ import portalService from '../services/portalService';
 import { tipoLocalLabels } from '@/modules/memoria/utils/memoriaLabels';
 import { memoriaShareUrl } from '@/modules/memoria/utils/share';
 import MemoriaEmpty from '../components/MemoriaEmpty.vue';
+import MemoriaQrCard from '@/modules/memoria/components/MemoriaQrCard.vue';
 
 const route = useRoute();
 const item = ref({});
@@ -161,8 +161,6 @@ const comparePair = computed(() => {
   return null;
 });
 const shareUrl = computed(() => memoriaShareUrl('locais', item.value.slug || route.params.slug));
-const pageUrl = computed(() => `${window.location.origin}/memoria/locais/${item.value.slug || route.params.slug}`);
-const qrSrc = computed(() => `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(pageUrl.value)}`);
 const whatsappHref = computed(() => `https://wa.me/?text=${encodeURIComponent(`${item.value.nome || ''} ${shareUrl.value}`)}`);
 const facebookHref = computed(() => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl.value)}`);
 

@@ -120,6 +120,14 @@
         </label>
       </section>
 
+      <MemoriaQrCard
+        v-if="isEdit && form.slug"
+        title="QR no espaço"
+        hint="Imprima e afixe no local do fato. Quem apontar a câmera abre esta página."
+        :path="`/memoria/marcos/${form.slug}`"
+        :unpublished="!form.publicado"
+      />
+
       <div v-if="error" class="text-red-600 text-sm bg-red-50 border border-red-100 rounded-xl px-4 py-3">{{ error }}</div>
       <div class="flex flex-wrap gap-3">
         <button class="bg-blue-600 text-white px-5 py-3 rounded-xl font-semibold min-h-11 disabled:opacity-50" :disabled="saving">
@@ -137,6 +145,7 @@ import { useRoute, useRouter } from 'vue-router';
 import memoriaService from '../services/memoriaService';
 import modalidadeService from '@/modules/modalidades/services/modalidadeService';
 import MemoriaField from '../components/MemoriaField.vue';
+import MemoriaQrCard from '../components/MemoriaQrCard.vue';
 import MemoriaFileDrop from '../components/MemoriaFileDrop.vue';
 import MemoriaChoicePicker from '../components/MemoriaChoicePicker.vue';
 import { inputClass, yearFromDate } from '../utils/memoriaLabels';

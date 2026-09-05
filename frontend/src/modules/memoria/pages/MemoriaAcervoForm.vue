@@ -167,6 +167,14 @@
         </span>
       </label>
 
+      <MemoriaQrCard
+        v-if="isEdit && publicSlug"
+        title="QR da peça"
+        hint="Imprima e afixe junto à exposição ou no espaço. Quem apontar a câmera abre esta ficha da Memória."
+        :path="`/memoria/acervo/${publicSlug}`"
+        :unpublished="!form.publicado"
+      />
+
       <div v-if="error" class="text-red-600 text-sm bg-red-50 border border-red-100 rounded-xl px-4 py-3">{{ error }}</div>
       <div class="flex flex-wrap gap-3">
         <button class="bg-blue-600 text-white px-5 py-3 rounded-xl font-semibold min-h-11 disabled:opacity-50" :disabled="saving">
@@ -184,6 +192,7 @@ import { useRoute, useRouter } from 'vue-router';
 import memoriaService from '../services/memoriaService';
 import modalidadeService from '@/modules/modalidades/services/modalidadeService';
 import MemoriaField from '../components/MemoriaField.vue';
+import MemoriaQrCard from '../components/MemoriaQrCard.vue';
 import MemoriaFileDrop from '../components/MemoriaFileDrop.vue';
 import { detectAcervoTipo, inputClass, licencaLabels, papelPecaLabels, yearFromDate } from '../utils/memoriaLabels';
 
@@ -202,6 +211,7 @@ const saving = ref(false);
 const error = ref('');
 const file = ref(null);
 const existingArquivo = ref('');
+const publicSlug = ref('');
 const modalidades = ref([]);
 const locais = ref([]);
 const marcos = ref([]);
@@ -328,6 +338,7 @@ onMounted(async () => {
       pessoas.value = [{ personalidade_id: String(data.personalidade_id), papel: 'outro' }];
     }
     existingArquivo.value = data.arquivo_url || '';
+    publicSlug.value = data.slug || '';
   }
 });
 </script>
