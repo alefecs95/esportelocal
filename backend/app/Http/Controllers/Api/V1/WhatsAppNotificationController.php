@@ -16,6 +16,10 @@ class WhatsAppNotificationController extends Controller
 
     public function send(Request $request)
     {
+        $actor = $request->user('sanctum') ?? $request->user();
+        if (!$actor || !$actor->isTenantAdmin()) {
+            return response()->json(['message' => 'Acesso negado. Apenas administradores podem enviar WhatsApp.'], 403);
+        }
         $validated = $request->validate([
             'phone' => 'required|string|max:20',
             'type' => 'required|string|max:80',

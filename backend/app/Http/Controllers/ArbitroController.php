@@ -27,7 +27,7 @@ class ArbitroController extends Controller
         RankingService $rankingService
     )
     {
-        $this->middleware('auth:sanctum');
+        $this->middleware(['auth:sanctum', 'tenant.user']);
         $this->tabelaService = $tabelaService;
         $this->eventoPartidaService = $eventoPartidaService;
         $this->rankingService = $rankingService;

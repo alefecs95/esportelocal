@@ -70,4 +70,9 @@ class User extends Authenticatable
     {
         return $this->perfil === 'SUPER_ADMIN';
     }
+
+    public function isTenantAdmin(): bool
+    {
+        return in_array($this->perfil, ['ADMIN', 'SUPER_ADMIN'], true);
+    }
 }

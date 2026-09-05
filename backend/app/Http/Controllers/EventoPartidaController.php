@@ -26,7 +26,8 @@ class EventoPartidaController extends Controller
     public function store(Request $request)
     {
         // Ensure user is authenticated and is ADMIN
-        if (!auth()->check() || auth()->user()->perfil !== 'ADMIN') {
+        $user = $request->user('sanctum') ?? $request->user();
+        if (!$user || !$user->isTenantAdmin()) {
             return response()->json(['message' => 'Acesso negado. Apenas administradores podem registrar eventos.'], 403);
         }
 
@@ -55,7 +56,8 @@ class EventoPartidaController extends Controller
     public function destroy($id)
     {
         // Ensure user is authenticated and is ADMIN
-        if (!auth()->check() || auth()->user()->perfil !== 'ADMIN') {
+        $user = request()->user('sanctum') ?? request()->user();
+        if (!$user || !$user->isTenantAdmin()) {
             return response()->json(['message' => 'Acesso negado. Apenas administradores podem deletar eventos.'], 403);
         }
 

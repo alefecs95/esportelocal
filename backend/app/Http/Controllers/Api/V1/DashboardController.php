@@ -11,6 +11,7 @@ use App\Models\Partida;
 use App\Models\Inscricao;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -35,8 +36,15 @@ class DashboardController extends Controller
         $inscricoesRecentes = Inscricao::where('created_at', '>=', Carbon::now()->subDays(7))->count();
 
         // 4. Gráfico: Atletas por Modalidade (Top 5)
+        $tenantId = App::has('current_tenant') ? App::get('current_tenant')->id : null;
+
         $atletasPorModalidade = DB::table('atleta_modalidade')
             ->join('modalidades', 'atleta_modalidade.modalidade_id', '=', 'modalidades.id')
+            ->join('atletas', 'atleta_modalidade.atleta_id', '=', 'atletas.id')
+            ->when($tenantId, function ($query) use ($tenantId) {
+                $query->where('atletas.prefeitura_id', $tenantId);
+            })
+            ->whereNull('atletas.deleted_at')
             ->select('modalidades.nome', DB::raw('count(*) as total'))
             ->groupBy('modalidades.id', 'modalidades.nome')
             ->orderByDesc('total')
@@ -53,6 +61,7 @@ class DashboardController extends Controller
         $inscricoesPendentes = Equipe::where('status_inscricao', 'pendente')
             ->with(['campeonato', 'entidade'])
             ->orderBy('created_at', 'desc')
+            ->limit(50)
             ->get();
 
         return response()->json([
@@ -73,20 +82,15 @@ class DashboardController extends Controller
 
     public function getCalendarEvents(Request $request)
     {
-        $start = $request->query('start');
-        $end = $request->query('end');
+        $start = $request->query('start') ?: Carbon::today()->toDateString();
+        $end = $request->query('end') ?: Carbon::today()->addDays(30)->toDateString();
+        $perPage = max(10, min((int) $request->query('per_page', 100), 200));
 
-        $query = Partida::with(['fase.campeonato']);
+        $query = Partida::with(['fase.campeonato'])
+            ->where('data_jogo', '>=', $start)
+            ->where('data_jogo', '<=', $end . ' 23:59:59')
+            ->orderBy('data_jogo', 'asc');
 
-        if ($start) {
-            $query->where('data_jogo', '>=', $start);
-        }
-        if ($end) {
-            $query->where('data_jogo', '<=', $end);
-        }
-
-        $events = $query->orderBy('data_jogo', 'asc')->get();
-
-        return response()->json($events);
+        return response()->json($query->paginate($perPage));
     }
 }

@@ -70,7 +70,7 @@ if (config('app.debug')) {
 }
 
 // Rotas Assinadas para PDF (Protegidas) - compatibilidade legada
-Route::group([], function () {
+Route::middleware('signed')->group(function () {
     Route::get('signed/pdf/carteirinha/{atletaId}/{campeonatoId}', [PdfController::class, 'gerarCarteirinha'])->name('pdf.carteirinha');
     Route::get('signed/pdf/sumula/{partidaId}', [PdfController::class, 'gerarSumula'])->name('pdf.sumula');
     Route::get('signed/pdf/participantes/{campeonatoId}', [PdfController::class, 'gerarListaInscritos'])->name('pdf.participantes');
@@ -78,7 +78,7 @@ Route::group([], function () {
 });
 
 // Rotas Assinadas para PDF (Protegidas) - versão /v1 (alias)
-Route::prefix('v1')->group(function () {
+Route::prefix('v1')->middleware('signed')->group(function () {
     Route::get('signed/pdf/carteirinha/{atletaId}/{campeonatoId}', [PdfController::class, 'gerarCarteirinha'])->name('pdf.v1.carteirinha');
     Route::get('signed/pdf/sumula/{partidaId}', [PdfController::class, 'gerarSumula'])->name('pdf.v1.sumula');
     Route::get('signed/pdf/participantes/{campeonatoId}', [PdfController::class, 'gerarListaInscritos'])->name('pdf.v1.participantes');
@@ -87,13 +87,16 @@ Route::prefix('v1')->group(function () {
 
 Route::prefix('v1')->group(function () {
     // Institucional - Configurações da Prefeitura e Diretoria
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'tenant.user', 'admin'])->group(function () {
         Route::get('institucional', [InstitucionalController::class, 'show']);
         Route::post('institucional', [InstitucionalController::class, 'update']);
         Route::post('institucional/integracoes/whatsapp/testar', [InstitucionalController::class, 'testWhatsAppConnection']);
         Route::get('institucional/integracoes/whatsapp/status', [InstitucionalController::class, 'whatsAppStatus']);
         Route::post('institucional/integracoes/whatsapp/conectar', [InstitucionalController::class, 'connectWhatsApp']);
         Route::post('institucional/integracoes/whatsapp/desconectar', [InstitucionalController::class, 'disconnectWhatsApp']);
+    });
+
+    Route::middleware(['auth:sanctum', 'tenant.user'])->group(function () {
         Route::apiResource('diretoria', DiretoriaController::class);
     });
 
@@ -126,72 +129,15 @@ Route::prefix('v1')->group(function () {
     Route::post('password/reset-by-token', [AuthController::class, 'resetPasswordByToken']);
     Route::get('notifications/unsubscribe/{token}', [WhatsAppNotificationController::class, 'unsubscribe']);
 
-    // Temporadas
-    Route::put('temporadas/{id}/ativar', [TemporadaController::class, 'ativar']);
-    Route::apiResource('temporadas', TemporadaController::class);
-
-    Route::get('users/responsaveis', [UserController::class, 'searchResponsavel']);
-    Route::get('users/arbitros', [UserController::class, 'getArbitros']);
-
-    Route::get('atletas/consulta-cpf/{cpf}', [AtletaController::class, 'consultarCpf']);
-    Route::post('atletas/consulta-titulo', [AtletaController::class, 'consultarTitulo']);
-    Route::apiResource('atletas', AtletaController::class);
-    Route::apiResource('modalidades', ModalidadeController::class);
-    
-    Route::get('filtros/cidades-eleitorais', [FiltroController::class, 'cidadesEleitorais']);
-    Route::get('filtros/bairros-eleitorais', [FiltroController::class, 'bairrosEleitorais']);
-    
-    // Rota de Simulação
-    Route::post('competicoes/simular-elegibilidade', [CampeonatoController::class, 'simularElegibilidade']);
-    
-    // Formatos de Campeonato
+    // Catálogo de modalidades (leitura pública para o portal). Escritas ficam autenticadas.
+    Route::get('modalidades', [ModalidadeController::class, 'index']);
     Route::get('formatos-campeonato', [CampeonatoController::class, 'getFormatos']);
 
-    // Rotas de Campeonatos (Legado e Novo)
-    Route::get('campeonatos/{id}/inscricoes', [InscricaoController::class, 'indexByCampeonato']);
-    Route::apiResource('campeonatos', CampeonatoController::class);
-    // Alias para competicoes (opcional, mas bom para consistência)
-    Route::apiResource('competicoes', CampeonatoController::class)->parameters(['competicoes' => 'campeonato']);
-
-    Route::post('inscricoes', [InscricaoController::class, 'store']);
-    Route::put('inscricoes/{id}', [InscricaoController::class, 'update']);
-
-    // Entidades (Clubes)
-    Route::apiResource('entidades', EntidadeController::class);
-
-    // Equipes
-    Route::get('equipes/{id}', [EquipeController::class, 'show']);
-    Route::get('campeonatos/{id}/equipes', [EquipeController::class, 'indexByCampeonato']);
-
-    // Tabela e Partidas
-    Route::post('campeonatos/{id}/gerar-tabela', [TabelaController::class, 'gerarTabela']);
-    Route::get('campeonatos/{id}/tabela', [TabelaController::class, 'listarTabela']);
-    Route::put('partidas/{id}/placar', [TabelaController::class, 'atualizarPlacar']);
-    // Corrida
-    Route::post('campeonatos/{id}/resultados-corrida', [TabelaController::class, 'salvarResultadosCorrida']);
-
-    // Módulo Árbitro
-    Route::get('arbitro/minhas-partidas', [ArbitroController::class, 'minhasPartidas']);
-    Route::put('arbitro/partidas/{id}/placar', [ArbitroController::class, 'atualizarPlacar']);
-    Route::get('arbitro/partidas/{id}/escalacao', [ArbitroController::class, 'getEscalacao']);
-    Route::put('arbitro/partidas/{id}/escalacao', [ArbitroController::class, 'salvarEscalacao']);
-    Route::post('arbitro/partidas/{id}/eventos/lote', [ArbitroController::class, 'storeEventosLote']);
-    Route::post('arbitro/partidas/{id}/eventos', [ArbitroController::class, 'storeEvento']);
-
-    // Ranking
+    // Ranking público
     Route::get('ranking/temporada-ativa', [RankingController::class, 'temporadaAtiva']);
-    Route::post('ranking/recalcular', [RankingController::class, 'recalcular'])->middleware('admin');
     Route::get('ranking/{temporada_id}', [RankingController::class, 'index']);
     Route::get('ranking/{temporada_id}/modalidade/{modalidade_id}', [RankingController::class, 'porModalidade']);
     Route::get('ranking/{temporada_id}/top10', [RankingController::class, 'top10']);
-
-    // Eventos da Partida
-    Route::get('partidas/{id}', [PartidaController::class, 'show']);
-    Route::get('partidas/{id}/eventos', [EventoPartidaController::class, 'index']);
-    
-    // Dashboard Admin
-    Route::get('dashboard/stats', [DashboardController::class, 'getStats']);
-    Route::get('dashboard/calendar', [DashboardController::class, 'getCalendarEvents']);
 
     // Módulo Público (Portal)
     Route::get('public/home-data', [PublicController::class, 'getHomeData']);
@@ -237,8 +183,8 @@ Route::prefix('v1')->group(function () {
     Route::get('public/memoria/recordes', [MemoriaPublicController::class, 'recordes']);
     Route::post('public/memoria/contribuicoes', [MemoriaPublicController::class, 'contribuir'])->middleware('throttle:10,1');
 
-    // Rotas protegidas que geram URLs para PDF (agora exigem autenticação)
-    Route::middleware('auth:sanctum')->group(function () {
+    // Rotas protegidas
+    Route::middleware(['auth:sanctum', 'tenant.user'])->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::get('me', [AuthController::class, 'me']);
         Route::post('update-password', [AuthController::class, 'updatePassword']);
@@ -246,8 +192,43 @@ Route::prefix('v1')->group(function () {
         Route::post('usuarios', [UserController::class, 'adminStore']);
         Route::put('usuarios/{id}', [UserController::class, 'adminUpdate']);
         Route::delete('usuarios/{id}', [UserController::class, 'adminDestroy']);
-        Route::post('whatsapp/send', [WhatsAppNotificationController::class, 'send']);
         Route::put('whatsapp/preferences', [WhatsAppNotificationController::class, 'updatePreference']);
+        Route::post('whatsapp/send', [WhatsAppNotificationController::class, 'send'])->middleware('admin');
+        Route::post('ranking/recalcular', [RankingController::class, 'recalcular'])->middleware('admin');
+
+        Route::put('temporadas/{id}/ativar', [TemporadaController::class, 'ativar']);
+        Route::apiResource('temporadas', TemporadaController::class);
+        Route::get('users/responsaveis', [UserController::class, 'searchResponsavel']);
+        Route::get('users/arbitros', [UserController::class, 'getArbitros']);
+        Route::get('atletas/consulta-cpf/{cpf}', [AtletaController::class, 'consultarCpf']);
+        Route::post('atletas/consulta-titulo', [AtletaController::class, 'consultarTitulo']);
+        Route::apiResource('atletas', AtletaController::class);
+        Route::apiResource('modalidades', ModalidadeController::class)->except(['index']);
+        Route::get('filtros/cidades-eleitorais', [FiltroController::class, 'cidadesEleitorais']);
+        Route::get('filtros/bairros-eleitorais', [FiltroController::class, 'bairrosEleitorais']);
+        Route::post('competicoes/simular-elegibilidade', [CampeonatoController::class, 'simularElegibilidade']);
+        Route::get('campeonatos/{id}/inscricoes', [InscricaoController::class, 'indexByCampeonato']);
+        Route::apiResource('campeonatos', CampeonatoController::class);
+        Route::apiResource('competicoes', CampeonatoController::class)->parameters(['competicoes' => 'campeonato']);
+        Route::post('inscricoes', [InscricaoController::class, 'store']);
+        Route::put('inscricoes/{id}', [InscricaoController::class, 'update']);
+        Route::apiResource('entidades', EntidadeController::class);
+        Route::get('equipes/{id}', [EquipeController::class, 'show']);
+        Route::get('campeonatos/{id}/equipes', [EquipeController::class, 'indexByCampeonato']);
+        Route::post('campeonatos/{id}/gerar-tabela', [TabelaController::class, 'gerarTabela']);
+        Route::get('campeonatos/{id}/tabela', [TabelaController::class, 'listarTabela']);
+        Route::put('partidas/{id}/placar', [TabelaController::class, 'atualizarPlacar']);
+        Route::post('campeonatos/{id}/resultados-corrida', [TabelaController::class, 'salvarResultadosCorrida']);
+        Route::get('arbitro/minhas-partidas', [ArbitroController::class, 'minhasPartidas']);
+        Route::put('arbitro/partidas/{id}/placar', [ArbitroController::class, 'atualizarPlacar']);
+        Route::get('arbitro/partidas/{id}/escalacao', [ArbitroController::class, 'getEscalacao']);
+        Route::put('arbitro/partidas/{id}/escalacao', [ArbitroController::class, 'salvarEscalacao']);
+        Route::post('arbitro/partidas/{id}/eventos/lote', [ArbitroController::class, 'storeEventosLote']);
+        Route::post('arbitro/partidas/{id}/eventos', [ArbitroController::class, 'storeEvento']);
+        Route::get('partidas/{id}', [PartidaController::class, 'show']);
+        Route::get('partidas/{id}/eventos', [EventoPartidaController::class, 'index']);
+        Route::get('dashboard/stats', [DashboardController::class, 'getStats']);
+        Route::get('dashboard/calendar', [DashboardController::class, 'getCalendarEvents']);
         
         // Gerar URLs para PDF
         Route::get('campeonatos/{id}/pdf-inscritos', [PdfController::class, 'getUrlListaInscritos']);

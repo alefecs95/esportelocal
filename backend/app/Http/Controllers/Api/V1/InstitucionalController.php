@@ -17,6 +17,11 @@ class InstitucionalController extends Controller
 
     public function show(Request $request)
     {
+        $denied = $this->denyUnlessTenantAdmin($request);
+        if ($denied) {
+            return $denied;
+        }
+
         $user = $request->user();
 
         if (!$user->prefeitura_id) {
@@ -30,6 +35,11 @@ class InstitucionalController extends Controller
 
     public function update(Request $request)
     {
+        $denied = $this->denyUnlessTenantAdmin($request);
+        if ($denied) {
+            return $denied;
+        }
+
         $user = $request->user();
 
         if (!$user->prefeitura_id) {
@@ -124,6 +134,11 @@ class InstitucionalController extends Controller
 
     public function testWhatsAppConnection(Request $request)
     {
+        $denied = $this->denyUnlessTenantAdmin($request);
+        if ($denied) {
+            return $denied;
+        }
+
         $user = $request->user();
 
         if (!$user->prefeitura_id) {
@@ -140,6 +155,11 @@ class InstitucionalController extends Controller
 
     public function connectWhatsApp(Request $request)
     {
+        $denied = $this->denyUnlessTenantAdmin($request);
+        if ($denied) {
+            return $denied;
+        }
+
         $user = $request->user();
 
         if (!$user->prefeitura_id) {
@@ -156,6 +176,11 @@ class InstitucionalController extends Controller
 
     public function disconnectWhatsApp(Request $request)
     {
+        $denied = $this->denyUnlessTenantAdmin($request);
+        if ($denied) {
+            return $denied;
+        }
+
         $user = $request->user();
 
         if (!$user->prefeitura_id) {
@@ -172,6 +197,11 @@ class InstitucionalController extends Controller
 
     public function whatsAppStatus(Request $request)
     {
+        $denied = $this->denyUnlessTenantAdmin($request);
+        if ($denied) {
+            return $denied;
+        }
+
         $user = $request->user();
 
         if (!$user->prefeitura_id) {
@@ -191,6 +221,16 @@ class InstitucionalController extends Controller
             'qr' => $status['qr'] ?? null,
             'message' => $status['message'] ?? null,
         ]);
+    }
+
+    private function denyUnlessTenantAdmin(Request $request)
+    {
+        $user = $request->user('sanctum') ?? $request->user();
+        if (!$user || !$user->isTenantAdmin()) {
+            return response()->json(['message' => 'Acesso negado. Apenas administradores.'], 403);
+        }
+
+        return null;
     }
 
     private function buildPrefeituraResponse(Prefeitura $prefeitura): array

@@ -161,8 +161,8 @@ const isEditing = computed(() => !!props.initialData.id);
 
 const loadEntidades = async () => {
     try {
-        const { data } = await entidadeService.getAll();
-        entidades.value = data;
+        const { data } = await entidadeService.getAll({ per_page: 100 });
+        entidades.value = Array.isArray(data) ? data : (data?.data || []);
     } catch (e) {
         console.error('Erro ao carregar entidades', e);
     }

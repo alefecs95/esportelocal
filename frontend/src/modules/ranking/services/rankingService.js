@@ -18,8 +18,8 @@ export const recalcularRanking = () => {
 
 export const getTemporadaAtiva = async () => {
     try {
-        const { data } = await api.get('/temporadas');
-        const temporadas = Array.isArray(data) ? data : [];
+        const { data } = await api.get('/temporadas', { params: { per_page: 100 } });
+        const temporadas = Array.isArray(data) ? data : (data?.data || []);
         const ativa = temporadas.find((temporada) => String(temporada?.status || '').toLowerCase() === 'ativa');
 
         if (ativa) {

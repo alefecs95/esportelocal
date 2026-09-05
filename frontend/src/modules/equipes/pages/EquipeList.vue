@@ -106,8 +106,9 @@ watch(showLinkModal, async (newVal) => {
     if (newVal) {
         try {
             // Recarrega sempre para garantir atualização, mas poderia ser otimizado
-            const response = await entidadeService.getAll();
-            const todasEntidades = response.data;
+            const response = await entidadeService.getAll({ per_page: 100 });
+            const payload = response.data;
+            const todasEntidades = Array.isArray(payload) ? payload : (payload?.data || []);
 
             // Filtra para remover entidades que já estão neste campeonato
             // Verifica pelo ID da entidade vinculado à equipe

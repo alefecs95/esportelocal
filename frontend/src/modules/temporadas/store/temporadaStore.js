@@ -6,7 +6,12 @@ export const useTemporadaStore = defineStore('temporada', {
     temporadas: [],
     currentTemporada: null,
     loading: false,
-    error: null
+    error: null,
+    pagination: {
+      current_page: 1,
+      last_page: 1,
+      total: 0,
+    },
   }),
 
   actions: {
@@ -14,8 +19,14 @@ export const useTemporadaStore = defineStore('temporada', {
       this.loading = true;
       this.error = null;
       try {
-        const response = await temporadaService.getAll();
-        this.temporadas = response.data;
+        const response = await temporadaService.getAll({ per_page: 100 });
+        const payload = response.data;
+        this.temporadas = Array.isArray(payload) ? payload : (payload?.data || []);
+        this.pagination = {
+          current_page: payload?.current_page || 1,
+          last_page: payload?.last_page || 1,
+          total: payload?.total || this.temporadas.length,
+        };
       } catch (error) {
         this.error = 'Erro ao carregar temporadas.';
         console.error(error);

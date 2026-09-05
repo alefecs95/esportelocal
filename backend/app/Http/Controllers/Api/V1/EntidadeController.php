@@ -21,13 +21,22 @@ class EntidadeController extends Controller
     {
         $query = Entidade::with('user');
         
-        // Se passar parâmetro ?only_mine=1, filtra pelo usuário logado
         if ($request->has('only_mine') && $request->user()) {
             $query->where('user_id', $request->user()->id);
         }
-        
-        $entidades = $query->orderBy('nome')->get();
-        return response()->json($entidades);
+
+        $search = trim((string) $request->query('search', $request->query('q', '')));
+        if ($search !== '') {
+            $query->where(function ($builder) use ($search) {
+                $builder->where('nome', 'like', "%{$search}%")
+                    ->orWhere('sigla', 'like', "%{$search}%")
+                    ->orWhere('cidade', 'like', "%{$search}%");
+            });
+        }
+
+        $perPage = max(10, min((int) $request->query('per_page', 20), 100));
+
+        return response()->json($query->orderBy('nome')->paginate($perPage));
     }
 
     public function store(Request $request)

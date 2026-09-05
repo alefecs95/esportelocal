@@ -10,9 +10,11 @@ use Illuminate\Validation\Rule;
 
 class TemporadaController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return Temporada::orderBy('ano', 'desc')->get();
+        $perPage = max(10, min((int) $request->query('per_page', 50), 100));
+
+        return Temporada::orderBy('ano', 'desc')->paginate($perPage);
     }
 
     public function store(Request $request)

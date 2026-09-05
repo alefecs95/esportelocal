@@ -3,8 +3,8 @@ import api from '@/services/api';
 const RESOURCE = '/temporadas';
 
 export default {
-  getAll() {
-    return api.get(RESOURCE);
+  getAll(params = {}) {
+    return api.get(RESOURCE, { params });
   },
 
   getById(id) {

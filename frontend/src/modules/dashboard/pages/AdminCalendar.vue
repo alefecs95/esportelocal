@@ -118,8 +118,8 @@ const filters = ref({
 const loadEvents = async () => {
   loading.value = true;
   try {
-    const { data } = await dashboardService.getCalendarEvents(filters.value);
-    events.value = data;
+    const { data } = await dashboardService.getCalendarEvents({ ...filters.value, per_page: 200 });
+    events.value = Array.isArray(data) ? data : (data?.data || []);
   } catch (e) {
     console.error('Erro ao carregar eventos', e);
   } finally {
@@ -130,7 +130,8 @@ const loadEvents = async () => {
 const groupedEvents = computed(() => {
   const groups = {};
   events.value.forEach(event => {
-    const date = event.data_jogo.split('T')[0]; // Assumes ISO format or YYYY-MM-DD
+    if (!event?.data_jogo) return;
+    const date = String(event.data_jogo).split('T')[0].split(' ')[0];
     if (!groups[date]) groups[date] = [];
     groups[date].push(event);
   });

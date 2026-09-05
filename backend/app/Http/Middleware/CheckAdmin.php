@@ -13,7 +13,7 @@ class CheckAdmin
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $user = $request->user();
+        $user = $request->user('sanctum') ?? $request->user();
         if (!$user || !in_array($user->perfil, ['ADMIN', 'SUPER_ADMIN'], true)) {
             return response()->json(['message' => 'Acesso negado. Apenas administradores.'], 403);
         }

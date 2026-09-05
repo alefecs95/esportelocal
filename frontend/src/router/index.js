@@ -8,6 +8,16 @@ const router = createRouter({
     ]
 });
 
+const homeForUser = (user) => {
+    if (user?.perfil === 'SUPER_ADMIN') return '/super-admin/dashboard';
+    if (user?.perfil === 'ADMIN') return '/admin/dashboard';
+    if (user?.perfil === 'REDATOR') return '/admin/noticias';
+    if (user?.is_manager || user?.perfil === 'RESPONSAVEL') return '/manager';
+    if (user?.perfil === 'ATLETA') return '/athlete/dashboard';
+    if (user?.perfil === 'ARBITRO') return '/admin/arbitro/minhas-partidas';
+    return '/portal';
+};
+
 router.beforeEach((to, from, next) => {
     const isAuthenticated = !!localStorage.getItem('token');
     
@@ -24,14 +34,22 @@ router.beforeEach((to, from, next) => {
                 return;
             }
 
-            if (user.perfil === 'ARBITRO' && to.path.startsWith('/admin') && !to.path.startsWith('/admin/arbitro/')) {
-                next('/admin/arbitro/minhas-partidas');
-                return;
-            }
-
-            if (user.perfil === 'REDATOR' && to.path.startsWith('/admin') && !to.path.startsWith('/admin/noticias') && !to.path.startsWith('/admin/memoria')) {
-                next('/admin/noticias');
-                return;
+            if (to.path.startsWith('/admin')) {
+                const perfil = user.perfil;
+                if (perfil === 'ARBITRO') {
+                    if (!to.path.startsWith('/admin/arbitro/')) {
+                        next('/admin/arbitro/minhas-partidas');
+                        return;
+                    }
+                } else if (perfil === 'REDATOR') {
+                    if (!to.path.startsWith('/admin/noticias') && !to.path.startsWith('/admin/memoria')) {
+                        next('/admin/noticias');
+                        return;
+                    }
+                } else if (perfil !== 'ADMIN' && perfil !== 'SUPER_ADMIN') {
+                    next(homeForUser(user));
+                    return;
+                }
             }
 
             if (to.meta.role) {
@@ -79,37 +97,7 @@ router.beforeEach((to, from, next) => {
                  return;
              }
 
-             if (user.perfil === 'SUPER_ADMIN') {
-                 next('/super-admin/dashboard');
-                 return;
-             }
-
-             if (user.perfil === 'ADMIN') {
-                 next('/admin/dashboard');
-                 return;
-             }
-
-             if (user.perfil === 'REDATOR') {
-                 next('/admin/noticias');
-                 return;
-             }
-
-             if (user.is_manager || user.perfil === 'RESPONSAVEL') {
-                 next('/manager');
-                 return;
-             }
-             
-             if (user.perfil === 'ATLETA') {
-                 next('/athlete/dashboard');
-                 return;
-             }
-
-             if (user.perfil === 'ARBITRO') {
-                 next('/admin/arbitro/minhas-partidas');
-                 return;
-             }
-             
-             next('/admin/dashboard');
+             next(homeForUser(user));
         } else {
             next();
         }

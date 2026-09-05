@@ -4,13 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\BelongsToTenant;
 use App\Traits\ResolvesMediaUrl;
 
 class AtletaArquivo extends Model
 {
-    use HasFactory, ResolvesMediaUrl;
+    use HasFactory, BelongsToTenant, ResolvesMediaUrl;
 
-    protected $fillable = ['atleta_id', 'nome', 'path', 'tipo'];
+    protected $fillable = ['atleta_id', 'prefeitura_id', 'nome', 'path', 'tipo'];
 
     protected $appends = ['url'];
 

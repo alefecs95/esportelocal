@@ -20,6 +20,7 @@
         type="text" 
         placeholder="Buscar por nome, sigla ou cidade..." 
         class="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+        @input="onSearchInput"
       >
     </div>
 
@@ -33,10 +34,17 @@
 
     <EntidadeList 
       v-else 
-      :entidades="filteredEntidades" 
+      :entidades="entidades" 
       @edit="handleEdit" 
       @delete="handleDelete" 
     />
+    <div v-if="pagination.last_page > 1" class="mt-4 flex items-center justify-between text-sm text-gray-600">
+      <span>Página {{ pagination.current_page }} de {{ pagination.last_page }} ({{ pagination.total }} clubes)</span>
+      <div class="flex gap-2">
+        <button type="button" class="px-3 py-1 border rounded disabled:opacity-50" :disabled="pagination.current_page <= 1" @click="loadEntidades(pagination.current_page - 1)">Anterior</button>
+        <button type="button" class="px-3 py-1 border rounded disabled:opacity-50" :disabled="pagination.current_page >= pagination.last_page" @click="loadEntidades(pagination.current_page + 1)">Próxima</button>
+      </div>
+    </div>
 
     <!-- Modal Create/Edit -->
     <div v-if="showCreateModal || showEditModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -53,7 +61,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import entidadeService from '../services/entidadeService';
 import EntidadeList from '../components/EntidadeList.vue';
 import EntidadeForm from '../components/EntidadeForm.vue';
@@ -63,32 +71,44 @@ const loading = ref(true);
 const saving = ref(false);
 const error = ref(null);
 const searchQuery = ref('');
+const pagination = ref({ current_page: 1, last_page: 1, total: 0 });
+let searchTimer = null;
 
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
 const selectedEntidade = ref(null);
 
-const filteredEntidades = computed(() => {
-  if (!searchQuery.value) return entidades.value;
-  const lower = searchQuery.value.toLowerCase();
-  return entidades.value.filter(e => 
-    e.nome.toLowerCase().includes(lower) || 
-    (e.sigla && e.sigla.toLowerCase().includes(lower)) ||
-    (e.cidade && e.cidade.toLowerCase().includes(lower))
-  );
-});
+const unwrapList = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
 
-const loadEntidades = async () => {
+const loadEntidades = async (page = 1) => {
   loading.value = true;
   try {
-    const { data } = await entidadeService.getAll();
-    entidades.value = data;
+    const { data } = await entidadeService.getAll({
+      page,
+      per_page: 20,
+      search: searchQuery.value || undefined,
+    });
+    entidades.value = unwrapList(data);
+    pagination.value = {
+      current_page: data.current_page || 1,
+      last_page: data.last_page || 1,
+      total: data.total || entidades.value.length,
+    };
   } catch (e) {
     error.value = 'Erro ao carregar clubes.';
     console.error(e);
   } finally {
     loading.value = false;
   }
+};
+
+const onSearchInput = () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => loadEntidades(1), 300);
 };
 
 const handleEdit = (entidade) => {
@@ -101,7 +121,7 @@ const handleDelete = async (id) => {
   
   try {
     await entidadeService.delete(id);
-    entidades.value = entidades.value.filter(e => e.id !== id);
+    await loadEntidades(pagination.value.current_page);
   } catch (e) {
     alert('Erro ao excluir clube.');
   }
@@ -111,15 +131,11 @@ const handleSave = async (formData) => {
   saving.value = true;
   try {
     if (showEditModal.value && selectedEntidade.value) {
-      const { data } = await entidadeService.update(selectedEntidade.value.id, formData);
-      const index = entidades.value.findIndex(e => e.id === data.id);
-      if (index !== -1) entidades.value[index] = data;
+      await entidadeService.update(selectedEntidade.value.id, formData);
     } else {
-      const { data } = await entidadeService.create(formData);
-      entidades.value.push(data);
-      // Sort again?
-      entidades.value.sort((a, b) => a.nome.localeCompare(b.nome));
+      await entidadeService.create(formData);
     }
+    await loadEntidades(pagination.value.current_page);
     closeModals();
   } catch (e) {
     alert(e.response?.data?.message || 'Erro ao salvar clube.');
@@ -134,5 +150,5 @@ const closeModals = () => {
   selectedEntidade.value = null;
 };
 
-onMounted(loadEntidades);
+onMounted(() => loadEntidades(1));
 </script>

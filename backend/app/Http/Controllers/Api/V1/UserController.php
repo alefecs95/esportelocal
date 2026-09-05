@@ -30,6 +30,7 @@ class UserController extends Controller
 
     public function searchResponsavel(Request $request)
     {
+        $this->requireAdmin($request);
         $search = $request->query('q');
         
         // Permite buscar tanto RESPONSAVEL quanto ATLETA para vincular a uma entidade
@@ -49,6 +50,7 @@ class UserController extends Controller
 
     public function getArbitros(Request $request)
     {
+        $this->requireAdmin($request);
         $arbitros = User::whereIn('perfil', ['ARBITRO', 'ADMIN'])
             ->where('status', 'ATIVO')
             ->orderBy('name')
