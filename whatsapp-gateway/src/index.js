@@ -74,20 +74,33 @@ function brazilVariants(digits) {
 
 function waitForAck(session, messageId, timeoutMs = 15000) {
     if (!messageId) {
-        return Promise.resolve(null)
+        return Promise.resolve({ ok: false, reason: 'missing_id' })
     }
 
     return new Promise((resolve) => {
         const timer = setTimeout(() => {
             session.acks.delete(messageId)
-            resolve(null)
+            resolve({ ok: false, reason: 'timeout' })
         }, timeoutMs)
 
-        session.acks.set(messageId, (status) => {
+        session.acks.set(messageId, (result) => {
             clearTimeout(timer)
-            resolve(status)
+            resolve(result)
         })
     })
+}
+
+function describeSendFailure(ack) {
+    if (ack?.code === '463' || String(ack?.message || '').toLowerCase().includes('restricted')) {
+        return 'A conta WhatsApp está restrita pelo Meta (erro 463). Pare os envios por 24–48h e só retome com contatos que já conversaram com este número.'
+    }
+    if (ack?.message) {
+        return `WhatsApp rejeitou a mensagem: ${ack.message}`
+    }
+    if (ack?.reason === 'timeout') {
+        return 'WhatsApp não confirmou o recebimento da mensagem.'
+    }
+    return 'Não foi possível enviar a mensagem WhatsApp.'
 }
 
 function asJid(value, fallbackDomain) {
@@ -246,17 +259,19 @@ async function startSession(sessionId, { reset = false } = {}) {
                 continue
             }
 
-            // ERROR = 0
+            // ERROR = 0 (ex.: 463 reachout / conta restrita)
             if (status === 0) {
+                const code = stubParams?.[0] ? String(stubParams[0]) : 'error'
+                const message = stubParams?.[1] ? String(stubParams[1]) : 'Mensagem rejeitada pelo WhatsApp.'
                 session.acks.delete(id)
-                waiter(null)
+                waiter({ ok: false, code, message, status: 0 })
                 continue
             }
 
             // SERVER_ACK (2) ou superior = servidor aceitou
             if (typeof status === 'number' && status >= 2) {
                 session.acks.delete(id)
-                waiter(status)
+                waiter({ ok: true, status })
             }
         }
     })
@@ -274,7 +289,7 @@ async function startSession(sessionId, { reset = false } = {}) {
             const waiter = id ? session.acks.get(id) : null
             if (waiter && (item?.receipt?.receiptTimestamp || item?.receipt?.readTimestamp)) {
                 session.acks.delete(id)
-                waiter(3)
+                waiter({ ok: true, status: 3 })
             }
         }
     })
@@ -490,11 +505,18 @@ app.post('/send/text', async (req, res) => {
                     remoteJidAlt: sent?.key?.remoteJidAlt,
                 }, 'Texto entregue ao servidor')
 
-                const status = await waitForAck(session, messageId)
-                logger.info({ sessionId, jid, messageId, status }, 'Ack do WhatsApp')
+                const ack = await waitForAck(session, messageId)
+                logger.info({ sessionId, jid, messageId, ack }, 'Ack do WhatsApp')
 
-                if (status === null) {
-                    lastError = new Error('WhatsApp não confirmou o recebimento da mensagem.')
+                if (!ack?.ok) {
+                    lastError = Object.assign(new Error(describeSendFailure(ack)), {
+                        code: ack?.code,
+                        whatsappMessage: ack?.message,
+                    })
+                    // Conta restrita: não adianta tentar outro JID
+                    if (ack?.code === '463') {
+                        break
+                    }
                     continue
                 }
 
@@ -502,7 +524,7 @@ app.post('/send/text', async (req, res) => {
                     ok: true,
                     jid,
                     messageId,
-                    status,
+                    status: ack.status,
                     lid: recipient.lidJid,
                     pn: recipient.pnJid,
                 })
@@ -514,11 +536,13 @@ app.post('/send/text', async (req, res) => {
 
         throw lastError || new Error('Não foi possível enviar a mensagem.')
     } catch (error) {
-        logger.error({ err: error, sessionId, number }, 'Falha ao enviar mensagem')
-        return res.status(500).json({
+        logger.error({ err: error, sessionId, number, code: error.code }, 'Falha ao enviar mensagem')
+        const restricted = error.code === '463'
+        return res.status(restricted ? 423 : 500).json({
             ok: false,
-            message: 'Falha ao enviar mensagem WhatsApp.',
+            message: error.message || 'Falha ao enviar mensagem WhatsApp.',
             error: error.message,
+            code: error.code || null,
         })
     }
 })
