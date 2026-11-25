@@ -177,11 +177,11 @@ class CampeonatoService
         }
 
         if ($returnList) {
-            return $query->select('id', 'nome', 'data_nascimento', 'cidade_eleitoral', 'bairro_eleitoral')
+            return $query->select('id', 'nome', 'sexo', 'data_nascimento', 'cidade_eleitoral', 'bairro_eleitoral')
                          ->orderBy('nome')
                          ->get()
                          ->map(function($atleta) {
-                             $atleta->idade = \Carbon\Carbon::parse($atleta->data_nascimento)->age;
+                             $atleta->idade = $atleta->data_nascimento ? \Carbon\Carbon::parse($atleta->data_nascimento)->age : null;
                              return $atleta;
                          });
         }

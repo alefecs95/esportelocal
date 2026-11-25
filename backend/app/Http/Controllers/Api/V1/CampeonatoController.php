@@ -196,18 +196,29 @@ class CampeonatoController extends Controller
             'genero' => 'nullable|in:masculino,feminino,misto',
         ]);
 
-        $totalElegiveis = $this->campeonatoService->simularElegiveis($request->only([
+        $returnList = $request->boolean('return_list');
+        $resultado = $this->campeonatoService->simularElegiveis($request->only([
             'idade_min',
             'idade_max',
             'cidade_eleitoral',
             'bairro_eleitoral',
             'genero',
-        ]));
+        ]), $returnList);
+
+        if ($returnList) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'total_elegiveis' => $resultado->count(),
+                    'atletas' => $resultado,
+                ],
+            ]);
+        }
 
         return response()->json([
             'success' => true,
             'data' => [
-                'total_elegiveis' => $totalElegiveis,
+                'total_elegiveis' => $resultado,
             ],
         ]);
     }
