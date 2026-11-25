@@ -652,19 +652,27 @@ class InscricaoController extends Controller
         $isMenor = $this->cadastroCamposService->isMenorDeIdade($atleta->data_nascimento, $campeonato);
         $dependeTermoMenor = $isMenor && (bool) $campeonato->exige_termo_menor;
 
-        $inscricao = Inscricao::create([
-            'prefeitura_id' => $campeonato->prefeitura_id,
-            'atleta_id' => $atleta->id,
-            'campeonato_id' => $campeonato->id,
-            'campeonato_categoria_id' => $categoriaId,
-            'status' => $status,
-            'status_pagamento' => $statusPagamento,
-            'forma_contribuicao' => $formaContribuicao,
-            'responsavel_nome' => $responsavelNome ?: ($dependeTermoMenor ? $atleta->responsavel_nome : null),
-            'data_inscricao' => now(),
-            'aceitou_regulamento_em' => $aceitouRegulamento ? now() : null,
-            'aceitou_termos_imagem_em' => $aceitouTermosImagem ? now() : null,
-        ]);
+        // Corrida solidária: o número de peito é gerado já no cadastro (identificação do atleta)
+        $inscricao = DB::transaction(function () use ($atleta, $campeonato, $categoriaId, $status, $statusPagamento, $formaContribuicao, $responsavelNome, $dependeTermoMenor, $aceitouRegulamento, $aceitouTermosImagem) {
+            $numeroPeito = $campeonato->inscricao_solidaria
+                ? $this->proximoNumeroPeito($campeonato)
+                : null;
+
+            return Inscricao::create([
+                'prefeitura_id' => $campeonato->prefeitura_id,
+                'atleta_id' => $atleta->id,
+                'campeonato_id' => $campeonato->id,
+                'campeonato_categoria_id' => $categoriaId,
+                'numero_peito' => $numeroPeito,
+                'status' => $status,
+                'status_pagamento' => $statusPagamento,
+                'forma_contribuicao' => $formaContribuicao,
+                'responsavel_nome' => $responsavelNome ?: ($dependeTermoMenor ? $atleta->responsavel_nome : null),
+                'data_inscricao' => now(),
+                'aceitou_regulamento_em' => $aceitouRegulamento ? now() : null,
+                'aceitou_termos_imagem_em' => $aceitouTermosImagem ? now() : null,
+            ]);
+        });
 
         $inscricao->load(['atleta', 'categoria', 'campeonato']);
         $inscricao->setAttribute('menor_idade', $isMenor);
@@ -681,6 +689,21 @@ class InscricaoController extends Controller
         ));
 
         return $this->response(true, 'Inscrição realizada com sucesso', $inscricao, 201);
+    }
+
+    /**
+     * Próximo número de peito do campeonato (sequencial). Deve ser chamado dentro de uma transação:
+     * o lock no campeonato serializa a geração para evitar números repetidos.
+     */
+    private function proximoNumeroPeito(Campeonato $campeonato): int
+    {
+        Campeonato::where('id', $campeonato->id)->lockForUpdate()->first();
+
+        $ultimoNumero = (int) Inscricao::withTrashed()
+            ->where('campeonato_id', $campeonato->id)
+            ->max('numero_peito');
+
+        return $ultimoNumero + 1;
     }
 
     private function validarFormaContribuicaoParaCategoria(

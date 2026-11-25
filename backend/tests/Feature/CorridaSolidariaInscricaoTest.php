@@ -152,6 +152,56 @@ class CorridaSolidariaInscricaoTest extends TestCase
         ]);
     }
 
+    public function test_numero_de_peito_e_gerado_no_cadastro_sequencial(): void
+    {
+        $campeonato = $this->criarCampeonato();
+        $categorias = $this->criarCategorias($campeonato);
+
+        $primeiro = $this->withHeaders($this->headers())
+            ->postJson("/api/v1/public/campeonatos/{$campeonato->id}/inscricoes", $this->payloadAdulto([
+                'campeonato_categoria_id' => $categorias['m5']->id,
+                'forma_contribuicao' => 'alimento',
+            ]))
+            ->assertCreated();
+
+        $segundo = $this->withHeaders($this->headers())
+            ->postJson("/api/v1/public/campeonatos/{$campeonato->id}/inscricoes", $this->payloadAdulto([
+                'nome' => 'Outro Adulto',
+                'cpf' => '11144477735',
+                'campeonato_categoria_id' => $categorias['m3']->id,
+                'forma_contribuicao' => 'alimento',
+            ]))
+            ->assertCreated();
+
+        $this->assertSame(1, $primeiro->json('data.numero_peito'));
+        $this->assertSame(2, $segundo->json('data.numero_peito'));
+        // Ainda pendente: o número existe desde o cadastro, mas a inscrição só é confirmada na entrega da contribuição
+        $segundo->assertJsonPath('data.status', 'pendente');
+    }
+
+    public function test_menor_com_termo_pode_se_inscrever_nos_5km(): void
+    {
+        $campeonato = $this->criarCampeonato();
+        $categorias = $this->criarCategorias($campeonato);
+        $categorias['m5']->update(['idade_min' => null]);
+
+        $this->withHeaders($this->headers())
+            ->postJson("/api/v1/public/campeonatos/{$campeonato->id}/inscricoes", [
+                'nome' => 'Adolescente 16',
+                'data_nascimento' => '2010-03-01',
+                'sexo' => 'M',
+                'telefone' => '(99) 99999-0005',
+                'responsavel_nome' => 'Responsável Teste',
+                'responsavel_telefone' => '(99) 99999-0006',
+                'campeonato_categoria_id' => $categorias['m5']->id,
+                'forma_contribuicao' => 'alimento',
+                'aceitou_regulamento' => true,
+                'aceitou_termos_imagem' => true,
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.depende_termo_menor', true);
+    }
+
     public function test_cadastro_simplificado_de_crianca_sem_cpf_exige_responsavel(): void
     {
         $campeonato = $this->criarCampeonato();

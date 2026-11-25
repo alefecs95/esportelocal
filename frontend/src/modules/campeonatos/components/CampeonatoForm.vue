@@ -487,7 +487,7 @@
     <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
       <h3 class="text-lg font-semibold text-gray-800 mb-2">Inscrição solidária</h3>
       <p class="text-sm text-gray-500 mb-4">
-        Ative para eventos onde a inscrição fica pendente até a entrega de alimento, brinquedo ou taxa, com número de peito gerado na confirmação.
+        Ative para eventos onde a inscrição fica pendente até a entrega de alimento, brinquedo ou taxa, com número de peito gerado já no cadastro (a inscrição só é confirmada na entrega da contribuição).
       </p>
 
       <div class="space-y-4">
