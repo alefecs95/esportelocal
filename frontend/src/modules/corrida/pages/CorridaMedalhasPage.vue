@@ -38,7 +38,7 @@
         <div>
           <div class="flex items-center gap-2 flex-wrap">
             <span v-if="insc.numero_peito" class="px-2.5 py-0.5 rounded-full bg-blue-600 text-white text-xs font-bold">
-              Peito #{{ insc.numero_peito }}
+              Peito #{{ formatNumeroPeito(insc.numero_peito) }}
             </span>
             <span class="font-bold text-gray-900">{{ insc.atleta?.nome }}</span>
           </div>
@@ -73,6 +73,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { formatNumeroPeito } from '@/utils/formatNumeroPeito';
 import { useRoute } from 'vue-router';
 import inscricaoService from '@/modules/inscricoes/services/inscricaoService';
 

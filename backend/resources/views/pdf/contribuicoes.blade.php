@@ -60,7 +60,7 @@
         <tbody>
             @forelse($inscricoes as $insc)
             <tr>
-                <td style="text-align: center;">{{ $insc->numero_peito ?? '-' }}</td>
+                <td style="text-align: center;">{{ $insc->numero_peito_formatado ?? '-' }}</td>
                 <td>{{ $insc->atleta?->nome }}</td>
                 <td>{{ $insc->categoria?->nome ?? 'Geral' }}</td>
                 <td>{{ $insc->forma_contribuicao ? ucfirst($insc->forma_contribuicao) : '-' }}</td>

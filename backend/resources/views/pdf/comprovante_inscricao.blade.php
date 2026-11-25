@@ -36,7 +36,7 @@
         @if($inscricao->numero_peito)
         <div class="peito-box">
             <div class="peito-label">Número de Peito</div>
-            <div class="peito-num">#{{ $inscricao->numero_peito }}</div>
+            <div class="peito-num">#{{ $inscricao->numero_peito_formatado }}</div>
         </div>
         @endif
 

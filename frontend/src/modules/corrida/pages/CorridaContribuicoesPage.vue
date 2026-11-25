@@ -50,7 +50,7 @@
         <div>
           <div class="flex items-center gap-2 flex-wrap">
             <span v-if="insc.numero_peito" class="px-2.5 py-0.5 rounded-full bg-blue-600 text-white text-xs font-bold">
-              Peito #{{ insc.numero_peito }}
+              Peito #{{ formatNumeroPeito(insc.numero_peito) }}
             </span>
             <span class="font-bold text-gray-900 text-base">{{ insc.atleta?.nome }}</span>
           </div>
@@ -127,6 +127,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
+import { formatNumeroPeito } from '@/utils/formatNumeroPeito';
 import { useRoute } from 'vue-router';
 import inscricaoService from '@/modules/inscricoes/services/inscricaoService';
 
@@ -204,7 +205,7 @@ const confirmar = async () => {
       valor_pago: modalForm.forma_contribuicao === 'dinheiro' ? modalForm.valor_pago : undefined,
     });
     const atualizada = resp.data?.data;
-    mensagemSucesso.value = `Contribuição confirmada para ${modalInscricao.value.atleta?.nome}! Número de peito gerado: #${atualizada?.numero_peito}`;
+    mensagemSucesso.value = `Contribuição confirmada para ${modalInscricao.value.atleta?.nome}! Número de peito gerado: #${formatNumeroPeito(atualizada?.numero_peito)}`;
     modalInscricao.value = null;
     await carregar();
   } catch (e) {

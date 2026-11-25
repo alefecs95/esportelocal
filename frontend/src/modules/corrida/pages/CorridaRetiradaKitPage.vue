@@ -33,7 +33,7 @@
         <div>
           <div class="flex items-center gap-2 flex-wrap">
             <span v-if="insc.numero_peito" class="px-2.5 py-0.5 rounded-full bg-blue-600 text-white text-xs font-bold">
-              Peito #{{ insc.numero_peito }}
+              Peito #{{ formatNumeroPeito(insc.numero_peito) }}
             </span>
             <span class="font-bold text-gray-900 text-base">{{ insc.atleta?.nome }}</span>
             <span v-if="insc.menor_idade" class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-bold">
@@ -69,7 +69,7 @@
         <div class="text-sm text-gray-700">
           <div><strong>{{ modalInscricao.atleta?.nome }}</strong></div>
           <div class="text-xs text-gray-500">
-            {{ modalInscricao.categoria?.nome }} · Peito {{ modalInscricao.numero_peito ? `#${modalInscricao.numero_peito}` : 'não gerado' }}
+            {{ modalInscricao.categoria?.nome }} · Peito {{ modalInscricao.numero_peito ? `#${formatNumeroPeito(modalInscricao.numero_peito)}` : 'não gerado' }}
           </div>
         </div>
 
@@ -131,6 +131,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
+import { formatNumeroPeito } from '@/utils/formatNumeroPeito';
 import { useRoute } from 'vue-router';
 import inscricaoService from '@/modules/inscricoes/services/inscricaoService';
 

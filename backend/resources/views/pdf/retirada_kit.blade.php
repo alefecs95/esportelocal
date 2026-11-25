@@ -38,7 +38,7 @@
         <tbody>
             @forelse($inscricoes as $insc)
             <tr>
-                <td style="text-align: center; font-weight: bold;">{{ $insc->numero_peito ?? '-' }}</td>
+                <td style="text-align: center; font-weight: bold;">{{ $insc->numero_peito_formatado ?? '-' }}</td>
                 <td>
                     <strong>{{ $insc->atleta?->nome }}</strong><br>
                     @if($insc->atleta?->tamanho_camiseta)

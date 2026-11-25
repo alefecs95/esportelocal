@@ -646,7 +646,7 @@
             </div>
             <div v-if="inscricaoResultado.numero_peito" class="flex justify-between">
               <span class="text-gray-500">Número de peito</span>
-              <span class="font-bold text-blue-700">#{{ inscricaoResultado.numero_peito }}</span>
+              <span class="font-bold text-blue-700">#{{ formatNumeroPeito(inscricaoResultado.numero_peito) }}</span>
             </div>
           </div>
           <p v-if="inscricaoResultado.status === 'pendente' && eventoCampeonato?.inscricao_solidaria" class="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-3">
@@ -705,6 +705,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
+import { formatNumeroPeito } from '@/utils/formatNumeroPeito';
 import { useRouter, useRoute } from 'vue-router';
 import authService from '../services/authService';
 import { useAtletaStore } from '../../atletas/store/atletaStore';

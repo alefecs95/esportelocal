@@ -182,7 +182,7 @@
               <div class="leading-tight">
                 <p class="text-xs font-bold text-gray-900 whitespace-nowrap">{{ item.nome }}</p>
                 <p class="text-[11px] text-gray-500 whitespace-nowrap">
-                  <span v-if="item.numero_peito" class="font-bold text-blue-700 mr-1">#{{ item.numero_peito }}</span>
+                  <span v-if="item.numero_peito" class="font-bold text-blue-700 mr-1">#{{ formatNumeroPeito(item.numero_peito) }}</span>
                   <span v-if="item.categoria">{{ item.categoria }}</span>
                 </p>
               </div>
@@ -286,7 +286,7 @@
               <p class="font-bold text-sm text-gray-900 truncate">{{ item.nome }}</p>
               <div class="flex items-center gap-2 mt-0.5 text-xs text-gray-500">
                 <span v-if="item.numero_peito" class="font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full">
-                  #{{ item.numero_peito }}
+                  #{{ formatNumeroPeito(item.numero_peito) }}
                 </span>
                 <span v-if="item.categoria" class="truncate">{{ item.categoria }}</span>
               </div>
@@ -596,6 +596,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
+import { formatNumeroPeito } from '@/utils/formatNumeroPeito';
 import { useRoute } from 'vue-router';
 import portalService from '@/modules/portal/services/portalService';
 import inscricaoService from '@/modules/inscricoes/services/inscricaoService';

@@ -94,7 +94,7 @@
           <tbody class="divide-y divide-gray-100">
             <tr v-for="insc in inscricoes" :key="insc.id" class="hover:bg-gray-50">
               <td class="px-3 py-3 font-bold text-blue-700 whitespace-nowrap">
-                {{ insc.numero_peito ? `#${insc.numero_peito}` : '—' }}
+                {{ insc.numero_peito ? `#${formatNumeroPeito(insc.numero_peito)}` : '—' }}
               </td>
               <td class="px-3 py-3">
                 <div class="font-semibold text-gray-900">{{ insc.atleta?.nome }}</div>
@@ -134,6 +134,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
+import { formatNumeroPeito } from '@/utils/formatNumeroPeito';
 import { useRoute } from 'vue-router';
 import inscricaoService from '@/modules/inscricoes/services/inscricaoService';
 
@@ -192,7 +193,7 @@ const limparFiltros = () => {
 const exportarCsv = () => {
   const header = ['Peito', 'Nome', 'CPF', 'Telefone', 'Prova', 'Status', 'Contribuicao', 'Recebida', 'KitRetirado'];
   const rows = inscricoes.value.map((i) => [
-    i.numero_peito || '',
+    formatNumeroPeito(i.numero_peito),
     `"${(i.atleta?.nome || '').replace(/"/g, '""')}"`,
     i.atleta?.cpf || '',
     i.atleta?.telefone || '',

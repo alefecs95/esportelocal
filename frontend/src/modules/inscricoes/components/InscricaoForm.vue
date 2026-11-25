@@ -162,7 +162,7 @@
         <p class="font-semibold text-green-800">Inscrição registrada com sucesso!</p>
         <p class="text-sm text-green-700">
           Status: <strong class="uppercase">{{ inscricaoCriada.status === 'pendente' ? 'Aguardando contribuição' : inscricaoCriada.status }}</strong>
-          <span v-if="inscricaoCriada.numero_peito"> — Peito #{{ inscricaoCriada.numero_peito }}</span>
+          <span v-if="inscricaoCriada.numero_peito"> — Peito #{{ formatNumeroPeito(inscricaoCriada.numero_peito) }}</span>
         </p>
         <div class="flex flex-wrap gap-3 pt-1">
           <a
@@ -207,6 +207,7 @@
 
 <script setup>
 import { ref, onMounted, computed, reactive, watch } from 'vue';
+import { formatNumeroPeito } from '@/utils/formatNumeroPeito';
 import { useRouter, useRoute } from 'vue-router';
 import { useInscricaoStore } from '../store/inscricaoStore';
 import { useCampeonatoStore } from '@/modules/campeonatos/store/campeonatoStore';

@@ -45,7 +45,7 @@
             <tbody>
                 @foreach($grupo['inscricoes'] as $insc)
                 <tr>
-                    <td style="text-align: center; font-weight: bold;">{{ $insc->numero_peito ?? '-' }}</td>
+                    <td style="text-align: center; font-weight: bold;">{{ $insc->numero_peito_formatado ?? '-' }}</td>
                     <td>{{ $insc->atleta?->nome }}</td>
                     <td>{{ $insc->atleta?->sexo ?? '-' }}</td>
                     <td>{{ $insc->kit_retirado_em ? 'Retirado' : 'Pendente' }}</td>

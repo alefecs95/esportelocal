@@ -151,7 +151,7 @@ class WhatsAppNotificationService
         }
 
         if ($inscricao->numero_peito) {
-            $linhas[] = "🔢 *Número de peito:* #{$inscricao->numero_peito}";
+            $linhas[] = "🔢 *Número de peito:* #{$inscricao->numero_peito_formatado}";
         }
 
         if ($campeonato->data_inicio) {

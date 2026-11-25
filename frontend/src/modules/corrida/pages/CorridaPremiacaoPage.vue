@@ -54,7 +54,7 @@
                   {{ colocado.colocacao_categoria }}º
                 </span>
                 <span class="font-bold text-gray-900">{{ colocado.atleta_nome }}</span>
-                <span v-if="colocado.numero_peito" class="text-xs text-gray-500">#{{ colocado.numero_peito }}</span>
+                <span v-if="colocado.numero_peito" class="text-xs text-gray-500">#{{ formatNumeroPeito(colocado.numero_peito) }}</span>
               </div>
               <div class="text-xs text-gray-600 mt-1 ml-9">
                 Tempo: <strong>{{ colocado.tempo_visual || '-' }}</strong>
@@ -85,6 +85,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { formatNumeroPeito } from '@/utils/formatNumeroPeito';
 import { useRoute } from 'vue-router';
 import inscricaoService from '@/modules/inscricoes/services/inscricaoService';
 

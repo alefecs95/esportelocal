@@ -74,4 +74,16 @@ class Inscricao extends Model
     {
         return $this->belongsTo(CampeonatoCategoria::class, 'campeonato_categoria_id');
     }
+
+    /**
+     * Número de peito para exibição, sempre com 3 dígitos (ex.: 001, 042, 1000).
+     */
+    public function getNumeroPeitoFormatadoAttribute(): ?string
+    {
+        if ($this->numero_peito === null) {
+            return null;
+        }
+
+        return str_pad((string) $this->numero_peito, 3, '0', STR_PAD_LEFT);
+    }
 }
