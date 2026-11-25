@@ -42,6 +42,13 @@
           <span class="flex items-center gap-1">
             <Info :size="16" /> Status: {{ formatStatus(campeonato.status) }}
           </span>
+          <button
+            type="button"
+            @click="activeTab = 'inscritos'"
+            class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-3 py-1 rounded-full font-bold text-xs transition-colors"
+          >
+            <Users :size="14" /> {{ totalInscritos }} {{ totalInscritos === 1 ? 'inscrito' : 'inscritos' }}
+          </button>
         </div>
 
         <!-- Bloco Público de Corrida / Inscrição Solidária (só aparece quando configurado) -->
@@ -73,7 +80,7 @@
               <strong>Criança (Kids / Teens):</strong> 1 kg de alimento ou 1 brinquedo.
             </p>
             <p class="text-xs text-emerald-800">
-              Sua inscrição é confirmada e recebe número de peito após a entrega da contribuição junto à organização.
+              Seu número de peito é gerado já no cadastro; a inscrição é confirmada após a entrega da contribuição junto à organização.
             </p>
           </div>
 
@@ -84,8 +91,74 @@
         </div>
       </div>
 
+      <!-- Animação: Últimos Atletas Inscritos -->
+      <div
+        v-if="ultimosInscritos.length > 0"
+        class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6 sm:mb-8 overflow-hidden"
+      >
+        <div class="flex items-center justify-between gap-2 mb-3">
+          <div class="flex items-center gap-2">
+            <span class="relative flex h-2.5 w-2.5">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
+            <h2 class="text-sm font-bold text-gray-800">Últimos atletas inscritos</h2>
+            <span class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+              {{ totalInscritos }} no total
+            </span>
+          </div>
+          <button
+            type="button"
+            @click="activeTab = 'inscritos'"
+            class="text-xs font-semibold text-blue-600 hover:text-blue-800"
+          >
+            Ver todos →
+          </button>
+        </div>
+
+        <div class="marquee-container relative overflow-hidden">
+          <div
+            class="marquee-track flex gap-3 w-max"
+            :class="{ 'marquee-animate': ultimosInscritos.length >= 3 }"
+          >
+            <div
+              v-for="(item, idx) in ultimosInscritosLoop"
+              :key="`${item.id}-${idx}`"
+              class="flex items-center gap-2.5 bg-gray-50 border border-gray-200 rounded-full pl-1.5 pr-3.5 py-1.5 shrink-0"
+            >
+              <img
+                v-if="item.foto_url"
+                :src="item.foto_url"
+                :alt="item.nome"
+                class="w-8 h-8 rounded-full object-cover border border-white shadow-sm shrink-0"
+              />
+              <div
+                v-else
+                class="w-8 h-8 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0"
+              >
+                {{ getIniciais(item.nome) }}
+              </div>
+              <div class="leading-tight">
+                <p class="text-xs font-bold text-gray-900 whitespace-nowrap">{{ item.nome }}</p>
+                <p class="text-[11px] text-gray-500 whitespace-nowrap">
+                  <span v-if="item.numero_peito" class="font-bold text-blue-700 mr-1">#{{ item.numero_peito }}</span>
+                  <span v-if="item.categoria">{{ item.categoria }}</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Abas de Navegação -->
       <div class="flex border-b border-gray-200 mb-6 sm:mb-8 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+        <button 
+          @click="activeTab = 'inscritos'"
+          class="px-4 sm:px-6 py-3 font-medium text-sm flex items-center gap-2 whitespace-nowrap border-b-2 transition-colors min-h-12"
+          :class="activeTab === 'inscritos' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+        >
+          <Users :size="18" /> Inscritos ({{ totalInscritos }})
+        </button>
         <button 
           v-if="isEventoCorridaOuSolidario"
           @click="activeTab = 'resultados_corrida'"
@@ -119,8 +192,70 @@
 
       <!-- Conteúdo das Abas -->
 
+      <!-- ABA INSCRITOS PÚBLICA (NOME, FOTO, CATEGORIA E NÚMERO DE PEITO) -->
+      <div v-if="activeTab === 'inscritos'" class="space-y-4">
+        <div class="bg-white rounded-xl border border-gray-200 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-bold text-gray-800">Atletas Inscritos</h2>
+            <p class="text-xs text-gray-500">
+              Total de {{ totalInscritos }} {{ totalInscritos === 1 ? 'participante inscrito' : 'participantes inscritos' }} nesta competição.
+            </p>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <input
+              v-model="buscaInscrito"
+              type="text"
+              placeholder="Buscar por nome..."
+              class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <select
+              v-if="categoriasInscritosNomes.length > 0"
+              v-model="filtroCategoriaInscrito"
+              class="rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white"
+            >
+              <option value="">Todas as categorias</option>
+              <option v-for="cat in categoriasInscritosNomes" :key="cat" :value="cat">{{ cat }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div v-if="loadingInscritos" class="text-center py-10 text-gray-500">Carregando atletas inscritos...</div>
+        <div v-else-if="inscritosFiltrados.length === 0" class="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-500">
+          Nenhum atleta inscrito encontrado.
+        </div>
+        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div
+            v-for="item in inscritosFiltrados"
+            :key="item.id"
+            class="bg-white rounded-xl border border-gray-200 p-3.5 flex items-center gap-3 shadow-sm hover:shadow transition-shadow"
+          >
+            <img
+              v-if="item.foto_url"
+              :src="item.foto_url"
+              :alt="item.nome"
+              class="w-12 h-12 rounded-full object-cover border border-gray-200 shrink-0"
+            />
+            <div
+              v-else
+              class="w-12 h-12 rounded-full bg-blue-100 text-blue-700 font-bold text-sm flex items-center justify-center shrink-0"
+            >
+              {{ getIniciais(item.nome) }}
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="font-bold text-sm text-gray-900 truncate">{{ item.nome }}</p>
+              <div class="flex items-center gap-2 mt-0.5 text-xs text-gray-500">
+                <span v-if="item.numero_peito" class="font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full">
+                  #{{ item.numero_peito }}
+                </span>
+                <span v-if="item.categoria" class="truncate">{{ item.categoria }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- ABA RESULTADOS POR CATEGORIA (CORRIDA PÚBLICA - SEM DADOS SENSÍVEIS) -->
-      <div v-if="activeTab === 'resultados_corrida'" class="space-y-4">
+      <div v-else-if="activeTab === 'resultados_corrida'" class="space-y-4">
         <div class="bg-white rounded-xl border border-gray-200 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div class="text-sm font-semibold text-gray-700">Filtrar por categoria / prova</div>
           <select v-model="filtroCategoriaResultado" class="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
@@ -424,7 +559,7 @@ import portalService from '@/modules/portal/services/portalService';
 import inscricaoService from '@/modules/inscricoes/services/inscricaoService';
 import ChaveamentoBracket from '@/modules/tabela/components/ChaveamentoBracket.vue';
 import PartidaPublicCard from '@/modules/portal/components/PartidaPublicCard.vue';
-import { Calendar, MapPin, ArrowLeft, Trophy, Target, Square, Info } from 'lucide-vue-next';
+import { Calendar, MapPin, ArrowLeft, Trophy, Target, Square, Info, Users } from 'lucide-vue-next';
 
 const route = useRoute();
 const campeonato = ref(null);
@@ -441,6 +576,47 @@ const eventoInfo = ref(null);
 const resultadosCorrida = ref([]);
 const loadingResultadosCorrida = ref(false);
 const filtroCategoriaResultado = ref('');
+const totalInscritos = ref(0);
+const ultimosInscritos = ref([]);
+const inscritosLista = ref([]);
+const loadingInscritos = ref(false);
+const buscaInscrito = ref('');
+const filtroCategoriaInscrito = ref('');
+
+const ultimosInscritosLoop = computed(() => {
+  if (ultimosInscritos.value.length >= 3) {
+    return [...ultimosInscritos.value, ...ultimosInscritos.value];
+  }
+  return ultimosInscritos.value;
+});
+
+const categoriasInscritosNomes = computed(() => {
+  const set = new Set();
+  inscritosLista.value.forEach((i) => {
+    if (i.categoria) set.add(i.categoria);
+  });
+  return Array.from(set);
+});
+
+const inscritosFiltrados = computed(() => {
+  const q = buscaInscrito.value.trim().toLowerCase();
+  return inscritosLista.value.filter((i) => {
+    if (filtroCategoriaInscrito.value && i.categoria !== filtroCategoriaInscrito.value) {
+      return false;
+    }
+    if (q && !(i.nome || '').toLowerCase().includes(q)) {
+      return false;
+    }
+    return true;
+  });
+});
+
+const getIniciais = (nome) => {
+  if (!nome) return '?';
+  const partes = nome.trim().split(/\s+/).filter(Boolean);
+  if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase();
+  return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
+};
 
 const isEventoCorridaOuSolidario = computed(() => {
   return Boolean(
@@ -585,12 +761,27 @@ const loadData = async () => {
     // Carregar dados iniciais das outras abas (opcional, pode ser lazy load)
     loadArtilharia();
     loadCartoes();
+    loadInscritosPublicos();
     loadEventoEResultadosCorrida();
 
   } catch (e) {
     console.error('Erro ao carregar tabela', e);
   } finally {
     loading.value = false;
+  }
+};
+
+const loadInscritosPublicos = async () => {
+  loadingInscritos.value = true;
+  try {
+    const { data } = await portalService.getCampeonatoInscritos(route.params.id);
+    totalInscritos.value = Number(data?.total || 0);
+    ultimosInscritos.value = Array.isArray(data?.ultimos) ? data.ultimos : [];
+    inscritosLista.value = Array.isArray(data?.inscritos) ? data.inscritos : [];
+  } catch (e) {
+    console.error('Erro ao carregar inscritos públicos', e);
+  } finally {
+    loadingInscritos.value = false;
   }
 };
 
@@ -667,3 +858,22 @@ const getBannerUrl = (campeonatoData) => {
 
 onMounted(loadData);
 </script>
+
+<style scoped>
+.marquee-animate {
+  animation: marquee-inscritos 28s linear infinite;
+}
+
+.marquee-container:hover .marquee-animate {
+  animation-play-state: paused;
+}
+
+@keyframes marquee-inscritos {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+</style>

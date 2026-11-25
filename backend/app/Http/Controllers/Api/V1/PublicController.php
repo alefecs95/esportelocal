@@ -537,4 +537,47 @@ class PublicController extends Controller
             'stats' => $stats
         ]);
     }
+
+    public function getCampeonatoInscritos(int $id)
+    {
+        $campeonato = Campeonato::findOrFail($id);
+
+        $inscricoes = \App\Models\Inscricao::query()
+            ->where('campeonato_id', $campeonato->id)
+            ->whereNotIn('status', ['cancelada', 'rejeitada'])
+            ->whereNotNull('atleta_id')
+            ->with(['atleta:id,nome,foto', 'categoria:id,nome'])
+            ->orderByDesc('created_at')
+            ->get();
+
+        $mapItem = function ($insc) {
+            return [
+                'id' => $insc->id,
+                'nome' => $insc->atleta?->nome ?? 'Participante',
+                'foto_url' => $insc->atleta?->foto_url,
+                'categoria' => $insc->categoria?->nome,
+                'numero_peito' => $insc->numero_peito,
+                'inscrito_em' => $insc->created_at?->toIso8601String(),
+            ];
+        };
+
+        $ultimos = $inscricoes->take(15)->map($mapItem)->values();
+
+        $inscritos = $inscricoes
+            ->sortBy(function ($insc) {
+                return [
+                    $insc->numero_peito ? 0 : 1,
+                    $insc->numero_peito ?? PHP_INT_MAX,
+                    mb_strtolower($insc->atleta?->nome ?? ''),
+                ];
+            })
+            ->map($mapItem)
+            ->values();
+
+        return response()->json([
+            'total' => $inscricoes->count(),
+            'ultimos' => $ultimos,
+            'inscritos' => $inscritos,
+        ]);
+    }
 }

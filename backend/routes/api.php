@@ -161,6 +161,7 @@ Route::prefix('v1')->group(function () {
     Route::get('public/campeonatos/{id}/campos-cadastro', [CampeonatoController::class, 'camposCadastro']);
     Route::post('public/campeonatos/{id}/inscricoes', [InscricaoController::class, 'storePublico'])->middleware('throttle:20,1');
     Route::get('public/campeonatos/{id}/resultados-corrida', [\App\Http\Controllers\Api\V1\PremiacaoController::class, 'resultadosPublicos']);
+    Route::get('public/campeonatos/{id}/inscritos', [PublicController::class, 'getCampeonatoInscritos']);
 
     Route::get('public/campeonatos/{id}/artilharia', [PublicController::class, 'getArtilharia']);
     Route::get('public/campeonatos/{id}/cartoes', [PublicController::class, 'getCartoes']);

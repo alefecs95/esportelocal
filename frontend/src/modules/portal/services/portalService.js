@@ -36,6 +36,10 @@ export default {
     return api.get(`/public/campeonatos/${campeonatoId}/tabela`);
   },
 
+  getCampeonatoInscritos(campeonatoId) {
+    return api.get(`/public/campeonatos/${campeonatoId}/inscritos`);
+  },
+
   getArtilharia(campeonatoId) {
     return api.get(`/public/campeonatos/${campeonatoId}/artilharia`);
   },
