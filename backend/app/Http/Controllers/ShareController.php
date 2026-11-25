@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Campeonato;
 use App\Models\MemoriaAcervo;
 use App\Models\MemoriaEquipe;
 use App\Models\MemoriaLocal;
@@ -14,6 +15,48 @@ use Illuminate\Support\Str;
 
 class ShareController extends Controller
 {
+    public function campeonato(Request $request, string $slug)
+    {
+        $campeonato = Campeonato::resolvePublicOrFail($slug, ['modalidade']);
+        $tenant = $this->resolveTenant($campeonato->prefeitura_id);
+        $tenantName = $tenant?->nome ?: 'Esporte Local';
+
+        $statusLabels = [
+            'inscricoes_abertas' => 'Inscrições abertas',
+            'em_andamento' => 'Em andamento',
+            'inscricoes_encerradas' => 'Inscrições encerradas',
+            'finalizado' => 'Finalizado',
+        ];
+        $partes = [];
+        if (!empty($statusLabels[$campeonato->status])) {
+            $partes[] = $statusLabels[$campeonato->status];
+        }
+        if ($campeonato->modalidade?->nome) {
+            $partes[] = $campeonato->modalidade->nome;
+        }
+        if ($campeonato->data_inicio) {
+            $inicio = $campeonato->data_inicio->format('d/m/Y');
+            $fim = $campeonato->data_fim ? $campeonato->data_fim->format('d/m/Y') : null;
+            $partes[] = ($fim && $fim !== $inicio) ? "{$inicio} a {$fim}" : $inicio;
+        }
+        if ($campeonato->local || $campeonato->cidade_eleitoral) {
+            $partes[] = $campeonato->local ?: $campeonato->cidade_eleitoral;
+        }
+
+        $description = !empty($partes)
+            ? implode(' · ', $partes)
+            : 'Confira detalhes, regulamento e inscrições oficiais no portal Esporte Local.';
+
+        $image = $campeonato->banner_url ?: ($tenant?->logo_url ?: null);
+        $host = $request->getSchemeAndHttpHost();
+        $slugFinal = $campeonato->slug ?: (string) $campeonato->id;
+        $isInscricao = str_ends_with(rtrim($request->getPathInfo(), '/'), '/inscricao');
+        $url = rtrim($host, '/') . '/campeonatos/' . $slugFinal . ($isInscricao ? '/inscricao' : '');
+        $title = ($isInscricao ? 'Inscrição: ' : '') . $campeonato->nome . ' | ' . $tenantName;
+
+        return $this->shareResponse($title, $description, $image, $url);
+    }
+
     public function noticia(Request $request, string $slug)
     {
         $noticia = Noticia::query()

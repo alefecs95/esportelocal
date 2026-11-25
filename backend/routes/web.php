@@ -18,6 +18,9 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/share/campeonatos/{slug}', [ShareController::class, 'campeonato']);
+Route::get('/campeonatos/{slug}', [ShareController::class, 'campeonato']);
+Route::get('/campeonatos/{slug}/inscricao', [ShareController::class, 'campeonato']);
 Route::get('/share/noticias/{slug}', [ShareController::class, 'noticia']);
 Route::get('/share/memoria/acervo/{slug}', [ShareController::class, 'memoriaAcervo']);
 Route::get('/share/memoria/marcos/{slug}', [ShareController::class, 'memoriaMarco']);
