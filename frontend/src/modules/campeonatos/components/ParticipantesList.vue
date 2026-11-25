@@ -9,6 +9,9 @@
         <BaseButton variant="secondary" @click="$router.push('/admin/competicoes')">
           Voltar
         </BaseButton>
+        <BaseButton variant="secondary" @click="irParaAdicionarAtleta">
+          Adicionar atleta
+        </BaseButton>
         <BaseButton variant="primary" @click="exportarPDF">
           Exportar PDF
         </BaseButton>
@@ -37,7 +40,10 @@
     </div>
 
     <div v-else-if="Object.keys(inscricoesPorCategoria).length === 0" class="text-center py-12 bg-white rounded-lg border border-dashed border-gray-300">
-      <p class="text-gray-500 mb-2">Nenhum participante inscrito ainda.</p>
+      <p class="text-gray-500 mb-4">Nenhum participante inscrito ainda.</p>
+      <BaseButton variant="primary" @click="irParaAdicionarAtleta">
+        Adicionar primeiro atleta
+      </BaseButton>
     </div>
 
     <div v-else class="space-y-6">
@@ -297,6 +303,16 @@ const cancelarInscricao = async (inscricao) => {
         console.error(e);
     }
 }
+
+const irParaAdicionarAtleta = () => {
+    router.push({
+        path: '/admin/inscricoes/nova',
+        query: {
+            campeonato_id: route.params.id,
+            retorno: route.fullPath,
+        },
+    });
+};
 
 const exportarPDF = () => {
     const url = `${import.meta.env.VITE_API_URL}/pdf/participantes/${route.params.id}`;

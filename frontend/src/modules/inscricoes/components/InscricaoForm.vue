@@ -176,10 +176,10 @@
           </a>
           <button
             type="button"
-            @click="$router.push('/admin/inscricoes')"
+            @click="$router.push(retornoSeguro)"
             class="inline-flex items-center px-3 py-1.5 rounded border border-green-600 text-green-800 text-sm font-medium hover:bg-green-100"
           >
-            Ir para lista de inscrições
+            {{ retornoSeguro === '/admin/inscricoes' ? 'Ir para lista de inscrições' : 'Voltar para participantes' }}
           </button>
         </div>
       </div>
@@ -382,6 +382,15 @@ watch(() => form.categoria_id, () => {
     form.forma_contribuicao = '';
 });
 
+// Retorno seguro: só aceita caminhos internos do painel admin (ex.: lista de participantes da competição)
+const retornoSeguro = computed(() => {
+    const retorno = route.query.retorno;
+    if (typeof retorno === 'string' && retorno.startsWith('/admin/') && !retorno.startsWith('//')) {
+        return retorno;
+    }
+    return '/admin/inscricoes';
+});
+
 const submit = async () => {
   try {
     const resp = await inscricaoStore.createInscricao(form);
@@ -389,7 +398,7 @@ const submit = async () => {
       inscricaoCriada.value = resp.data || resp;
       return;
     }
-    router.push('/admin/inscricoes'); 
+    router.push(retornoSeguro.value);
   } catch (err) {
     // Erro tratado no store
   }
