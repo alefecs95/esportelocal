@@ -1,7 +1,58 @@
 <template>
   <div class="bg-white p-6 rounded-lg shadow-md">
-    <h2 class="text-xl font-bold mb-4">Nova Inscrição</h2>
-    
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+      <h2 class="text-xl font-bold text-gray-900">Nova Inscrição</h2>
+      <div v-if="form.campeonato_id" class="inline-flex rounded-lg bg-gray-100 p-1 self-start">
+        <button
+          type="button"
+          @click="modoInscricao = 'existente'"
+          class="px-3.5 py-1.5 rounded-md text-xs sm:text-sm font-semibold transition-colors"
+          :class="modoInscricao === 'existente' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+        >
+          Atleta já cadastrado
+        </button>
+        <button
+          type="button"
+          @click="modoInscricao = 'novo'"
+          class="px-3.5 py-1.5 rounded-md text-xs sm:text-sm font-semibold transition-colors"
+          :class="modoInscricao === 'novo' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+        >
+          Cadastrar novo atleta
+        </button>
+      </div>
+    </div>
+
+    <div v-if="modoInscricao === 'novo' && form.campeonato_id" class="space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 text-sm">
+        <span class="text-blue-900 font-medium">
+          Formulário completo de inscrição online — {{ selectedCampeonato?.nome }}
+        </span>
+        <div class="flex items-center gap-3">
+          <a
+            :href="`/campeonatos/${form.campeonato_id}/inscricao`"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-xs font-semibold text-blue-700 hover:text-blue-900 underline"
+          >
+            Abrir em nova aba ↗
+          </a>
+          <button
+            type="button"
+            @click="cancel"
+            class="px-3 py-1.5 rounded-md border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-50"
+          >
+            Voltar
+          </button>
+        </div>
+      </div>
+      <iframe
+        :src="`/campeonatos/${form.campeonato_id}/inscricao`"
+        title="Formulário de inscrição online"
+        class="w-full min-h-[820px] rounded-xl border border-gray-200 bg-white"
+      ></iframe>
+    </div>
+
+    <template v-else>
     <div v-if="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
       {{ error }}
     </div>
@@ -202,6 +253,7 @@
         </button>
       </div>
     </form>
+    </template>
   </div>
 </template>
 
@@ -237,6 +289,7 @@ const campeonatos = computed(() => campeonatoStore.campeonatos);
 
 const atletasElegiveis = ref([]);
 const loadingAtletas = ref(false);
+const modoInscricao = ref('existente');
 const camposCadastroInfo = ref(null);
 const inscricaoCriada = ref(null);
 
