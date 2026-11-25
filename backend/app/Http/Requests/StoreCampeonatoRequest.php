@@ -16,6 +16,16 @@ class StoreCampeonatoRequest extends FormRequest
         return $user && $user->isTenantAdmin();
     }
 
+    protected function prepareForValidation(): void
+    {
+        if (is_string($this->input('campos_cadastro'))) {
+            $decoded = json_decode($this->input('campos_cadastro'), true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $this->merge(['campos_cadastro' => $decoded]);
+            }
+        }
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *
@@ -48,6 +58,11 @@ class StoreCampeonatoRequest extends FormRequest
             'suspensao_automatica_ativa' => 'boolean',
             'cartoes_amarelos_para_suspensao' => 'nullable|integer|min:1|max:10',
             'cartao_vermelho_suspende' => 'boolean',
+            'modo_cadastro' => 'nullable|in:completo,simplificado,personalizado',
+            'campos_cadastro' => 'nullable|array',
+            'inscricao_solidaria' => 'nullable|boolean',
+            'exige_termo_menor' => 'nullable|boolean',
+            'kit_retirada_info' => 'nullable|string',
             'categorias' => 'nullable|array',
             'categorias.*.nome' => 'required_with:categorias|string|max:255',
             'categorias.*.genero' => 'nullable|in:M,F,Misto',
@@ -58,6 +73,12 @@ class StoreCampeonatoRequest extends FormRequest
             'categorias.*.distancia' => 'nullable|string',
             'categorias.*.valor_inscricao' => 'nullable|numeric',
             'categorias.*.vagas_limite' => 'nullable|integer',
+            'categorias.*.competitiva' => 'nullable|boolean',
+            'categorias.*.contribuicao_alimento_kg' => 'nullable|numeric|min:0',
+            'categorias.*.aceita_brinquedo' => 'nullable|boolean',
+            'categorias.*.premiacao_descricao' => 'nullable|string|max:255',
+            'categorias.*.largada_prevista' => 'nullable|string|max:20',
+            'categorias.*.ordem_premiacao' => 'nullable|integer|min:1',
         ];
     }
 }

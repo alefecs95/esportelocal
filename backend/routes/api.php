@@ -75,6 +75,11 @@ Route::middleware('signed')->group(function () {
     Route::get('signed/pdf/sumula/{partidaId}', [PdfController::class, 'gerarSumula'])->name('pdf.sumula');
     Route::get('signed/pdf/participantes/{campeonatoId}', [PdfController::class, 'gerarListaInscritos'])->name('pdf.participantes');
     Route::get('signed/pdf/equipe-atletas/{equipeId}', [PdfController::class, 'gerarEquipeAtletas'])->name('pdf.equipe-atletas');
+    Route::get('signed/pdf/retirada-kit/{campeonatoId}', [PdfController::class, 'gerarRetiradaKit'])->name('pdf.retirada-kit');
+    Route::get('signed/pdf/largada/{campeonatoId}', [PdfController::class, 'gerarLargada'])->name('pdf.largada');
+    Route::get('signed/pdf/contribuicoes/{campeonatoId}', [PdfController::class, 'gerarContribuicoes'])->name('pdf.contribuicoes');
+    Route::get('signed/pdf/comprovante-inscricao/{inscricaoId}', [PdfController::class, 'gerarComprovanteInscricao'])->name('pdf.comprovante-inscricao');
+    Route::get('signed/inscricoes/{id}/comprovante', [InscricaoController::class, 'comprovantePublico'])->name('inscricoes.comprovante.signed');
 });
 
 // Rotas Assinadas para PDF (Protegidas) - versão /v1 (alias)
@@ -83,6 +88,11 @@ Route::prefix('v1')->middleware('signed')->group(function () {
     Route::get('signed/pdf/sumula/{partidaId}', [PdfController::class, 'gerarSumula'])->name('pdf.v1.sumula');
     Route::get('signed/pdf/participantes/{campeonatoId}', [PdfController::class, 'gerarListaInscritos'])->name('pdf.v1.participantes');
     Route::get('signed/pdf/equipe-atletas/{equipeId}', [PdfController::class, 'gerarEquipeAtletas'])->name('pdf.v1.equipe-atletas');
+    Route::get('signed/pdf/retirada-kit/{campeonatoId}', [PdfController::class, 'gerarRetiradaKit'])->name('pdf.v1.retirada-kit');
+    Route::get('signed/pdf/largada/{campeonatoId}', [PdfController::class, 'gerarLargada'])->name('pdf.v1.largada');
+    Route::get('signed/pdf/contribuicoes/{campeonatoId}', [PdfController::class, 'gerarContribuicoes'])->name('pdf.v1.contribuicoes');
+    Route::get('signed/pdf/comprovante-inscricao/{inscricaoId}', [PdfController::class, 'gerarComprovanteInscricao'])->name('pdf.v1.comprovante-inscricao');
+    Route::get('signed/inscricoes/{id}/comprovante', [InscricaoController::class, 'comprovantePublico'])->name('inscricoes.v1.comprovante.signed');
 });
 
 Route::prefix('v1')->group(function () {
@@ -147,6 +157,11 @@ Route::prefix('v1')->group(function () {
     Route::get('public/campeonatos', [CampeonatoController::class, 'indexPublic']);
     Route::get('public/campeonatos/{id}/banner', [PublicController::class, 'getCampeonatoBanner']);
     Route::get('public/campeonatos/{id}/tabela', [TabelaController::class, 'listarTabela']);
+    // Cadastro configurável por competição (Corrida Solidária)
+    Route::get('public/campeonatos/{id}/campos-cadastro', [CampeonatoController::class, 'camposCadastro']);
+    Route::post('public/campeonatos/{id}/inscricoes', [InscricaoController::class, 'storePublico'])->middleware('throttle:20,1');
+    Route::get('public/campeonatos/{id}/resultados-corrida', [\App\Http\Controllers\Api\V1\PremiacaoController::class, 'resultadosPublicos']);
+
     Route::get('public/campeonatos/{id}/artilharia', [PublicController::class, 'getArtilharia']);
     Route::get('public/campeonatos/{id}/cartoes', [PublicController::class, 'getCartoes']);
 
@@ -208,10 +223,19 @@ Route::prefix('v1')->group(function () {
         Route::get('filtros/bairros-eleitorais', [FiltroController::class, 'bairrosEleitorais']);
         Route::post('competicoes/simular-elegibilidade', [CampeonatoController::class, 'simularElegibilidade']);
         Route::get('campeonatos/{id}/inscricoes', [InscricaoController::class, 'indexByCampeonato']);
+        Route::post('inscricoes/{id}/confirmar-contribuicao', [InscricaoController::class, 'confirmarContribuicao'])->middleware('admin');
+        Route::post('inscricoes/{id}/retirar-kit', [InscricaoController::class, 'retirarKit'])->middleware('admin');
+        Route::get('campeonatos/{id}/premiacao', [\App\Http\Controllers\Api\V1\PremiacaoController::class, 'podio'])->middleware('admin');
+        Route::post('inscricoes/{id}/premiar', [\App\Http\Controllers\Api\V1\PremiacaoController::class, 'premiar'])->middleware('admin');
+        Route::post('inscricoes/{id}/marcar-chegada', [\App\Http\Controllers\Api\V1\PremiacaoController::class, 'marcarChegada'])->middleware('admin');
+        Route::get('campeonatos/{id}/medalhas-finisher', [\App\Http\Controllers\Api\V1\PremiacaoController::class, 'medalhasFinisher'])->middleware('admin');
         Route::apiResource('campeonatos', CampeonatoController::class);
         Route::apiResource('competicoes', CampeonatoController::class)->parameters(['competicoes' => 'campeonato']);
         Route::post('inscricoes', [InscricaoController::class, 'store']);
         Route::put('inscricoes/{id}', [InscricaoController::class, 'update']);
+        Route::get('inscricoes/{id}/comprovante', [InscricaoController::class, 'comprovantePublico']);
+        Route::get('inscricoes/{id}/comprovante.pdf', [PdfController::class, 'gerarComprovanteInscricao']);
+        Route::get('inscricoes/{id}/pdf-comprovante', [PdfController::class, 'getUrlComprovanteInscricao']);
         Route::apiResource('entidades', EntidadeController::class);
         Route::get('equipes/{id}', [EquipeController::class, 'show']);
         Route::get('campeonatos/{id}/equipes', [EquipeController::class, 'indexByCampeonato']);
@@ -232,6 +256,9 @@ Route::prefix('v1')->group(function () {
         
         // Gerar URLs para PDF
         Route::get('campeonatos/{id}/pdf-inscritos', [PdfController::class, 'getUrlListaInscritos']);
+        Route::get('campeonatos/{id}/pdf-retirada-kit', fn ($id) => app(PdfController::class)->getUrlCorrida($id, 'retirada-kit'));
+        Route::get('campeonatos/{id}/pdf-largada', fn ($id) => app(PdfController::class)->getUrlCorrida($id, 'largada'));
+        Route::get('campeonatos/{id}/pdf-contribuicoes', fn ($id) => app(PdfController::class)->getUrlCorrida($id, 'contribuicoes'));
         Route::get('atletas/{atletaId}/pdf-carteirinha', [PdfController::class, 'getUrlCarteirinha']); // Precisa passar ?campeonato_id=X na query
         Route::get('atletas/{atletaId}/pdf-ficha', [PdfController::class, 'gerarFichaAtleta']);
         Route::get('partidas/{id}/pdf-sumula', [PdfController::class, 'getUrlSumula']);

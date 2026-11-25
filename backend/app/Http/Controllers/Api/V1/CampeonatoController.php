@@ -211,4 +211,53 @@ class CampeonatoController extends Controller
             ],
         ]);
     }
+
+    public function camposCadastro(int $id): JsonResponse
+    {
+        $campeonato = \App\Models\Campeonato::with(['modalidade', 'categorias'])->find($id);
+        if (!$campeonato) {
+            return $this->response(false, 'Campeonato não encontrado', [], 404);
+        }
+
+        /** @var \App\Services\CadastroCamposService $cadastroService */
+        $cadastroService = app(\App\Services\CadastroCamposService::class);
+        $config = $cadastroService->getConfiguracaoEfetiva($campeonato);
+
+        return $this->response(true, 'Configuração de campos carregada com sucesso', [
+            ...$config,
+            'campeonato' => [
+                'id' => $campeonato->id,
+                'nome' => $campeonato->nome,
+                'local' => $campeonato->local,
+                'data_inicio' => $campeonato->data_inicio?->format('Y-m-d'),
+                'data_fim' => $campeonato->data_fim?->format('Y-m-d'),
+                'inicio_inscricao' => $campeonato->inicio_inscricao?->format('Y-m-d'),
+                'fim_inscricao' => $campeonato->fim_inscricao?->format('Y-m-d'),
+                'status' => $campeonato->status,
+                'permite_inscricao_online' => (bool) $campeonato->permite_inscricao_online,
+                'inscricao_solidaria' => (bool) $campeonato->inscricao_solidaria,
+                'exige_termo_menor' => (bool) $campeonato->exige_termo_menor,
+                'kit_retirada_info' => $campeonato->kit_retirada_info,
+                'regulamento' => $campeonato->regulamento,
+                'valor_inscricao' => $campeonato->valor_inscricao,
+                'categorias' => $campeonato->categorias->map(fn ($cat) => [
+                    'id' => $cat->id,
+                    'nome' => $cat->nome,
+                    'descricao' => $cat->descricao,
+                    'genero' => $cat->genero,
+                    'idade_min' => $cat->idade_min,
+                    'idade_max' => $cat->idade_max,
+                    'distancia' => $cat->distancia,
+                    'valor_inscricao' => $cat->valor_inscricao,
+                    'vagas_limite' => $cat->vagas_limite,
+                    'competitiva' => (bool) ($cat->competitiva ?? true),
+                    'contribuicao_alimento_kg' => $cat->contribuicao_alimento_kg,
+                    'aceita_brinquedo' => (bool) ($cat->aceita_brinquedo ?? false),
+                    'premiacao_descricao' => $cat->premiacao_descricao,
+                    'largada_prevista' => $cat->largada_prevista,
+                    'ordem_premiacao' => $cat->ordem_premiacao,
+                ])->values(),
+            ],
+        ]);
+    }
 }

@@ -137,6 +137,12 @@ const routes = [
                 meta: { title: 'Detalhes do Campeonato' }
             },
             {
+                path: 'campeonatos/:campeonatoId/inscricao',
+                name: 'PortalCampeonatoInscricao',
+                component: () => import('../modules/auth/pages/Register.vue'),
+                meta: { title: 'Inscrição na Competição' }
+            },
+            {
                 path: 'partidas',
                 name: 'PortalPartidas',
                 component: () => import('../modules/portal/pages/PortalPartidas.vue'),
@@ -531,6 +537,47 @@ const routes = [
                 name: 'TabelaView',
                 component: () => import('../modules/tabela/pages/TabelaView.vue'),
                 meta: { title: 'Tabela de Jogos' }
+            },
+            {
+                path: 'competicoes/:id/corrida',
+                component: () => import('../modules/corrida/pages/CorridaOperacaoLayout.vue'),
+                meta: { title: 'Operação da Corrida' },
+                children: [
+                    {
+                        path: '',
+                        redirect: to => `/admin/competicoes/${to.params.id}/corrida/inscritos`
+                    },
+                    {
+                        path: 'inscritos',
+                        name: 'CorridaInscritos',
+                        component: () => import('../modules/corrida/pages/CorridaInscritosPage.vue'),
+                        meta: { title: 'Corrida — Inscritos' }
+                    },
+                    {
+                        path: 'contribuicoes',
+                        name: 'CorridaContribuicoes',
+                        component: () => import('../modules/corrida/pages/CorridaContribuicoesPage.vue'),
+                        meta: { title: 'Corrida — Contribuições' }
+                    },
+                    {
+                        path: 'retirada-kit',
+                        name: 'CorridaRetiradaKit',
+                        component: () => import('../modules/corrida/pages/CorridaRetiradaKitPage.vue'),
+                        meta: { title: 'Corrida — Retirada de Kit' }
+                    },
+                    {
+                        path: 'premiacao',
+                        name: 'CorridaPremiacao',
+                        component: () => import('../modules/corrida/pages/CorridaPremiacaoPage.vue'),
+                        meta: { title: 'Corrida — Premiação' }
+                    },
+                    {
+                        path: 'medalhas',
+                        name: 'CorridaMedalhas',
+                        component: () => import('../modules/corrida/pages/CorridaMedalhasPage.vue'),
+                        meta: { title: 'Corrida — Medalha Finisher' }
+                    }
+                ]
             },
             {
                 path: 'partidas/:id',

@@ -24,6 +24,12 @@ class CampeonatoCategoria extends Model
         'distancia',
         'valor_inscricao',
         'vagas_limite',
+        'competitiva',
+        'contribuicao_alimento_kg',
+        'aceita_brinquedo',
+        'premiacao_descricao',
+        'largada_prevista',
+        'ordem_premiacao',
     ];
 
     protected $casts = [
@@ -33,6 +39,10 @@ class CampeonatoCategoria extends Model
         'peso_max' => 'decimal:2',
         'valor_inscricao' => 'decimal:2',
         'vagas_limite' => 'integer',
+        'competitiva' => 'boolean',
+        'contribuicao_alimento_kg' => 'decimal:2',
+        'aceita_brinquedo' => 'boolean',
+        'ordem_premiacao' => 'integer',
     ];
 
     public function campeonato()

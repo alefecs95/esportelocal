@@ -2,8 +2,11 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Campeonato;
+use App\Services\CadastroCamposService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\App;
 use Illuminate\Validation\Rule;
 
 class StoreAtletaRequest extends FormRequest
@@ -25,6 +28,17 @@ class StoreAtletaRequest extends FormRequest
      */
     public function rules(): array
     {
+        $campeonatoId = $this->input('campeonato_id');
+        if ($campeonatoId) {
+            $campeonato = Campeonato::find($campeonatoId);
+            if ($campeonato) {
+                $tenantId = App::has('current_tenant') ? App::get('current_tenant')?->id : ($this->user()?->prefeitura_id ?? null);
+                /** @var CadastroCamposService $service */
+                $service = app(CadastroCamposService::class);
+                return $service->buildAtletaValidationRules($campeonato, $this->all(), $tenantId, false);
+            }
+        }
+
         return [
             'nome' => 'required|string|max:255',
             'cpf' => 'required|string|unique:atletas,cpf|max:14',
@@ -40,6 +54,11 @@ class StoreAtletaRequest extends FormRequest
             'numero' => 'nullable|string|max:20',
             'complemento' => 'nullable|string|max:255',
             'nome_pai' => 'nullable|string|max:255',
+            'responsavel_nome' => 'nullable|string|max:255',
+            'responsavel_cpf' => 'nullable|string|max:14',
+            'responsavel_telefone' => 'nullable|string|max:20',
+            'tamanho_camiseta' => 'nullable|string|max:10',
+            'contato_emergencia' => 'nullable|string|max:255',
             'zona_eleitoral' => [
                 Rule::requiredIf(fn () => $this->isMaiorOuIgual16()),
                 'nullable',

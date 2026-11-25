@@ -86,7 +86,7 @@
             
             <!-- Seleção de Categoria (se houver múltiplas disponíveis para o atleta) -->
             <div v-if="categoriasDisponiveis.length > 0" class="mt-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Prova / Categoria</label>
                 <select 
                   v-model="form.categoria_id" 
                   class="block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
@@ -94,13 +94,93 @@
                 >
                    <option value="" disabled>Selecione a categoria</option>
                    <option v-for="cat in categoriasDisponiveis" :key="cat.id" :value="cat.id">
-                     {{ cat.nome }} ({{ cat.idade_min || 0 }}-{{ cat.idade_max || 99 }} anos)
+                     {{ cat.nome }}<span v-if="cat.idade_min || cat.idade_max"> ({{ cat.idade_min || 0 }}-{{ cat.idade_max || 99 }} anos)</span>
                    </option>
                 </select>
             </div>
-             <div v-else-if="form.atleta_id && categoriasDisponiveis.length === 0 && selectedCampeonato?.categorias?.length > 0" class="mt-2 text-red-600 text-sm">
+             <div v-else-if="form.atleta_id && categoriasDisponiveis.length === 0 && categoriasDoCampeonato.length > 0" class="mt-2 text-red-600 text-sm">
                 Este atleta não se encaixa em nenhuma categoria específica (idade/peso/gênero).
             </div>
+
+            <!-- Campos específicos de inscrição solidária -->
+            <div v-if="isSolidaria && form.atleta_id" class="mt-4 space-y-4 rounded-lg border border-emerald-200 bg-emerald-50/50 p-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-800 mb-1">Forma de contribuição *</label>
+                <select
+                  v-model="form.forma_contribuicao"
+                  class="block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white focus:ring-emerald-500 focus:border-emerald-500"
+                  required
+                >
+                  <option value="" disabled>Escolha como contribuir</option>
+                  <option v-for="opt in opcoesContribuicao" :key="opt.value" :value="opt.value">
+                    {{ opt.label }}
+                  </option>
+                </select>
+                <p class="text-xs text-emerald-800 mt-1">
+                  Sua inscrição será confirmada quando a contribuição for entregue.
+                </p>
+              </div>
+
+              <div v-if="atletaSelecionadoEhMenor" class="rounded-md bg-amber-50 border border-amber-200 p-3 space-y-2">
+                <p class="text-xs font-semibold text-amber-800">
+                  Menor de 18 anos na data do evento: o termo de autorização assinado pelo responsável deve ser entregue na retirada do kit.
+                </p>
+                <div>
+                  <label class="block text-xs font-medium text-gray-700 mb-1">Nome do responsável *</label>
+                  <input
+                    v-model="form.responsavel_nome"
+                    type="text"
+                    required
+                    class="block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white text-sm"
+                    placeholder="Nome completo do pai, mãe ou responsável"
+                  />
+                </div>
+              </div>
+
+              <div class="space-y-2 pt-2 border-t border-emerald-200 text-sm text-gray-700">
+                <label class="flex items-start gap-2">
+                  <input v-model="form.aceitou_regulamento" type="checkbox" required class="mt-1 h-4 w-4 rounded border-gray-300 text-emerald-600" />
+                  <span>Li e aceito o regulamento da competição.</span>
+                </label>
+                <label class="flex items-start gap-2">
+                  <input v-model="form.aceitou_termos_imagem" type="checkbox" required class="mt-1 h-4 w-4 rounded border-gray-300 text-emerald-600" />
+                  <span>Autorizo o uso de imagem para divulgação oficial do evento.</span>
+                </label>
+                <label class="flex items-start gap-2">
+                  <input v-model="form.aceitou_declaracao_veracidade" type="checkbox" required class="mt-1 h-4 w-4 rounded border-gray-300 text-emerald-600" />
+                  <span>Declaro a veracidade das informações, ciência do percurso e que estou em condições físicas adequadas para participar (Art. 18).</span>
+                </label>
+                <p class="text-xs text-gray-500">
+                  Privacidade (LGPD): os dados informados são utilizados exclusivamente para organização, controle de retirada de kit, cronometragem e premiação do evento.
+                </p>
+              </div>
+            </div>
+        </div>
+      </div>
+
+      <div v-if="inscricaoCriada" class="mb-6 rounded-lg border border-green-200 bg-green-50 p-4 space-y-2">
+        <p class="font-semibold text-green-800">Inscrição registrada com sucesso!</p>
+        <p class="text-sm text-green-700">
+          Status: <strong class="uppercase">{{ inscricaoCriada.status === 'pendente' ? 'Aguardando contribuição' : inscricaoCriada.status }}</strong>
+          <span v-if="inscricaoCriada.numero_peito"> — Peito #{{ inscricaoCriada.numero_peito }}</span>
+        </p>
+        <div class="flex flex-wrap gap-3 pt-1">
+          <a
+            v-if="inscricaoCriada.comprovante_pdf_url"
+            :href="inscricaoCriada.comprovante_pdf_url"
+            target="_blank"
+            rel="noopener"
+            class="inline-flex items-center px-3 py-1.5 rounded bg-green-700 text-white text-sm font-medium hover:bg-green-800"
+          >
+            Baixar Comprovante (PDF)
+          </a>
+          <button
+            type="button"
+            @click="$router.push('/admin/inscricoes')"
+            class="inline-flex items-center px-3 py-1.5 rounded border border-green-600 text-green-800 text-sm font-medium hover:bg-green-100"
+          >
+            Ir para lista de inscrições
+          </button>
         </div>
       </div>
 
@@ -127,19 +207,26 @@
 
 <script setup>
 import { ref, onMounted, computed, reactive, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useInscricaoStore } from '../store/inscricaoStore';
 import { useCampeonatoStore } from '@/modules/campeonatos/store/campeonatoStore';
+import inscricaoService from '../services/inscricaoService';
 import api from '@/services/api'; // Import direto para chamada customizada
 
 const router = useRouter();
+const route = useRoute();
 const inscricaoStore = useInscricaoStore();
 const campeonatoStore = useCampeonatoStore();
 
 const form = reactive({
   campeonato_id: '',
   atleta_id: '',
-  categoria_id: '' // Adicionado para suportar categorias específicas
+  categoria_id: '', // Adicionado para suportar categorias específicas
+  forma_contribuicao: '',
+  responsavel_nome: '',
+  aceitou_regulamento: false,
+  aceitou_termos_imagem: false,
+  aceitou_declaracao_veracidade: false,
 });
 
 const searchAtleta = ref('');
@@ -149,32 +236,65 @@ const campeonatos = computed(() => campeonatoStore.campeonatos);
 
 const atletasElegiveis = ref([]);
 const loadingAtletas = ref(false);
+const camposCadastroInfo = ref(null);
+const inscricaoCriada = ref(null);
 
 const selectedCampeonato = computed(() => {
     return campeonatos.value.find(c => String(c.id) === String(form.campeonato_id));
 });
 
+const isSolidaria = computed(() => {
+    return Boolean(camposCadastroInfo.value?.campeonato?.inscricao_solidaria ?? selectedCampeonato.value?.inscricao_solidaria);
+});
+
+const categoriasDoCampeonato = computed(() => {
+    return camposCadastroInfo.value?.campeonato?.categorias || selectedCampeonato.value?.categorias || [];
+});
+
+const normalizarGenero = (valor) => {
+    const v = String(valor || '').trim().toUpperCase();
+    if (['M', 'MASCULINO', 'MASC'].includes(v)) return 'M';
+    if (['F', 'FEMININO', 'FEM'].includes(v)) return 'F';
+    if (v === 'MISTO') return 'MISTO';
+    return v;
+};
+
 onMounted(async () => {
-  await campeonatoStore.fetchCampeonatos(); 
+  await campeonatoStore.fetchCampeonatos();
+  if (route.query.campeonato_id) {
+      form.campeonato_id = Number(route.query.campeonato_id) || route.query.campeonato_id;
+      await onCampeonatoChange();
+  }
 });
 
 const onCampeonatoChange = async () => {
     form.atleta_id = '';
     form.categoria_id = '';
+    form.forma_contribuicao = '';
+    form.responsavel_nome = '';
     atletasElegiveis.value = [];
+    camposCadastroInfo.value = null;
+    inscricaoCriada.value = null;
     
     if (!form.campeonato_id) return;
 
     loadingAtletas.value = true;
     try {
+        try {
+            const cfgResp = await inscricaoService.getCamposCadastro(form.campeonato_id);
+            camposCadastroInfo.value = cfgResp.data?.data || null;
+        } catch {
+            camposCadastroInfo.value = null;
+        }
+
         const camp = selectedCampeonato.value;
         // Chama endpoint de simulação com flag return_list=true
         const response = await api.post('/competicoes/simular-elegibilidade', {
-            idade_min: camp.idade_min,
-            idade_max: camp.idade_max,
-            cidade_eleitoral: camp.cidade_eleitoral,
-            bairro_eleitoral: camp.bairro_eleitoral,
-            genero: camp.genero,
+            idade_min: camp?.idade_min,
+            idade_max: camp?.idade_max,
+            cidade_eleitoral: camp?.cidade_eleitoral,
+            bairro_eleitoral: camp?.bairro_eleitoral,
+            genero: camp?.genero,
             return_list: true
         });
         
@@ -197,24 +317,56 @@ const atletasFiltrados = computed(() => {
     return lista;
 });
 
+const atletaSelecionado = computed(() => {
+    return atletasElegiveis.value.find(a => a.id === form.atleta_id) || null;
+});
+
+const atletaSelecionadoEhMenor = computed(() => {
+    const atleta = atletaSelecionado.value;
+    if (!atleta) return false;
+    if (typeof atleta.idade === 'number') return atleta.idade < 18;
+    return false;
+});
+
 // Lógica para determinar categorias disponíveis para o atleta selecionado
 const categoriasDisponiveis = computed(() => {
-    if (!form.atleta_id || !selectedCampeonato.value || !selectedCampeonato.value.categorias) return [];
+    if (!form.atleta_id || categoriasDoCampeonato.value.length === 0) return [];
     
-    const atleta = atletasElegiveis.value.find(a => a.id === form.atleta_id);
+    const atleta = atletaSelecionado.value;
     if (!atleta) return [];
+    const sexoAtleta = normalizarGenero(atleta.sexo || atleta.genero);
 
-    return selectedCampeonato.value.categorias.filter(cat => {
-        // Filtra por idade
-        if (cat.idade_min && atleta.idade < cat.idade_min) return false;
-        if (cat.idade_max && atleta.idade > cat.idade_max) return false;
-        
-        // Filtra por gênero (se categoria tiver gênero específico)
-        // Assumindo que atleta tem gênero no backend, se não tiver, ignora ou melhora a query
-        // if (cat.genero && cat.genero !== 'Misto' && cat.genero !== atleta.genero) return false;
-
+    return categoriasDoCampeonato.value.filter(cat => {
+        if (cat.idade_min !== null && cat.idade_min !== undefined && atleta.idade < cat.idade_min) return false;
+        if (cat.idade_max !== null && cat.idade_max !== undefined && atleta.idade > cat.idade_max) return false;
+        if (cat.genero) {
+            const catGen = normalizarGenero(cat.genero);
+            if (catGen !== 'MISTO' && sexoAtleta && catGen !== sexoAtleta) return false;
+        }
         return true;
     });
+});
+
+const categoriaSelecionadaObj = computed(() => {
+    return categoriasDisponiveis.value.find(c => String(c.id) === String(form.categoria_id)) || null;
+});
+
+const opcoesContribuicao = computed(() => {
+    const cat = categoriaSelecionadaObj.value;
+    const opcoes = [];
+    const valor = cat?.valor_inscricao !== null && cat?.valor_inscricao !== undefined
+        ? Number(cat.valor_inscricao)
+        : Number(selectedCampeonato.value?.valor_inscricao || 0);
+    if (valor > 0) {
+        opcoes.push({ value: 'dinheiro', label: `Dinheiro (R$ ${valor.toFixed(2).replace('.', ',')})` });
+    }
+    if (Number(cat?.contribuicao_alimento_kg || 0) > 0) {
+        opcoes.push({ value: 'alimento', label: `Alimento (${cat.contribuicao_alimento_kg} kg)` });
+    }
+    if (cat?.aceita_brinquedo) {
+        opcoes.push({ value: 'brinquedo', label: '1 brinquedo' });
+    }
+    return opcoes;
 });
 
 // Auto-selecionar categoria se houver apenas uma compatível
@@ -226,9 +378,17 @@ watch(categoriasDisponiveis, (cats) => {
     }
 });
 
+watch(() => form.categoria_id, () => {
+    form.forma_contribuicao = '';
+});
+
 const submit = async () => {
   try {
-    await inscricaoStore.createInscricao(form);
+    const resp = await inscricaoStore.createInscricao(form);
+    if (isSolidaria.value && resp) {
+      inscricaoCriada.value = resp.data || resp;
+      return;
+    }
     router.push('/admin/inscricoes'); 
   } catch (err) {
     // Erro tratado no store

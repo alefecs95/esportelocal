@@ -43,6 +43,11 @@ class Campeonato extends Model
         'suspensao_automatica_ativa',
         'cartoes_amarelos_para_suspensao',
         'cartao_vermelho_suspende',
+        'modo_cadastro',
+        'campos_cadastro',
+        'inscricao_solidaria',
+        'exige_termo_menor',
+        'kit_retirada_info',
     ];
 
     protected $casts = [
@@ -62,6 +67,9 @@ class Campeonato extends Model
         'cartoes_amarelos_para_suspensao' => 'integer',
         'cartao_vermelho_suspende' => 'boolean',
         'formato' => FormatoCampeonato::class,
+        'campos_cadastro' => 'array',
+        'inscricao_solidaria' => 'boolean',
+        'exige_termo_menor' => 'boolean',
     ];
 
     protected $appends = [

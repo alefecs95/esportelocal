@@ -50,6 +50,15 @@
         >
           Tabela
         </BaseButton>
+        <BaseButton
+          v-if="item.tipo_competicao === 'individual' || item.inscricao_solidaria"
+          variant="primary"
+          size="sm"
+          class="mr-2"
+          @click="$router.push(`/admin/competicoes/${item.id}/corrida/inscritos`)"
+        >
+          Corrida
+        </BaseButton>
         <BaseButton variant="secondary" size="sm" class="mr-2" @click="$emit('edit', item)">
           Editar
         </BaseButton>

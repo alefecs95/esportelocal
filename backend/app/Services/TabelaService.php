@@ -83,12 +83,25 @@ class TabelaService
                     $tempoMs = $this->converterTempoParaMs($tempoVisual);
                 }
 
-                Inscricao::where('id', $inscricaoId)
+                $inscricao = Inscricao::where('id', $inscricaoId)
                     ->where('campeonato_id', $campeonato->id)
-                    ->update([
-                        'tempo_visual' => $tempoVisual,
-                        'tempo_ms' => $tempoMs
-                    ]);
+                    ->first();
+
+                if (!$inscricao) {
+                    continue;
+                }
+
+                $dadosAtualizacao = [
+                    'tempo_visual' => $tempoVisual,
+                    'tempo_ms' => $tempoMs,
+                ];
+
+                // Finalizou = kit retirado + tempo registrado. Mantém marcação manual existente quando não há tempo.
+                if ($tempoMs !== null && $inscricao->kit_retirado_em !== null && $inscricao->finalizou_em === null) {
+                    $dadosAtualizacao['finalizou_em'] = now();
+                }
+
+                $inscricao->update($dadosAtualizacao);
             }
 
             // Recalcular colocações
@@ -142,6 +155,22 @@ class TabelaService
             // Por enquanto vamos usar 'colocacao' como GERAL
             $inscricao->update(['colocacao' => $rank]);
             $rank++;
+        }
+
+        // 1b. Colocação por categoria (prova), calculada a partir do mesmo tempo_ms.
+        // Não altera a colocação geral acima.
+        Inscricao::where('campeonato_id', $campeonato->id)
+            ->whereNull('tempo_ms')
+            ->whereNotNull('colocacao_categoria')
+            ->update(['colocacao_categoria' => null]);
+
+        $porCategoria = $inscricoesGeral->groupBy(fn ($i) => $i->campeonato_categoria_id ?? 0);
+        foreach ($porCategoria as $inscricoesCat) {
+            $rankCat = 1;
+            foreach ($inscricoesCat->sortBy('tempo_ms')->values() as $inscricao) {
+                $inscricao->update(['colocacao_categoria' => $rankCat]);
+                $rankCat++;
+            }
         }
 
         // Se precisarmos de ranking por categoria, precisaríamos de outro campo ou tabela auxiliar.

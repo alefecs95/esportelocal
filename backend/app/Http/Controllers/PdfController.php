@@ -72,6 +72,141 @@ class PdfController extends Controller
         return response()->json(['url' => $url]);
     }
 
+    public function getUrlCorrida($campeonatoId, string $tipo)
+    {
+        $campeonato = Campeonato::findOrFail($campeonatoId);
+        $rota = match ($tipo) {
+            'retirada-kit' => 'pdf.retirada-kit',
+            'largada' => 'pdf.largada',
+            'contribuicoes' => 'pdf.contribuicoes',
+            default => abort(404),
+        };
+        $url = URL::signedRoute($rota, ['campeonatoId' => $campeonato->id], Carbon::now()->addMinutes(30));
+        return response()->json(['url' => $url]);
+    }
+
+    public function gerarRetiradaKit(Request $request, $campeonatoId)
+    {
+        $this->assertLinkNotExpired($request);
+
+        $campeonato = Campeonato::findOrFail($campeonatoId);
+        $inscricoes = Inscricao::with(['atleta', 'categoria'])
+            ->where('campeonato_id', $campeonato->id)
+            ->where('status', 'confirmada')
+            ->whereNotNull('numero_peito')
+            ->orderBy('numero_peito')
+            ->get();
+
+        $inscricoes->each(function ($insc) use ($campeonato) {
+            $insc->setAttribute('menor_idade', app(\App\Services\CadastroCamposService::class)
+                ->isMenorDeIdade($insc->atleta?->data_nascimento, $campeonato));
+        });
+
+        $pdf = Pdf::loadView('pdf.retirada_kit', [
+            'campeonato' => $campeonato,
+            'inscricoes' => $inscricoes,
+            'data_emissao' => Carbon::now()->format('d/m/Y H:i'),
+        ]);
+        return $pdf->stream("retirada_kit_{$campeonato->id}.pdf");
+    }
+
+    public function gerarLargada(Request $request, $campeonatoId)
+    {
+        $this->assertLinkNotExpired($request);
+
+        $campeonato = Campeonato::with('categorias')->findOrFail($campeonatoId);
+        $inscricoes = Inscricao::with(['atleta', 'categoria'])
+            ->where('campeonato_id', $campeonato->id)
+            ->where('status', 'confirmada')
+            ->orderBy('numero_peito')
+            ->get();
+
+        $gruposPorProva = $campeonato->categorias
+            ->sortBy('id')
+            ->map(function ($categoria) use ($inscricoes) {
+                return [
+                    'nome' => $categoria->nome,
+                    'largada_prevista' => $categoria->largada_prevista,
+                    'inscricoes' => $inscricoes->where('campeonato_categoria_id', $categoria->id)->values(),
+                ];
+            })
+            ->filter(fn ($g) => $g['inscricoes']->isNotEmpty())
+            ->values();
+
+        $semCategoria = $inscricoes->whereNull('campeonato_categoria_id')->values();
+        if ($semCategoria->isNotEmpty()) {
+            $gruposPorProva->push(['nome' => 'Geral', 'largada_prevista' => null, 'inscricoes' => $semCategoria]);
+        }
+
+        $pdf = Pdf::loadView('pdf.largada_prova', [
+            'campeonato' => $campeonato,
+            'gruposPorProva' => $gruposPorProva,
+            'total' => $inscricoes->count(),
+            'data_emissao' => Carbon::now()->format('d/m/Y H:i'),
+        ]);
+        return $pdf->stream("largada_{$campeonato->id}.pdf");
+    }
+
+    public function gerarContribuicoes(Request $request, $campeonatoId)
+    {
+        $this->assertLinkNotExpired($request);
+
+        $campeonato = Campeonato::findOrFail($campeonatoId);
+        $inscricoes = Inscricao::with(['atleta', 'categoria'])
+            ->where('campeonato_id', $campeonato->id)
+            ->whereNotNull('forma_contribuicao')
+            ->orderBy('numero_peito')
+            ->get();
+
+        $recebidas = $inscricoes->whereNotNull('contribuicao_recebida_em');
+        $resumo = [
+            'total_inscricoes' => $inscricoes->count(),
+            'total_recebidas' => $recebidas->count(),
+            'total_alimento_kg' => (float) $recebidas->where('forma_contribuicao', 'alimento')->sum('contribuicao_quantidade'),
+            'total_brinquedos' => (int) $recebidas->where('forma_contribuicao', 'brinquedo')->sum(fn ($i) => (int) ($i->contribuicao_quantidade ?? 1)),
+            'total_dinheiro' => (float) $recebidas->where('forma_contribuicao', 'dinheiro')->sum('valor_pago'),
+        ];
+
+        $pdf = Pdf::loadView('pdf.contribuicoes', [
+            'campeonato' => $campeonato,
+            'inscricoes' => $inscricoes,
+            'resumo' => $resumo,
+            'data_emissao' => Carbon::now()->format('d/m/Y H:i'),
+        ]);
+        return $pdf->stream("contribuicoes_{$campeonato->id}.pdf");
+    }
+
+    public function getUrlComprovanteInscricao($inscricaoId)
+    {
+        $inscricao = Inscricao::findOrFail($inscricaoId);
+        $url = URL::temporarySignedRoute(
+            'pdf.v1.comprovante-inscricao',
+            Carbon::now()->addDays(30),
+            ['inscricaoId' => $inscricao->id]
+        );
+        return response()->json(['url' => $url]);
+    }
+
+    public function gerarComprovanteInscricao(Request $request, $inscricaoId)
+    {
+        if ($request->has('expires')) {
+            $this->assertLinkNotExpired($request);
+        }
+
+        $inscricao = Inscricao::with(['atleta', 'categoria', 'campeonato'])->findOrFail($inscricaoId);
+        $campeonato = $inscricao->campeonato;
+        $isMenor = app(\App\Services\CadastroCamposService::class)
+            ->isMenorDeIdade($inscricao->atleta?->data_nascimento, $campeonato);
+
+        $pdf = Pdf::loadView('pdf.comprovante_inscricao', [
+            'inscricao' => $inscricao,
+            'campeonato' => $campeonato,
+            'depende_termo_menor' => $isMenor && (bool) ($campeonato?->exige_termo_menor),
+            'data_emissao' => Carbon::now()->format('d/m/Y H:i'),
+        ]);
+        return $pdf->stream("comprovante_inscricao_{$inscricao->id}.pdf");
+    }
+
 
     // Métodos de Geração de PDF (Protegidos por Signed URL)
     public function gerarListaInscritos(Request $request, $campeonatoId)

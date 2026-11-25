@@ -44,13 +44,16 @@ class AtletaService
                 $atleta->modalidades()->sync($data['modalidades']);
             }
 
-            // Criar usuário automaticamente
-            $this->criarUsuarioParaAtleta(
-                $atleta->cpf,
-                $atleta->nome,
-                $atleta->acesso_ativo ? 'ATIVO' : 'INATIVO',
-                $atleta->prefeitura_id
-            );
+            // Criar usuário automaticamente apenas quando o atleta possuir CPF válido
+            $cpfLimpo = preg_replace('/[^0-9]/', '', (string) ($atleta->cpf ?? ''));
+            if (strlen($cpfLimpo) === 11) {
+                $this->criarUsuarioParaAtleta(
+                    $cpfLimpo,
+                    $atleta->nome,
+                    $atleta->acesso_ativo ? 'ATIVO' : 'INATIVO',
+                    $atleta->prefeitura_id
+                );
+            }
 
             DB::commit();
 

@@ -36,17 +36,64 @@
           <span class="flex items-center gap-1">
             <Calendar :size="16" /> {{ formatDate(campeonato.data_inicio) }} - {{ formatDate(campeonato.data_fim) }}
           </span>
-          <span class="flex items-center gap-1">
-            <MapPin :size="16" /> {{ campeonato.cidade_eleitoral }}
+          <span v-if="eventoInfo?.local || campeonato.cidade_eleitoral" class="flex items-center gap-1">
+            <MapPin :size="16" /> {{ eventoInfo?.local || campeonato.cidade_eleitoral }}
           </span>
           <span class="flex items-center gap-1">
             <Info :size="16" /> Status: {{ formatStatus(campeonato.status) }}
           </span>
         </div>
+
+        <!-- Bloco Público de Corrida / Inscrição Solidária (só aparece quando configurado) -->
+        <div v-if="isEventoCorridaOuSolidario" class="mt-4 pt-4 border-t border-gray-100 space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="text-sm text-gray-700 space-y-1">
+              <p v-if="eventoInfo?.inicio_inscricao || eventoInfo?.fim_inscricao">
+                <strong>Prazo de inscrição:</strong>
+                {{ formatDate(eventoInfo.inicio_inscricao) }} a {{ formatDate(eventoInfo.fim_inscricao) }}
+              </p>
+              <p v-if="eventoInfo?.kit_retirada_info">
+                <strong>Retirada do kit:</strong> {{ eventoInfo.kit_retirada_info }}
+              </p>
+            </div>
+            <router-link
+              v-if="eventoInfo?.permite_inscricao_online && eventoInfo?.status === 'inscricoes_abertas'"
+              :to="`/campeonatos/${campeonato.id}/inscricao`"
+              class="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-emerald-600 text-white font-bold text-sm hover:bg-emerald-700 shadow-sm shrink-0"
+            >
+              Fazer Inscrição Online
+            </router-link>
+          </div>
+
+          <div v-if="eventoInfo?.inscricao_solidaria" class="rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-sm text-emerald-900 space-y-2">
+            <h3 class="font-bold text-emerald-900">Como contribuir</h3>
+            <p>
+              <strong>Adulto (3 km e 5 km):</strong> R$ 30,00 ou 4 kg de alimento ou 1 brinquedo.
+              <br />
+              <strong>Criança (Kids / Teens):</strong> 1 kg de alimento ou 1 brinquedo.
+            </p>
+            <p class="text-xs text-emerald-800">
+              Sua inscrição é confirmada e recebe número de peito após a entrega da contribuição junto à organização.
+            </p>
+          </div>
+
+          <div v-if="eventoInfo?.regulamento" class="rounded-xl bg-gray-50 border border-gray-200 p-4">
+            <h3 class="font-bold text-gray-800 text-sm mb-2">Regulamento</h3>
+            <p class="text-sm text-gray-700 whitespace-pre-line">{{ eventoInfo.regulamento }}</p>
+          </div>
+        </div>
       </div>
 
       <!-- Abas de Navegação -->
       <div class="flex border-b border-gray-200 mb-6 sm:mb-8 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+        <button 
+          v-if="isEventoCorridaOuSolidario"
+          @click="activeTab = 'resultados_corrida'"
+          class="px-4 sm:px-6 py-3 font-medium text-sm flex items-center gap-2 whitespace-nowrap border-b-2 transition-colors min-h-12"
+          :class="activeTab === 'resultados_corrida' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+        >
+          <Trophy :size="18" /> Resultados por Categoria
+        </button>
         <button 
           @click="activeTab = 'classificacao'"
           class="px-4 sm:px-6 py-3 font-medium text-sm flex items-center gap-2 whitespace-nowrap border-b-2 transition-colors min-h-12"
@@ -71,9 +118,54 @@
       </div>
 
       <!-- Conteúdo das Abas -->
-      
+
+      <!-- ABA RESULTADOS POR CATEGORIA (CORRIDA PÚBLICA - SEM DADOS SENSÍVEIS) -->
+      <div v-if="activeTab === 'resultados_corrida'" class="space-y-4">
+        <div class="bg-white rounded-xl border border-gray-200 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="text-sm font-semibold text-gray-700">Filtrar por categoria / prova</div>
+          <select v-model="filtroCategoriaResultado" class="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
+            <option value="">Todas as categorias</option>
+            <option v-for="catNome in categoriasResultadosNomes" :key="catNome" :value="catNome">{{ catNome }}</option>
+          </select>
+        </div>
+
+        <div v-if="loadingResultadosCorrida" class="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-500">
+          Carregando resultados...
+        </div>
+        <div v-else-if="resultadosCorridaFiltrados.length === 0" class="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-500">
+          Nenhum resultado oficial publicado ainda.
+        </div>
+        <div v-else class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+              <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+                <tr>
+                  <th class="px-4 py-3 text-left">Pos. Cat.</th>
+                  <th class="px-4 py-3 text-left">Pos. Geral</th>
+                  <th class="px-4 py-3 text-left">Atleta</th>
+                  <th class="px-4 py-3 text-left">Categoria</th>
+                  <th class="px-4 py-3 text-left">Tempo</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                <tr v-for="res in resultadosCorridaFiltrados" :key="res.id" class="hover:bg-gray-50">
+                  <td class="px-4 py-3 font-bold text-blue-700">{{ res.colocacao_categoria ? `${res.colocacao_categoria}º` : '-' }}</td>
+                  <td class="px-4 py-3 text-gray-600">{{ res.colocacao ? `${res.colocacao}º` : '-' }}</td>
+                  <td class="px-4 py-3 font-medium text-gray-900">
+                    {{ res.atleta_nome }}
+                    <span v-if="res.premiado" class="ml-1.5 px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[11px] font-bold">Pódio</span>
+                  </td>
+                  <td class="px-4 py-3 text-gray-600">{{ res.categoria_nome }}</td>
+                  <td class="px-4 py-3 font-mono font-semibold text-gray-800">{{ res.tempo_visual || '-' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <!-- ABA CLASSIFICAÇÃO -->
-      <div v-if="activeTab === 'classificacao'" class="space-y-8">
+      <div v-else-if="activeTab === 'classificacao'" class="space-y-8">
         <!-- Mata-Mata -->
         <ChaveamentoBracket 
           v-if="campeonato.formato === 'mata_mata'" 
@@ -329,6 +421,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import portalService from '@/modules/portal/services/portalService';
+import inscricaoService from '@/modules/inscricoes/services/inscricaoService';
 import ChaveamentoBracket from '@/modules/tabela/components/ChaveamentoBracket.vue';
 import PartidaPublicCard from '@/modules/portal/components/PartidaPublicCard.vue';
 import { Calendar, MapPin, ArrowLeft, Trophy, Target, Square, Info } from 'lucide-vue-next';
@@ -344,6 +437,31 @@ const artilharia = ref([]);
 const cartoes = ref([]);
 const loadingArtilharia = ref(false);
 const loadingCartoes = ref(false);
+const eventoInfo = ref(null);
+const resultadosCorrida = ref([]);
+const loadingResultadosCorrida = ref(false);
+const filtroCategoriaResultado = ref('');
+
+const isEventoCorridaOuSolidario = computed(() => {
+  return Boolean(
+    eventoInfo.value?.inscricao_solidaria ||
+    campeonato.value?.formato === 'corrida' ||
+    campeonato.value?.inscricao_solidaria
+  );
+});
+
+const categoriasResultadosNomes = computed(() => {
+  const set = new Set();
+  resultadosCorrida.value.forEach((r) => {
+    if (r.categoria_nome) set.add(r.categoria_nome);
+  });
+  return Array.from(set);
+});
+
+const resultadosCorridaFiltrados = computed(() => {
+  if (!filtroCategoriaResultado.value) return resultadosCorrida.value;
+  return resultadosCorrida.value.filter((r) => r.categoria_nome === filtroCategoriaResultado.value);
+});
 
 const textoRegraSuspensao = computed(() => {
   if (!campeonato.value?.suspensao_automatica_ativa) {
@@ -467,11 +585,34 @@ const loadData = async () => {
     // Carregar dados iniciais das outras abas (opcional, pode ser lazy load)
     loadArtilharia();
     loadCartoes();
+    loadEventoEResultadosCorrida();
 
   } catch (e) {
     console.error('Erro ao carregar tabela', e);
   } finally {
     loading.value = false;
+  }
+};
+
+const loadEventoEResultadosCorrida = async () => {
+  try {
+    const cfgResp = await inscricaoService.getCamposCadastro(route.params.id);
+    eventoInfo.value = cfgResp.data?.data?.campeonato || null;
+  } catch {
+    eventoInfo.value = null;
+  }
+
+  if (eventoInfo.value?.inscricao_solidaria || campeonato.value?.formato === 'corrida') {
+    loadingResultadosCorrida.value = true;
+    try {
+      const resResp = await inscricaoService.getResultadosPublicos(route.params.id);
+      resultadosCorrida.value = resResp.data?.data?.resultados || [];
+      activeTab.value = 'resultados_corrida';
+    } catch (e) {
+      console.error('Erro ao carregar resultados da corrida', e);
+    } finally {
+      loadingResultadosCorrida.value = false;
+    }
   }
 };
 

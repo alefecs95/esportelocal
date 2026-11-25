@@ -114,9 +114,12 @@ class AtletaController extends Controller
             $phoneForNotification = $this->whatsAppNotificationService->normalizePhone($data['telefone'] ?? null);
             unset($data['receive_notifications']);
 
+            $campeonatoId = $data['campeonato_id'] ?? null;
+            unset($data['campeonato_id']);
+
             $isPublicRegister = $request->user() === null;
             if ($isPublicRegister) {
-                $data = $this->applyPublicRegistrationWorkflow($data);
+                $data = $this->applyPublicRegistrationWorkflow($data, $campeonatoId ? (int) $campeonatoId : null);
             }
 
             if ($receiveNotifications && !$phoneForNotification) {
@@ -559,10 +562,26 @@ class AtletaController extends Controller
         return null;
     }
 
-    private function applyPublicRegistrationWorkflow(array $data): array
+    private function applyPublicRegistrationWorkflow(array $data, ?int $campeonatoId = null): array
     {
         $data['titulo_verificado'] = false;
         $data['validacao_eleitoral_pendente'] = false;
+
+        if ($campeonatoId) {
+            $campeonato = \App\Models\Campeonato::find($campeonatoId);
+            if ($campeonato) {
+                $config = app(\App\Services\CadastroCamposService::class)->getConfiguracaoEfetiva($campeonato);
+                $eleitoralExigido = !empty($config['campos']['titulo_eleitor']['visivel'])
+                    && !empty($config['campos']['titulo_eleitor']['obrigatorio']);
+                if (!$eleitoralExigido) {
+                    $data['titulo_verificado'] = false;
+                    $data['validacao_eleitoral_pendente'] = false;
+                    $data['acesso_ativo'] = true;
+                    $data['pode_participar_competicoes'] = true;
+                    return $data;
+                }
+            }
+        }
 
         $dataNascimento = $data['data_nascimento'] ?? null;
         if (!$dataNascimento) {

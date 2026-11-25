@@ -208,6 +208,49 @@
                  <input v-model="cat.vagas_limite" type="number" class="w-full border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Ilimitado">
               </div>
             </div>
+
+            <!-- Campos adicionais de Corrida / Inscrição Solidária -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3 mt-3 pt-3 border-t border-gray-100">
+              <div class="flex items-center gap-2">
+                <input
+                  :id="`cat_competitiva_${index}`"
+                  type="checkbox"
+                  v-model="cat.competitiva"
+                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label :for="`cat_competitiva_${index}`" class="text-xs font-medium text-gray-700">Competitiva (pódio)</label>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <input
+                  :id="`cat_brinquedo_${index}`"
+                  type="checkbox"
+                  v-model="cat.aceita_brinquedo"
+                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label :for="`cat_brinquedo_${index}`" class="text-xs font-medium text-gray-700">Aceita brinquedo</label>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Alimento (kg)</label>
+                <input v-model="cat.contribuicao_alimento_kg" type="number" step="0.5" min="0" class="w-full border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Ex: 4">
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Largada prevista</label>
+                <input v-model="cat.largada_prevista" type="text" class="w-full border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Ex: 06:30">
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Ordem premiação</label>
+                <input v-model="cat.ordem_premiacao" type="number" min="1" class="w-full border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Ex: 1">
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Premiação</label>
+                <input v-model="cat.premiacao_descricao" type="text" class="w-full border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Ex: Troféu + cesta">
+              </div>
+            </div>
           </div>
         </div>
         <div v-else class="text-center py-6 bg-white rounded border border-dashed border-blue-200 text-blue-400">
@@ -337,6 +380,153 @@
              </div>
           </div>
         </div>
+    </div>
+
+    <!-- Seção 4b: Cadastro do Participante -->
+    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+      <h3 class="text-lg font-semibold text-gray-800 mb-2">Cadastro do participante</h3>
+      <p class="text-sm text-gray-500 mb-4">
+        Escolha quais campos serão pedidos na inscrição online desta competição. O modo "Completo" mantém o cadastro padrão do sistema.
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
+        <label
+          v-for="opcao in modosCadastroOpcoes"
+          :key="opcao.value"
+          :class="[
+            'cursor-pointer rounded-lg border p-4 transition',
+            form.modo_cadastro === opcao.value
+              ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-600'
+              : 'border-gray-200 hover:border-gray-300 bg-white'
+          ]"
+        >
+          <div class="flex items-center gap-2">
+            <input
+              type="radio"
+              name="modo_cadastro"
+              :value="opcao.value"
+              v-model="form.modo_cadastro"
+              class="h-4 w-4 text-blue-600"
+            />
+            <span class="font-semibold text-sm text-gray-900">{{ opcao.label }}</span>
+          </div>
+          <p class="text-xs text-gray-600 mt-1">{{ opcao.desc }}</p>
+        </label>
+      </div>
+
+      <!-- Campos fixos (sempre obrigatórios) -->
+      <div class="mb-4 rounded-md bg-gray-50 border border-gray-200 p-3">
+        <div class="text-xs font-bold uppercase text-gray-500 mb-2">Sempre obrigatórios (fixos)</div>
+        <div class="flex flex-wrap gap-2">
+          <span
+            v-for="fixo in camposFixosLabels"
+            :key="fixo"
+            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-700"
+          >
+            {{ fixo }} *
+          </span>
+        </div>
+      </div>
+
+      <!-- Tabela de configuração no modo personalizado -->
+      <div v-if="form.modo_cadastro === 'personalizado'" class="mb-4 overflow-x-auto border border-gray-200 rounded-md">
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Campo</th>
+              <th class="px-4 py-2 text-center text-xs font-semibold text-gray-600 uppercase">Mostrar</th>
+              <th class="px-4 py-2 text-center text-xs font-semibold text-gray-600 uppercase">Obrigatório</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 bg-white">
+            <tr v-for="campo in camposConfiguraveisMeta" :key="campo.key">
+              <td class="px-4 py-2 font-medium text-gray-800">{{ campo.label }}</td>
+              <td class="px-4 py-2 text-center">
+                <input
+                  type="checkbox"
+                  v-model="camposPersonalizados[campo.key].visivel"
+                  @change="onToggleVisivel(campo.key)"
+                  class="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                />
+              </td>
+              <td class="px-4 py-2 text-center">
+                <input
+                  type="checkbox"
+                  v-model="camposPersonalizados[campo.key].obrigatorio"
+                  :disabled="!camposPersonalizados[campo.key].visivel"
+                  class="h-4 w-4 text-blue-600 border-gray-300 rounded disabled:opacity-40"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Prévia dos campos ativos -->
+      <div class="rounded-md bg-blue-50/70 border border-blue-100 p-3">
+        <div class="text-xs font-bold uppercase text-blue-800 mb-2">Prévia dos campos ativos neste formulário</div>
+        <div class="flex flex-wrap gap-2">
+          <span
+            v-for="item in previaCamposAtivos"
+            :key="item.key"
+            :class="[
+              'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium',
+              item.obrigatorio ? 'bg-blue-600 text-white' : 'bg-white text-blue-800 border border-blue-200'
+            ]"
+          >
+            {{ item.label }}<span v-if="item.obrigatorio" class="ml-0.5">*</span>
+          </span>
+        </div>
+        <p class="text-[11px] text-blue-700 mt-2">
+          * Campos marcados com asterisco são obrigatórios. Menores de 18 anos na data do evento informam nome e telefone do responsável.
+        </p>
+      </div>
+    </div>
+
+    <!-- Seção 4c: Inscrição Solidária -->
+    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+      <h3 class="text-lg font-semibold text-gray-800 mb-2">Inscrição solidária</h3>
+      <p class="text-sm text-gray-500 mb-4">
+        Ative para eventos onde a inscrição fica pendente até a entrega de alimento, brinquedo ou taxa, com número de peito gerado na confirmação.
+      </p>
+
+      <div class="space-y-4">
+        <div class="flex items-start gap-3">
+          <input
+            id="inscricao_solidaria"
+            type="checkbox"
+            v-model="form.inscricao_solidaria"
+            class="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+          />
+          <label for="inscricao_solidaria" class="text-sm text-gray-900">
+            <span class="font-medium block">Ativar inscrição solidária</span>
+            <span class="text-xs text-gray-500">Inscrição nasce pendente, exige escolha de prova/contribuição e gera número de peito ao confirmar recebimento.</span>
+          </label>
+        </div>
+
+        <div class="flex items-start gap-3">
+          <input
+            id="exige_termo_menor"
+            type="checkbox"
+            v-model="form.exige_termo_menor"
+            class="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+          />
+          <label for="exige_termo_menor" class="text-sm text-gray-900">
+            <span class="font-medium block">Exigir termo de autorização para menores de 18 anos</span>
+            <span class="text-xs text-gray-500">Bloqueia a retirada do kit para menores sem termo assinado e nome do responsável.</span>
+          </label>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Informações de retirada do kit</label>
+          <textarea
+            v-model="form.kit_retirada_info"
+            rows="3"
+            class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            placeholder="Ex: Retirada nos dias 17 e 18/12 das 08h às 17h na Secretaria de Esportes. Levar documento com foto."
+          ></textarea>
+        </div>
+      </div>
     </div>
 
     <!-- Seção 5: Finalização -->
@@ -478,6 +668,11 @@ const props = defineProps({
       categorias: [],
       min_jogadores: '',
       max_jogadores: '',
+      modo_cadastro: 'completo',
+      campos_cadastro: null,
+      inscricao_solidaria: false,
+      exige_termo_menor: false,
+      kit_retirada_info: '',
     }),
   },
   isEdit: {
@@ -515,22 +710,141 @@ const processInitialData = (data) => {
     return processed;
 };
 
+const modosCadastroOpcoes = [
+  { value: 'completo', label: 'Completo (padrão)', desc: 'Mantém todos os campos tradicionais (CPF, filiação, título de eleitor, endereço, foto).' },
+  { value: 'simplificado', label: 'Simplificado', desc: 'Ideal para corridas e eventos abertos: nome, nascimento, sexo, CPF, telefone, e-mail, camiseta e emergência.' },
+  { value: 'personalizado', label: 'Personalizado', desc: 'Escolha individualmente quais campos mostrar e quais serão obrigatórios.' },
+];
+
+const camposFixosLabels = ['Nome completo', 'Data de nascimento', 'Prova / Categoria', 'Aceites obrigatórios'];
+
+const camposConfiguraveisMeta = [
+  { key: 'cpf', label: 'CPF' },
+  { key: 'sexo', label: 'Sexo' },
+  { key: 'nome_mae', label: 'Nome da mãe' },
+  { key: 'nome_pai', label: 'Nome do pai' },
+  { key: 'titulo_eleitor', label: 'Título de eleitor / dados eleitorais' },
+  { key: 'cep', label: 'CEP' },
+  { key: 'endereco', label: 'Endereço (rua, bairro, UF)' },
+  { key: 'telefone', label: 'Telefone / WhatsApp' },
+  { key: 'email', label: 'E-mail' },
+  { key: 'foto', label: 'Foto do participante' },
+  { key: 'tamanho_camiseta', label: 'Tamanho da camiseta' },
+  { key: 'contato_emergencia', label: 'Contato de emergência' },
+];
+
+const PRESET_CAMPOS = {
+  completo: {
+    cpf: { visivel: true, obrigatorio: true },
+    sexo: { visivel: true, obrigatorio: false },
+    nome_mae: { visivel: true, obrigatorio: true },
+    nome_pai: { visivel: true, obrigatorio: false },
+    titulo_eleitor: { visivel: true, obrigatorio: true },
+    cep: { visivel: true, obrigatorio: true },
+    endereco: { visivel: true, obrigatorio: true },
+    telefone: { visivel: true, obrigatorio: false },
+    email: { visivel: true, obrigatorio: false },
+    foto: { visivel: true, obrigatorio: false },
+    tamanho_camiseta: { visivel: false, obrigatorio: false },
+    contato_emergencia: { visivel: false, obrigatorio: false },
+  },
+  simplificado: {
+    cpf: { visivel: true, obrigatorio: true },
+    sexo: { visivel: true, obrigatorio: true },
+    nome_mae: { visivel: false, obrigatorio: false },
+    nome_pai: { visivel: false, obrigatorio: false },
+    titulo_eleitor: { visivel: false, obrigatorio: false },
+    cep: { visivel: false, obrigatorio: false },
+    endereco: { visivel: false, obrigatorio: false },
+    telefone: { visivel: true, obrigatorio: true },
+    email: { visivel: true, obrigatorio: false },
+    foto: { visivel: false, obrigatorio: false },
+    tamanho_camiseta: { visivel: true, obrigatorio: false },
+    contato_emergencia: { visivel: true, obrigatorio: false },
+  },
+};
+
+const criarCamposPersonalizados = (saved) => {
+  const base = PRESET_CAMPOS.completo;
+  const result = {};
+  camposConfiguraveisMeta.forEach(({ key }) => {
+    const item = saved && typeof saved === 'object' && saved[key] ? saved[key] : base[key];
+    const obrigatorio = Boolean(item?.obrigatorio);
+    result[key] = {
+      visivel: obrigatorio ? true : Boolean(item?.visivel),
+      obrigatorio,
+    };
+  });
+  return result;
+};
+
+const camposPersonalizados = reactive(criarCamposPersonalizados(props.initialData?.campos_cadastro));
+
+const onToggleVisivel = (key) => {
+  if (!camposPersonalizados[key].visivel) {
+    camposPersonalizados[key].obrigatorio = false;
+  }
+};
+
+const previaCamposAtivos = computed(() => {
+  const mapa = form.modo_cadastro === 'personalizado'
+    ? camposPersonalizados
+    : (PRESET_CAMPOS[form.modo_cadastro] || PRESET_CAMPOS.completo);
+
+  const fixos = [
+    { key: 'nome', label: 'Nome completo', obrigatorio: true },
+    { key: 'data_nascimento', label: 'Data de nascimento', obrigatorio: true },
+  ];
+
+  const ativos = camposConfiguraveisMeta
+    .filter(({ key }) => mapa[key]?.visivel)
+    .map(({ key, label }) => ({ key, label, obrigatorio: Boolean(mapa[key]?.obrigatorio) }));
+
+  return [...fixos, ...ativos, { key: 'cidade', label: 'Cidade', obrigatorio: form.modo_cadastro === 'completo' }];
+});
+
 const bannerPreview = ref(props.initialData?.banner_url || null);
+
+const normalizarCategorias = (cats) => {
+  if (!Array.isArray(cats)) return [];
+  return cats.map((cat) => ({
+    ...cat,
+    competitiva: cat.competitiva === undefined || cat.competitiva === null ? true : Boolean(cat.competitiva),
+    aceita_brinquedo: Boolean(cat.aceita_brinquedo),
+    contribuicao_alimento_kg: cat.contribuicao_alimento_kg ?? '',
+    premiacao_descricao: cat.premiacao_descricao ?? '',
+    largada_prevista: cat.largada_prevista ?? '',
+    ordem_premiacao: cat.ordem_premiacao ?? '',
+  }));
+};
 
 const form = reactive({ 
     categorias: [], 
     min_jogadores: '',
     max_jogadores: '',
+    modo_cadastro: 'completo',
+    campos_cadastro: null,
+    inscricao_solidaria: false,
+    exige_termo_menor: false,
+    kit_retirada_info: '',
     ...processInitialData(props.initialData) 
 });
 
-// Ensure categorias is array
-if (!form.categorias) form.categorias = [];
+form.categorias = normalizarCategorias(form.categorias);
+if (!form.modo_cadastro) form.modo_cadastro = 'completo';
+form.inscricao_solidaria = Boolean(form.inscricao_solidaria);
+form.exige_termo_menor = Boolean(form.exige_termo_menor);
 
 // Watch para garantir que form se mantenha sincronizado com props
 watch(() => props.initialData, (newVal) => {
     if (newVal) {
         Object.assign(form, processInitialData(newVal));
+        form.categorias = normalizarCategorias(newVal.categorias);
+        form.modo_cadastro = newVal.modo_cadastro || 'completo';
+        form.inscricao_solidaria = Boolean(newVal.inscricao_solidaria);
+        form.exige_termo_menor = Boolean(newVal.exige_termo_menor);
+        form.kit_retirada_info = newVal.kit_retirada_info || '';
+        Object.assign(camposPersonalizados, criarCamposPersonalizados(newVal.campos_cadastro));
         bannerPreview.value = newVal.banner_url || null;
         if (newVal.cidade_eleitoral && typeof campeonatoStore.fetchBairrosEleitorais === 'function') {
             campeonatoStore.fetchBairrosEleitorais(newVal.cidade_eleitoral);
@@ -580,7 +894,13 @@ const addCategoria = () => {
     peso_min: '',
     peso_max: '',
     valor_inscricao: '',
-    vagas_limite: ''
+    vagas_limite: '',
+    competitiva: true,
+    contribuicao_alimento_kg: '',
+    aceita_brinquedo: false,
+    premiacao_descricao: '',
+    largada_prevista: '',
+    ordem_premiacao: '',
   });
 };
 
@@ -692,6 +1012,13 @@ watch(() => [form.idade_min, form.idade_max, form.cidade_eleitoral, form.bairro_
 const submit = () => {
   const data = {
     ...form,
+    modo_cadastro: form.modo_cadastro || 'completo',
+    campos_cadastro: form.modo_cadastro === 'personalizado'
+      ? JSON.parse(JSON.stringify(camposPersonalizados))
+      : null,
+    inscricao_solidaria: Boolean(form.inscricao_solidaria),
+    exige_termo_menor: Boolean(form.exige_termo_menor),
+    kit_retirada_info: form.kit_retirada_info === '' ? null : form.kit_retirada_info,
     categorias: Array.isArray(form.categorias) ? form.categorias.map(cat => ({ ...cat })) : []
   };
 
@@ -707,6 +1034,12 @@ const submit = () => {
         valor_inscricao: cat.valor_inscricao === '' ? null : cat.valor_inscricao,
         vagas_limite: cat.vagas_limite === '' ? null : cat.vagas_limite,
         distancia: cat.distancia === '' ? null : cat.distancia,
+        competitiva: cat.competitiva === undefined ? true : Boolean(cat.competitiva),
+        contribuicao_alimento_kg: cat.contribuicao_alimento_kg === '' ? null : cat.contribuicao_alimento_kg,
+        aceita_brinquedo: Boolean(cat.aceita_brinquedo),
+        premiacao_descricao: cat.premiacao_descricao === '' ? null : cat.premiacao_descricao,
+        largada_prevista: cat.largada_prevista === '' ? null : cat.largada_prevista,
+        ordem_premiacao: cat.ordem_premiacao === '' ? null : cat.ordem_premiacao,
       };
     });
   }
@@ -725,6 +1058,12 @@ const submit = () => {
     const formData = new FormData();
     Object.entries(data).forEach(([key, value]) => {
       if (key === 'categorias') return;
+      if (key === 'campos_cadastro') {
+        if (value && typeof value === 'object') {
+          formData.append(key, JSON.stringify(value));
+        }
+        return;
+      }
       if (value === null || value === undefined || value === '') return;
       if (typeof value === 'boolean') {
         formData.append(key, value ? '1' : '0');
@@ -736,6 +1075,10 @@ const submit = () => {
     data.categorias.forEach((cat, index) => {
       Object.entries(cat).forEach(([key, value]) => {
         if (value === null || value === undefined || value === '') return;
+        if (typeof value === 'boolean') {
+          formData.append(`categorias[${index}][${key}]`, value ? '1' : '0');
+          return;
+        }
         formData.append(`categorias[${index}][${key}]`, value);
       });
     });
