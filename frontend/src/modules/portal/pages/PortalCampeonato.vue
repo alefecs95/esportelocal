@@ -1,95 +1,139 @@
 <template>
-  <div class="overflow-x-clip p-4 max-w-7xl mx-auto">
-    <div class="mb-6 flex flex-col-reverse sm:flex-row sm:justify-between sm:items-start gap-3">
-      <h1 class="text-xl sm:text-2xl font-bold text-gray-800 leading-tight min-w-0 break-words">{{ campeonato?.nome }}</h1>
-      <router-link 
-        to="/campeonatos"
-        class="text-blue-600 hover:text-blue-800 inline-flex items-center gap-2 font-medium min-h-11 shrink-0 self-start"
-      >
-        <ArrowLeft :size="20" /> Voltar
-      </router-link>
-    </div>
-
-    <div v-if="loading" class="text-center py-12">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-    </div>
-
-    <div v-else-if="!campeonato" class="text-center py-12 bg-white rounded-lg shadow-sm">
-      <p class="text-gray-500">Campeonato não encontrado.</p>
-    </div>
-
-    <div v-else>
-      <div v-if="getBannerUrl(campeonato)" class="mb-6">
-        <img
-          :src="getBannerUrl(campeonato)"
-          alt="Banner da competição"
-          class="w-full h-40 sm:h-56 md:h-72 object-cover rounded-xl border border-gray-100 shadow-sm"
-        />
+  <div class="event-detail-page min-h-screen bg-[#f8fafc] text-slate-900 overflow-x-clip">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <!-- Breadcrumb / Voltar -->
+      <div class="mb-5">
+        <router-link
+          to="/campeonatos"
+          class="pressable inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-950 min-h-10"
+        >
+          <ArrowLeft :size="16" /> Voltar para competições
+        </router-link>
       </div>
 
-      <!-- Info Card -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 mb-6 sm:mb-8">
-        <div class="flex flex-wrap gap-4 text-sm text-gray-600 mb-4">
-          <span class="bg-blue-50 text-blue-700 px-3 py-1 rounded-full font-bold uppercase text-xs tracking-wide">
-            {{ campeonato.modalidade?.nome }}
-          </span>
-          <span class="flex items-center gap-1">
-            <Calendar :size="16" /> {{ formatDate(campeonato.data_inicio) }} - {{ formatDate(campeonato.data_fim) }}
-          </span>
-          <span v-if="eventoInfo?.local || campeonato.cidade_eleitoral" class="flex items-center gap-1">
-            <MapPin :size="16" /> {{ eventoInfo?.local || campeonato.cidade_eleitoral }}
-          </span>
-          <span class="flex items-center gap-1">
-            <Info :size="16" /> Status: {{ formatStatus(campeonato.status) }}
-          </span>
-          <button
-            type="button"
-            @click="activeTab = 'inscritos'"
-            class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-3 py-1 rounded-full font-bold text-xs transition-colors"
-          >
-            <Users :size="14" /> {{ totalInscritos }} {{ totalInscritos === 1 ? 'inscrito' : 'inscritos' }}
-          </button>
+      <!-- Loading skeleton -->
+      <div v-if="loading" class="space-y-6 animate-pulse">
+        <div class="bg-white rounded-2xl border border-slate-200/80 overflow-hidden">
+          <div class="h-52 sm:h-72 bg-slate-200"></div>
+          <div class="p-6 sm:p-8 space-y-4">
+            <div class="h-8 w-2/3 bg-slate-200 rounded-lg"></div>
+            <div class="h-4 w-1/2 bg-slate-100 rounded"></div>
+          </div>
         </div>
+      </div>
 
-        <!-- Bloco Público de Corrida / Inscrição Solidária (só aparece quando configurado) -->
-        <div v-if="isEventoCorridaOuSolidario" class="mt-4 pt-4 border-t border-gray-100 space-y-4">
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div class="text-sm text-gray-700 space-y-1">
-              <p v-if="eventoInfo?.inicio_inscricao || eventoInfo?.fim_inscricao">
-                <strong>Prazo de inscrição:</strong>
-                {{ formatDate(eventoInfo.inicio_inscricao) }} a {{ formatDate(eventoInfo.fim_inscricao) }}
-              </p>
-              <p v-if="eventoInfo?.kit_retirada_info">
-                <strong>Retirada do kit:</strong> {{ eventoInfo.kit_retirada_info }}
-              </p>
+      <div v-else-if="!campeonato" class="bg-white rounded-2xl border border-slate-200/80 px-6 py-16 text-center max-w-xl mx-auto">
+        <p class="text-slate-600 font-medium">Campeonato não encontrado.</p>
+      </div>
+
+      <div v-else class="space-y-6 sm:space-y-8">
+        <!-- Hero Card do Evento -->
+        <section class="bg-white rounded-2xl border border-slate-200/90 shadow-[0_1px_2px_rgba(15,23,42,0.04)] overflow-hidden">
+          <div v-if="getBannerUrl(campeonato)" class="relative h-48 sm:h-64 md:h-80 bg-slate-900 overflow-hidden">
+            <img
+              :src="getBannerUrl(campeonato)"
+              :alt="campeonato.nome"
+              class="w-full h-full object-cover"
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent"></div>
+            <div class="absolute top-4 left-4 flex flex-wrap items-center gap-2">
+              <span class="px-3 py-1 rounded-full text-xs font-bold bg-white/95 text-slate-900 shadow-sm">
+                {{ campeonato.modalidade?.nome || 'Esporte' }}
+              </span>
+              <span
+                class="px-3 py-1 rounded-full text-xs font-bold shadow-sm"
+                :class="campeonato.status === 'inscricoes_abertas' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/80' : 'bg-white/90 text-slate-800'"
+              >
+                {{ formatStatus(campeonato.status) }}
+              </span>
             </div>
-            <router-link
-              v-if="eventoInfo?.permite_inscricao_online && eventoInfo?.status === 'inscricoes_abertas'"
-              :to="`/campeonatos/${campeonato.id}/inscricao`"
-              class="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-emerald-600 text-white font-bold text-sm hover:bg-emerald-700 shadow-sm shrink-0"
-            >
-              Fazer Inscrição Online
-            </router-link>
           </div>
 
-          <div v-if="eventoInfo?.inscricao_solidaria" class="rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-sm text-emerald-900 space-y-2">
-            <h3 class="font-bold text-emerald-900">Como contribuir</h3>
-            <p>
-              <strong>Adulto (3 km e 5 km):</strong> R$ 30,00 ou 4 kg de alimento ou 1 brinquedo.
-              <br />
-              <strong>Criança (Kids / Teens):</strong> 1 kg de alimento ou 1 brinquedo.
-            </p>
-            <p class="text-xs text-emerald-800">
-              Seu número de peito é gerado já no cadastro; a inscrição é confirmada após a entrega da contribuição junto à organização.
-            </p>
-          </div>
+          <div class="p-5 sm:p-8">
+            <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+              <div class="min-w-0 flex-1">
+                <div v-if="!getBannerUrl(campeonato)" class="flex flex-wrap items-center gap-2 mb-3">
+                  <span class="px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700">
+                    {{ campeonato.modalidade?.nome || 'Esporte' }}
+                  </span>
+                  <span class="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700">
+                    {{ formatStatus(campeonato.status) }}
+                  </span>
+                </div>
 
-          <div v-if="eventoInfo?.regulamento" class="rounded-xl bg-gray-50 border border-gray-200 p-4">
-            <h3 class="font-bold text-gray-800 text-sm mb-2">Regulamento</h3>
-            <p class="text-sm text-gray-700 whitespace-pre-line">{{ eventoInfo.regulamento }}</p>
+                <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-950 leading-[1.12] break-words">
+                  {{ campeonato.nome }}
+                </h1>
+
+                <div class="flex flex-wrap items-center gap-x-5 gap-y-2.5 text-sm text-slate-600 mt-4">
+                  <span class="inline-flex items-center gap-1.5 tabular-nums">
+                    <Calendar :size="16" class="text-slate-400" />
+                    {{ formatPeriodo(campeonato.data_inicio, campeonato.data_fim) }}
+                  </span>
+                  <span v-if="eventoInfo?.local || campeonato.local || campeonato.cidade_eleitoral" class="inline-flex items-center gap-1.5">
+                    <MapPin :size="16" class="text-slate-400" />
+                    {{ eventoInfo?.local || campeonato.local || campeonato.cidade_eleitoral }}
+                  </span>
+                  <button
+                    type="button"
+                    @click="activeTab = 'inscritos'"
+                    class="pressable inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200/80 px-3 py-1 rounded-full font-bold text-xs tabular-nums"
+                  >
+                    <Users :size="14" /> {{ totalInscritos }} {{ totalInscritos === 1 ? 'inscrito' : 'inscritos' }}
+                  </button>
+                </div>
+              </div>
+
+              <div v-if="eventoInfo?.permite_inscricao_online && eventoInfo?.status === 'inscricoes_abertas'" class="shrink-0">
+                <router-link
+                  :to="`/campeonatos/${campeonato.id}/inscricao`"
+                  class="pressable inline-flex items-center justify-center w-full sm:w-auto px-6 py-3.5 rounded-xl bg-emerald-600 text-white font-bold text-sm hover:bg-emerald-700 shadow-sm"
+                >
+                  Fazer Inscrição Online
+                </router-link>
+              </div>
+            </div>
+
+            <!-- Bloco Público de Corrida / Inscrição Solidária -->
+            <div v-if="isEventoCorridaOuSolidario" class="mt-6 pt-6 border-t border-slate-100 space-y-4">
+              <div v-if="eventoInfo?.inicio_inscricao || eventoInfo?.fim_inscricao || eventoInfo?.kit_retirada_info" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                <div v-if="eventoInfo?.inicio_inscricao || eventoInfo?.fim_inscricao" class="rounded-xl bg-slate-50 border border-slate-200/70 p-3.5">
+                  <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Prazo de inscrição</p>
+                  <p class="font-semibold text-slate-900 tabular-nums">
+                    {{ formatDate(eventoInfo.inicio_inscricao) }} a {{ formatDate(eventoInfo.fim_inscricao) }}
+                  </p>
+                </div>
+                <div v-if="eventoInfo?.kit_retirada_info" class="rounded-xl bg-slate-50 border border-slate-200/70 p-3.5">
+                  <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Retirada do kit</p>
+                  <p class="text-slate-800">{{ eventoInfo.kit_retirada_info }}</p>
+                </div>
+              </div>
+
+              <div v-if="eventoInfo?.inscricao_solidaria" class="rounded-xl bg-emerald-50/70 border border-emerald-200/80 p-4 text-sm text-emerald-950 space-y-1.5">
+                <h3 class="font-bold text-emerald-950">Como contribuir</h3>
+                <p class="leading-relaxed">
+                  <strong>Adulto (3 km e 5 km):</strong> R$ 30,00 ou 4 kg de alimento ou 1 brinquedo.
+                  <br />
+                  <strong>Criança (Kids / Teens):</strong> 1 kg de alimento ou 1 brinquedo.
+                </p>
+                <p class="text-xs text-emerald-800">
+                  Seu número de peito é gerado já no cadastro; a inscrição é confirmada após a entrega da contribuição junto à organização.
+                </p>
+              </div>
+
+              <details v-if="eventoInfo?.regulamento" class="group rounded-xl bg-slate-50 border border-slate-200/80">
+                <summary class="cursor-pointer select-none px-4 py-3 text-sm font-bold text-slate-800 flex items-center justify-between list-none">
+                  <span>Ler regulamento completo</span>
+                  <span class="text-xs font-semibold text-blue-600 group-open:hidden">Expandir</span>
+                  <span class="text-xs font-semibold text-slate-500 hidden group-open:inline">Recolher</span>
+                </summary>
+                <div class="px-4 pb-4 pt-1 border-t border-slate-200/60">
+                  <p class="text-sm text-slate-700 whitespace-pre-line leading-relaxed">{{ eventoInfo.regulamento }}</p>
+                </div>
+              </details>
+            </div>
           </div>
-        </div>
-      </div>
+        </section>
 
       <!-- Animação: Últimos Atletas Inscritos -->
       <div
@@ -548,6 +592,7 @@
         </div>
       </div>
 
+      </div>
     </div>
   </div>
 </template>
@@ -833,7 +878,16 @@ const loadCartoes = async () => {
 
 const formatDate = (dateString) => {
   if (!dateString) return '';
+  const match = String(dateString).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) return `${match[3]}/${match[2]}/${match[1]}`;
   return new Date(dateString).toLocaleDateString('pt-BR');
+};
+
+const formatPeriodo = (inicio, fim) => {
+  const d1 = formatDate(inicio);
+  const d2 = formatDate(fim);
+  if (!d2 || d1 === d2) return d1;
+  return `${d1} a ${d2}`;
 };
 
 const formatStatus = (status) => {
@@ -860,6 +914,22 @@ onMounted(loadData);
 </script>
 
 <style scoped>
+.event-detail-page {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.pressable {
+  transition:
+    transform 160ms var(--ease-out),
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.pressable:active {
+  transform: scale(0.97);
+}
+
 .marquee-animate {
   animation: marquee-inscritos 28s linear infinite;
 }
@@ -874,6 +944,18 @@ onMounted(loadData);
   }
   100% {
     transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pressable {
+    transition: none;
+  }
+  .pressable:active {
+    transform: none;
+  }
+  .marquee-animate {
+    animation: none;
   }
 }
 </style>
