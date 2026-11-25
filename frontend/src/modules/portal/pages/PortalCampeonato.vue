@@ -86,7 +86,7 @@
 
               <div v-if="eventoInfo?.permite_inscricao_online && eventoInfo?.status === 'inscricoes_abertas'" class="shrink-0">
                 <router-link
-                  :to="`/campeonatos/${campeonato.id}/inscricao`"
+                  :to="`/campeonatos/${campeonato.slug || campeonato.id}/inscricao`"
                   class="pressable inline-flex items-center justify-center w-full sm:w-auto px-6 py-3.5 rounded-xl bg-emerald-600 text-white font-bold text-sm hover:bg-emerald-700 shadow-sm"
                 >
                   Fazer Inscrição Online
@@ -597,7 +597,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { formatNumeroPeito } from '@/utils/formatNumeroPeito';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import portalService from '@/modules/portal/services/portalService';
 import inscricaoService from '@/modules/inscricoes/services/inscricaoService';
 import ChaveamentoBracket from '@/modules/tabela/components/ChaveamentoBracket.vue';
@@ -605,6 +605,7 @@ import PartidaPublicCard from '@/modules/portal/components/PartidaPublicCard.vue
 import { Calendar, MapPin, ArrowLeft, Trophy, Target, Square, Info, Users } from 'lucide-vue-next';
 
 const route = useRoute();
+const router = useRouter();
 const campeonato = ref(null);
 const fases = ref([]);
 const loading = ref(true);
@@ -781,6 +782,10 @@ const loadData = async () => {
   try {
     // Carregar Tabela
     const { data } = await portalService.getTabela(route.params.id);
+
+    if (data?.slug && String(route.params.id) !== String(data.slug)) {
+      router.replace({ name: 'PortalCampeonato', params: { id: data.slug } });
+    }
     
     // Processar dados da tabela
     const dadosNormalizados = {

@@ -223,9 +223,9 @@ class CampeonatoController extends Controller
         ]);
     }
 
-    public function camposCadastro(int $id): JsonResponse
+    public function camposCadastro(string $id): JsonResponse
     {
-        $campeonato = \App\Models\Campeonato::with(['modalidade', 'categorias'])->find($id);
+        $campeonato = \App\Models\Campeonato::resolvePublic($id, ['modalidade', 'categorias']);
         if (!$campeonato) {
             return $this->response(false, 'Campeonato não encontrado', [], 404);
         }
@@ -238,6 +238,7 @@ class CampeonatoController extends Controller
             ...$config,
             'campeonato' => [
                 'id' => $campeonato->id,
+                'slug' => $campeonato->slug,
                 'nome' => $campeonato->nome,
                 'local' => $campeonato->local,
                 'data_inicio' => $campeonato->data_inicio?->format('Y-m-d'),

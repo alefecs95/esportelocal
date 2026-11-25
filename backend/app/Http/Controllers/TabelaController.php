@@ -86,7 +86,7 @@ class TabelaController extends Controller
 
     public function listarTabela($id)
     {
-        $campeonato = Campeonato::with([
+        $campeonato = Campeonato::resolvePublicOrFail($id, [
             'modalidade', // Eager loading modalidade
             'fases' => function ($faseQuery) {
                 $faseQuery->orderBy('ordem');
@@ -97,7 +97,7 @@ class TabelaController extends Controller
             'fases.partidas' => function ($partidaQuery) {
                 $partidaQuery->orderByRaw('COALESCE(ordem_na_fase, 999999), id');
             }
-        ])->findOrFail($id);
+        ]);
 
         // Accessing them triggers the logic in getMandanteAttribute
         foreach ($campeonato->fases as $fase) {

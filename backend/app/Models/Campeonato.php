@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\BelongsToTenant;
 use App\Traits\ResolvesMediaUrl;
 use App\Enums\FormatoCampeonato;
+use Illuminate\Support\Str;
 
 class Campeonato extends Model
 {
@@ -17,6 +18,7 @@ class Campeonato extends Model
         'prefeitura_id',
         'temporada_id',
         'nome',
+        'slug',
         'local',
         'banner',
         'modalidade_id',
@@ -134,5 +136,78 @@ class Campeonato extends Model
                 ->select('atletas.*')
                 ->get();
         }
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (Campeonato $campeonato) {
+            if (empty($campeonato->slug)) {
+                $campeonato->slug = static::gerarSlugUnico(
+                    (string) ($campeonato->nome ?: 'competicao'),
+                    $campeonato->prefeitura_id ? (int) $campeonato->prefeitura_id : null
+                );
+            }
+        });
+
+        static::updating(function (Campeonato $campeonato) {
+            if (empty($campeonato->slug)) {
+                $campeonato->slug = static::gerarSlugUnico(
+                    (string) ($campeonato->nome ?: 'competicao'),
+                    $campeonato->prefeitura_id ? (int) $campeonato->prefeitura_id : null,
+                    $campeonato->id
+                );
+            }
+        });
+    }
+
+    public static function gerarSlugUnico(string $nome, ?int $prefeituraId = null, ?int $ignoreId = null): string
+    {
+        $base = Str::slug($nome) ?: 'competicao';
+        $slug = $base;
+        $i = 1;
+
+        while (static::withoutGlobalScopes()
+            ->when($prefeituraId !== null, fn ($q) => $q->where('prefeitura_id', $prefeituraId))
+            ->where('slug', $slug)
+            ->when($ignoreId !== null, fn ($q) => $q->where('id', '!=', $ignoreId))
+            ->exists()
+        ) {
+            $slug = $base . '-' . (++$i);
+        }
+
+        return $slug;
+    }
+
+    public static function resolvePublic(string|int $identificador, array $with = []): ?self
+    {
+        $ident = trim((string) $identificador);
+        if ($ident === '') {
+            return null;
+        }
+
+        $query = static::query();
+        if (!empty($with)) {
+            $query->with($with);
+        }
+
+        $bySlug = (clone $query)->where('slug', $ident)->first();
+        if ($bySlug) {
+            return $bySlug;
+        }
+
+        if (ctype_digit($ident)) {
+            return $query->find((int) $ident);
+        }
+
+        return null;
+    }
+
+    public static function resolvePublicOrFail(string|int $identificador, array $with = []): self
+    {
+        $campeonato = static::resolvePublic($identificador, $with);
+        if (!$campeonato) {
+            abort(404, 'Campeonato não encontrado');
+        }
+        return $campeonato;
     }
 }

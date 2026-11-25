@@ -740,7 +740,7 @@ const submitFeedbackRef = ref(null);
 
 const campeonatoId = computed(() => {
   const raw = route.params.campeonatoId || route.query.campeonato_id;
-  return raw ? Number(raw) : null;
+  return raw ? String(raw).trim() : null;
 });
 
 const eventoCampeonato = computed(() => eventoConfig.value?.campeonato || null);

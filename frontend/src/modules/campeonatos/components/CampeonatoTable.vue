@@ -78,7 +78,7 @@
               <span class="truncate">{{ item.local || item.cidade_eleitoral }}</span>
             </span>
             <a
-              :href="`/campeonatos/${item.id}`"
+              :href="`/campeonatos/${item.slug || item.id}`"
               target="_blank"
               rel="noopener noreferrer"
               class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium"

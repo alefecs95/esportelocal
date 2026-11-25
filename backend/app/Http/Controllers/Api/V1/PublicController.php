@@ -16,9 +16,9 @@ use Illuminate\Support\Facades\Storage;
 
 class PublicController extends Controller
 {
-    public function getCampeonatoBanner(int $id)
+    public function getCampeonatoBanner(string $id)
     {
-        $campeonato = Campeonato::findOrFail($id);
+        $campeonato = Campeonato::resolvePublicOrFail($id);
         $banner = $campeonato->banner;
 
         if (!$banner || str_starts_with($banner, 'http://') || str_starts_with($banner, 'https://')) {
@@ -173,14 +173,14 @@ class PublicController extends Controller
 
     public function getArtilharia($id)
     {
-        $campeonato = Campeonato::findOrFail($id);
-        
+        $campeonato = Campeonato::resolvePublicOrFail($id);
+
         $gols = DB::table('eventos_partida')
             ->join('partidas', 'eventos_partida.partida_id', '=', 'partidas.id')
             ->join('fases', 'partidas.fase_id', '=', 'fases.id')
             ->join('atletas', 'eventos_partida.jogador_id', '=', 'atletas.id')
             ->join('equipes', 'eventos_partida.time_id', '=', 'equipes.id')
-            ->where('fases.campeonato_id', $id)
+            ->where('fases.campeonato_id', $campeonato->id)
             ->where('eventos_partida.tipo_evento', 'GOL')
             ->select(
                 'atletas.id', 
@@ -204,7 +204,7 @@ class PublicController extends Controller
 
     public function getCartoes($id)
     {
-        $campeonato = Campeonato::findOrFail($id);
+        $campeonato = Campeonato::resolvePublicOrFail($id);
         $suspensaoAutomaticaAtiva = (bool) ($campeonato->suspensao_automatica_ativa ?? true);
         $cartoesAmarelosParaSuspensao = max(1, (int) ($campeonato->cartoes_amarelos_para_suspensao ?? 2));
         $cartaoVermelhoSuspende = (bool) ($campeonato->cartao_vermelho_suspende ?? true);
@@ -214,7 +214,7 @@ class PublicController extends Controller
             ->join('fases', 'partidas.fase_id', '=', 'fases.id')
             ->join('atletas', 'eventos_partida.jogador_id', '=', 'atletas.id')
             ->join('equipes', 'eventos_partida.time_id', '=', 'equipes.id')
-            ->where('fases.campeonato_id', $id)
+            ->where('fases.campeonato_id', $campeonato->id)
             ->where('partidas.status', 'finalizada')
             ->whereIn('eventos_partida.tipo_evento', ['CARTAO_AMARELO', 'CARTAO_VERMELHO'])
             ->select(
@@ -538,9 +538,9 @@ class PublicController extends Controller
         ]);
     }
 
-    public function getCampeonatoInscritos(int $id)
+    public function getCampeonatoInscritos(string $id)
     {
-        $campeonato = Campeonato::findOrFail($id);
+        $campeonato = Campeonato::resolvePublicOrFail($id);
 
         $inscricoes = \App\Models\Inscricao::query()
             ->where('campeonato_id', $campeonato->id)

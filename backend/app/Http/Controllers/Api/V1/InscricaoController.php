@@ -158,9 +158,9 @@ class InscricaoController extends Controller
     /**
      * Inscrição pública: cadastra/localiza atleta conforme configuração de campos do campeonato e cria a inscrição.
      */
-    public function storePublico(Request $request, int $campeonatoId): JsonResponse
+    public function storePublico(Request $request, string $campeonatoId): JsonResponse
     {
-        $campeonato = Campeonato::with('categorias')->find($campeonatoId);
+        $campeonato = Campeonato::resolvePublic($campeonatoId, ['categorias']);
         if (!$campeonato) {
             return $this->response(false, 'Campeonato não encontrado.', [], 404);
         }

@@ -117,7 +117,7 @@
         <!-- Evento em destaque -->
         <section v-if="eventoDestaque" aria-label="Competição em destaque">
           <router-link
-            :to="{ name: 'PortalCampeonato', params: { id: eventoDestaque.id } }"
+            :to="{ name: 'PortalCampeonato', params: { id: eventoDestaque.slug || eventoDestaque.id } }"
             class="event-card group bg-white rounded-2xl border border-slate-200/90 overflow-hidden grid grid-cols-1 lg:grid-cols-12 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
           >
             <div class="lg:col-span-7 relative overflow-hidden bg-slate-900 aspect-[16/9] lg:aspect-auto lg:min-h-[340px]">
@@ -201,7 +201,7 @@
             <router-link
               v-for="camp in demaisCampeonatos"
               :key="camp.id"
-              :to="{ name: 'PortalCampeonato', params: { id: camp.id } }"
+              :to="{ name: 'PortalCampeonato', params: { id: camp.slug || camp.id } }"
               class="event-card group bg-white rounded-2xl border border-slate-200/90 overflow-hidden flex flex-col min-w-0 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
             >
               <div class="relative aspect-[16/9] overflow-hidden bg-slate-900">

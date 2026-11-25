@@ -29,7 +29,7 @@
         </span>
         <div class="flex items-center gap-3">
           <a
-            :href="`/campeonatos/${form.campeonato_id}/inscricao`"
+            :href="`/campeonatos/${selectedCampeonato?.slug || form.campeonato_id}/inscricao`"
             target="_blank"
             rel="noopener noreferrer"
             class="text-xs font-semibold text-blue-700 hover:text-blue-900 underline"
@@ -46,7 +46,7 @@
         </div>
       </div>
       <iframe
-        :src="`/campeonatos/${form.campeonato_id}/inscricao`"
+        :src="`/campeonatos/${selectedCampeonato?.slug || form.campeonato_id}/inscricao`"
         title="Formulário de inscrição online"
         class="w-full min-h-[820px] rounded-xl border border-gray-200 bg-white"
       ></iframe>

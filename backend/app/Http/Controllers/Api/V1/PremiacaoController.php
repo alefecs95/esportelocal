@@ -86,9 +86,9 @@ class PremiacaoController extends Controller
      * GET public/campeonatos/{id}/resultados-corrida
      * Resultados públicos por categoria, sem CPF, telefone ou dados de contato.
      */
-    public function resultadosPublicos(int $id): JsonResponse
+    public function resultadosPublicos(string $id): JsonResponse
     {
-        $campeonato = Campeonato::with('categorias')->find($id);
+        $campeonato = Campeonato::resolvePublic($id, ['categorias']);
         if (!$campeonato) {
             return $this->response(false, 'Campeonato não encontrado.', [], 404);
         }
