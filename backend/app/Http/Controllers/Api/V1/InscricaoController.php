@@ -267,6 +267,9 @@ class InscricaoController extends Controller
                 $atletaData['prefeitura_id'] = $campeonato->prefeitura_id;
                 $atletaData['acesso_ativo'] = true;
                 $atletaData['pode_participar_competicoes'] = true;
+                if ($request->hasFile('foto')) {
+                    $atletaData['foto'] = $request->file('foto')->store('atletas/fotos', 'public');
+                }
 
                 $atleta = $this->atletaService->create($atletaData);
             }

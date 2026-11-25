@@ -213,6 +213,29 @@
         </div>
       </div>
 
+      <!-- Foto do Atleta (quando habilitada na competição) -->
+      <div v-if="isFieldVisible('foto')" class="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+        <label for="foto_atleta" class="block text-sm font-medium text-gray-700 mb-2">
+          Foto do Atleta {{ isFieldRequired('foto') ? '*' : '(opcional)' }}
+        </label>
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div class="w-16 h-16 rounded-full overflow-hidden bg-white border border-slate-200 flex items-center justify-center shrink-0">
+            <img v-if="fotoPreview" :src="fotoPreview" alt="Pré-visualização da foto" class="w-full h-full object-cover" />
+            <span v-else class="text-xs font-semibold text-slate-400">Foto</span>
+          </div>
+          <div class="flex-1 min-w-0 space-y-1">
+            <input
+              id="foto_atleta"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              @change="handleFotoChange"
+              class="block w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-3.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            />
+            <p class="text-xs text-slate-500">JPG, PNG ou WEBP até 5MB.</p>
+          </div>
+        </div>
+      </div>
+
       <div class="pt-2 flex items-center justify-between">
         <button v-if="isFieldVisible('cpf')" type="button" @click="goToPreviousStep" class="h-[44px] px-4 rounded-lg bg-white text-slate-700 border border-slate-300 font-semibold hover:bg-slate-50 transition-all">
           Voltar
@@ -742,6 +765,25 @@ const campeonatoId = computed(() => {
   const raw = route.params.campeonatoId || route.query.campeonato_id;
   return raw ? String(raw).trim() : null;
 });
+
+const fotoFile = ref(null);
+const fotoPreview = ref('');
+
+const handleFotoChange = (event) => {
+  const file = event.target?.files?.[0] || null;
+  if (!file) {
+    fotoFile.value = null;
+    fotoPreview.value = '';
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    setFormError('A foto deve ter no máximo 5MB.');
+    event.target.value = '';
+    return;
+  }
+  fotoFile.value = file;
+  fotoPreview.value = URL.createObjectURL(file);
+};
 
 const eventoCampeonato = computed(() => eventoConfig.value?.campeonato || null);
 
@@ -1482,12 +1524,35 @@ const handleRegister = async () => {
       !payload.titulo_verificado
     );
 
+    if (isFieldVisible('foto') && isFieldRequired('foto') && !fotoFile.value) {
+      setFormError('Envie uma foto do atleta para concluir a inscrição.');
+      currentStep.value = 2;
+      loading.value = false;
+      return;
+    }
+
     if (eventoCampeonato.value && campeonatoId.value) {
-      const { data } = await inscricaoService.criarInscricaoPublica(campeonatoId.value, payload);
+      let bodyToSend = payload;
+      if (fotoFile.value) {
+        const fd = new FormData();
+        Object.entries(payload).forEach(([key, val]) => {
+          if (val === null || val === undefined || val === '') return;
+          if (typeof val === 'boolean') {
+            fd.append(key, val ? '1' : '0');
+          } else {
+            fd.append(key, String(val));
+          }
+        });
+        fd.append('foto', fotoFile.value);
+        bodyToSend = fd;
+      }
+      const { data } = await inscricaoService.criarInscricaoPublica(campeonatoId.value, bodyToSend);
       inscricaoResultado.value = data?.data || null;
       success.value = data?.message || 'Inscrição realizada com sucesso.';
       successMessage.value = data?.message || 'Inscrição realizada com sucesso.';
       showSuccessModal.value = true;
+      fotoFile.value = null;
+      fotoPreview.value = '';
       resetForm();
       resetLockedFields();
       cpfConsultado.value = false;
