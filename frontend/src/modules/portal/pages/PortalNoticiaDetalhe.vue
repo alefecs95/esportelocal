@@ -567,7 +567,13 @@ onMounted(atualizarEstadoAuth);
 
 <style scoped>
 .animate-fade-in {
-  animation: fadeIn 0.3s ease-in-out;
+  animation: fadeIn 220ms var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in {
+    animation: fadeInReduced 180ms ease;
+  }
 }
 
 .headline-balance {
@@ -576,7 +582,12 @@ onMounted(atualizarEstadoAuth);
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInReduced {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 </style>

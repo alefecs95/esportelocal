@@ -668,7 +668,7 @@ onUnmounted(() => {
 <style scoped>
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.6s ease;
+  transition: opacity 400ms var(--ease-out);
 }
 .fade-enter-from,
 .fade-leave-to {
@@ -676,10 +676,17 @@ onUnmounted(() => {
 }
 
 .animate-fade-in-up {
-  animation: fadeInUp 0.6s ease both;
+  animation: fadeInUp 450ms var(--ease-out) both;
 }
 .animate-slide-up {
-  animation: fadeInUp 0.45s ease both;
+  animation: fadeInUp 400ms var(--ease-out) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-up,
+  .animate-slide-up {
+    animation: none;
+  }
 }
 
 @keyframes fadeInUp {

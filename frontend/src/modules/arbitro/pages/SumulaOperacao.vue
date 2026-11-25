@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen bg-slate-900 text-white font-sans flex flex-col">
+  <div class="min-h-dvh bg-slate-900 text-white font-sans flex flex-col">
     <!-- Header Fixo -->
-    <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-50 shadow-md">
+    <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-50 shadow-md pt-[env(safe-area-inset-top,0px)]">
       <div class="px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-1">
         <button @click="$router.push('/admin/arbitro/minhas-partidas')" class="p-2 -ml-2 text-slate-400 hover:text-white">
           <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>

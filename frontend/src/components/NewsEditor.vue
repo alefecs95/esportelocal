@@ -319,22 +319,25 @@ const initEditor = () => {
   color: #2563eb;
   background-color: #eff6ff;
   border-radius: 6px;
-  transition: all 0.2s;
-}
-
-.ce-toolbar__plus:hover {
-  background-color: #2563eb;
-  color: white;
+  transition: background-color 160ms ease, color 160ms ease;
 }
 
 .ce-toolbar__settings-btn {
   color: #6b7280;
   border-radius: 6px;
+  transition: background-color 160ms ease, color 160ms ease;
 }
 
-.ce-toolbar__settings-btn:hover {
-  background-color: #f3f4f6;
-  color: #1f2937;
+@media (hover: hover) and (pointer: fine) {
+  .ce-toolbar__plus:hover {
+    background-color: #2563eb;
+    color: white;
+  }
+
+  .ce-toolbar__settings-btn:hover {
+    background-color: #f3f4f6;
+    color: #1f2937;
+  }
 }
 
 /* Blocos Específicos */

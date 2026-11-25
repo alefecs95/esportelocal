@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen bg-gray-50 flex flex-col">
+  <div class="min-h-dvh bg-gray-50 flex flex-col">
     <!-- Navbar -->
-    <header class="bg-white shadow-sm z-10">
+    <header class="bg-white shadow-sm z-10 pt-[env(safe-area-inset-top,0px)]">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
           <div class="flex">
@@ -65,7 +65,7 @@
 
     <!-- Footer -->
     <footer class="bg-white border-t border-gray-200 mt-auto">
-      <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+      <div class="max-w-7xl mx-auto pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] px-4 sm:px-6 lg:px-8">
         <p class="text-center text-sm text-gray-500">
           &copy; {{ new Date().getFullYear() }} SEMEL. Todos os direitos reservados.
         </p>

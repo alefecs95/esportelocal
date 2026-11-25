@@ -1,13 +1,23 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-dvh bg-gray-50">
     <ManagerSidebar :mobile-open="sidebarOpen" @close="sidebarOpen = false" />
-    <div
-      v-if="sidebarOpen"
-      class="fixed inset-0 bg-black/50 z-30 lg:hidden"
-      @click="sidebarOpen = false"
-    ></div>
-    <div class="min-h-screen lg:ml-64">
-      <header class="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-3 sm:px-6 sticky top-0 z-20">
+    <Transition
+      enter-active-class="transition-opacity duration-200 ease-out-strong"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition-opacity duration-150 ease-out-strong"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div
+        v-if="sidebarOpen"
+        class="fixed inset-0 bg-black/50 z-30 lg:hidden"
+        @click="sidebarOpen = false"
+      ></div>
+    </Transition>
+    <div class="min-h-dvh lg:ml-64">
+      <header class="bg-white border-b border-gray-200 sticky top-0 z-20 pt-[env(safe-area-inset-top,0px)]">
+        <div class="h-16 flex items-center justify-between px-3 sm:px-6">
         <div class="flex items-center gap-2 min-w-0">
           <button
             class="lg:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
@@ -39,6 +49,7 @@
           <div class="h-9 w-9 sm:h-10 sm:w-10 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-bold shrink-0">
             {{ user.name?.charAt(0).toUpperCase() }}
           </div>
+        </div>
         </div>
       </header>
       <main class="p-4 sm:p-6 lg:p-8">

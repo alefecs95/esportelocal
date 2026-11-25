@@ -1,5 +1,5 @@
 <template>
-  <div v-if="loading" class="flex justify-center items-center h-[calc(100vh-200px)]">
+  <div v-if="loading" class="flex justify-center items-center h-[calc(100dvh-200px)]">
     <div class="flex flex-col items-center gap-2">
       <Loader2 class="animate-spin text-blue-600" :size="40" />
       <span class="text-gray-500 font-medium">Carregando suas informações...</span>

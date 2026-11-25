@@ -1,5 +1,6 @@
 <template>
-  <header class="bg-white shadow h-16 flex items-center justify-between px-3 sm:px-6 fixed top-0 left-0 lg:left-64 right-0 z-20">
+  <header class="bg-white shadow fixed top-0 left-0 lg:left-64 right-0 z-20 pt-[env(safe-area-inset-top,0px)]">
+    <div class="h-16 flex items-center justify-between gap-2 px-3 sm:px-6">
     <div class="flex items-center gap-2 min-w-0">
       <button @click="emit('toggle-sidebar')" class="lg:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100">
         <Menu :size="20" />
@@ -24,16 +25,24 @@
             {{ unread > 9 ? '9+' : unread }}
           </span>
         </button>
+        <Transition
+          enter-active-class="transition duration-150 ease-out-strong"
+          enter-from-class="opacity-0 scale-[0.97]"
+          enter-to-class="opacity-100 scale-100"
+          leave-active-class="transition duration-150 ease-out-strong"
+          leave-from-class="opacity-100 scale-100"
+          leave-to-class="opacity-0 scale-[0.97]"
+        >
         <div
           v-if="bellOpen"
-          class="absolute right-0 mt-2 w-80 max-w-[90vw] bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden"
+          class="absolute right-0 mt-2 w-80 max-w-[90vw] bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden origin-top-right"
         >
           <div class="px-3 py-2 border-b flex items-center justify-between">
             <p class="text-sm font-semibold">Memória do Esporte</p>
             <button v-if="unread" type="button" class="text-xs font-semibold text-blue-700" @click="marcarLidas">Marcar lidas</button>
           </div>
           <p v-if="!notices.length" class="px-3 py-6 text-sm text-gray-500 text-center">Nenhum envio recente da comunidade.</p>
-          <ul v-else class="max-h-72 overflow-y-auto divide-y">
+          <ul v-else class="max-h-72 overflow-y-auto overscroll-contain divide-y">
             <li v-for="item in notices" :key="item.id">
               <router-link :to="item.link || '/admin/memoria'" class="block px-3 py-2.5 hover:bg-gray-50" :class="item.lida ? 'opacity-70' : ''" @click="bellOpen = false">
                 <p class="text-sm font-medium text-gray-900">{{ item.titulo }}</p>
@@ -42,6 +51,7 @@
             </li>
           </ul>
         </div>
+        </Transition>
       </div>
       <div class="relative flex items-center gap-2 sm:gap-4">
         <button class="flex items-center space-x-2 text-gray-700 hover:text-gray-900 focus:outline-none">
@@ -62,6 +72,7 @@
           <span class="ml-2 text-sm font-medium hidden sm:inline">Sair</span>
         </button>
       </div>
+    </div>
     </div>
   </header>
 </template>

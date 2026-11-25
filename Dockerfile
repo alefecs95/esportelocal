@@ -87,8 +87,10 @@ RUN sed -i 's/user = www-data/user = www/g' /usr/local/etc/php-fpm.d/www.conf \
     && sed -i 's/^;clear_env = no/clear_env = no/' /usr/local/etc/php-fpm.d/www.conf
 
 RUN sed -i 's/user nginx;/user www;/' /etc/nginx/nginx.conf \
-    && mkdir -p /run/nginx /var/log/nginx \
-    && chown -R www:www /run/nginx /var/log/nginx
+    && mkdir -p /run/nginx /var/log/nginx /var/lib/nginx/tmp \
+    && chown -R www:www /run/nginx /var/log/nginx /var/lib/nginx
+
+RUN printf "upload_max_filesize=16M\npost_max_size=20M\n" > /usr/local/etc/php/conf.d/uploads.ini
 
 EXPOSE 80
 

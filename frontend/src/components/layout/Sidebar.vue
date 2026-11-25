@@ -1,5 +1,5 @@
 <template>
-  <div class="h-screen w-64 bg-gray-900 text-white fixed top-0 left-0 z-40 overflow-y-auto flex flex-col border-r border-gray-800 transform transition-transform duration-200 ease-out lg:translate-x-0" :class="mobileOpen ? 'translate-x-0' : '-translate-x-full'">
+  <div class="h-dvh w-64 bg-gray-900 text-white fixed top-0 left-0 z-40 overflow-y-auto overscroll-contain flex flex-col border-r border-gray-800 pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] transform transition-transform duration-300 ease-drawer lg:translate-x-0" :class="mobileOpen ? 'translate-x-0' : '-translate-x-full'">
     <div class="p-4 sm:p-6 flex items-center gap-3 border-b border-gray-800">
       <div class="bg-primary-600 p-2 rounded-lg">
         <Trophy :size="20" class="text-white" />
@@ -67,7 +67,7 @@
             <Settings :size="20" />
             Configurar
           </span>
-          <ChevronDown :size="16" class="transition-transform" :class="configurarAberto ? 'rotate-180' : ''" />
+          <ChevronDown :size="16" class="transition-transform duration-200 ease-in-out-strong" :class="configurarAberto ? 'rotate-180' : ''" />
         </button>
         <div v-if="configurarAberto" class="ml-4 space-y-1">
           <router-link to="/admin/temporadas" class="nav-link text-sm" active-class="bg-gray-800 text-white font-medium">
@@ -174,11 +174,17 @@ const handleNavigate = (event) => {
   padding: 0.625rem 0.75rem;
   border-radius: 0.5rem;
   color: #d1d5db;
-  transition: background-color 0.15s, color 0.15s;
+  transition: background-color 160ms ease, color 160ms ease;
 }
-.nav-link:hover {
+.nav-link:active {
   background-color: #1f2937;
   color: #fff;
+}
+@media (hover: hover) and (pointer: fine) {
+  .nav-link:hover {
+    background-color: #1f2937;
+    color: #fff;
+  }
 }
 .section-label {
   padding: 1rem 0.75rem 0.5rem;

@@ -1,6 +1,6 @@
 <template>
   <aside
-    class="w-64 bg-white border-r border-gray-200 fixed left-0 top-0 bottom-0 z-40 flex flex-col transition-transform duration-200 ease-out lg:translate-x-0"
+    class="w-64 bg-white border-r border-gray-200 fixed left-0 top-0 z-40 h-dvh flex flex-col overflow-hidden transition-transform duration-300 ease-drawer lg:translate-x-0 pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]"
     :class="mobileOpen ? 'translate-x-0' : '-translate-x-full'"
   >
     <div class="h-16 flex items-center justify-between border-b border-gray-200 px-4">
@@ -13,7 +13,7 @@
       </button>
     </div>
 
-    <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+    <nav class="flex-1 overflow-y-auto overscroll-contain py-4 px-3 space-y-1">
       <router-link
         to="/manager"
         @click="handleNavigate"

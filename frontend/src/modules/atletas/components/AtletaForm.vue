@@ -962,11 +962,17 @@ const marcarTituloComoVerificado = () => {
 
 <style scoped>
 .animate-fade-in {
-    animation: fadeIn 0.3s ease-in-out;
+    animation: fadeIn 180ms var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .animate-fade-in {
+        animation: fadeIn 180ms ease;
+    }
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 </style>

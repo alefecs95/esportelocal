@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50 flex flex-col font-sans">
+  <div class="min-h-dvh flex flex-col" :class="isTenant ? 'bg-gray-50 font-sans' : ''">
     <!-- Navbar Público - Apenas visível no Portal do Tenant -->
     <header v-if="isTenant" class="bg-primary-600 text-white shadow-md sticky top-0 z-50 border-b border-primary-700 pt-[env(safe-area-inset-top)]">
       <div class="container mx-auto px-4 py-3 flex justify-between items-center gap-2 min-w-0">
@@ -15,20 +15,20 @@
 
         <!-- Menu Desktop (mesmo breakpoint do botão hambúrguer) -->
         <nav class="hidden xl:flex items-center gap-1 bg-primary-700/30 p-1 rounded-full backdrop-blur-sm border border-white/10 shrink-0">
-            <router-link to="/" class="px-4 py-2 rounded-full text-sm font-bold transition-all hover:bg-white/10 hover:text-yellow-400" active-class="bg-white text-primary-700 shadow-sm hover:bg-white hover:text-primary-700" exact-active-class="bg-white text-primary-700 shadow-sm">Início</router-link>
-            <router-link to="/noticias" class="px-4 py-2 rounded-full text-sm font-bold transition-all hover:bg-white/10 hover:text-yellow-400" active-class="bg-white text-primary-700 shadow-sm hover:bg-white hover:text-primary-700">Notícias</router-link>
-            <router-link to="/memoria" class="px-4 py-2 rounded-full text-sm font-bold transition-all hover:bg-white/10 hover:text-yellow-400" active-class="bg-white text-primary-700 shadow-sm hover:bg-white hover:text-primary-700">Memória</router-link>
-            <router-link to="/campeonatos" class="px-4 py-2 rounded-full text-sm font-bold transition-all hover:bg-white/10 hover:text-yellow-400" active-class="bg-white text-primary-700 shadow-sm hover:bg-white hover:text-primary-700">Eventos</router-link>
-            <router-link to="/partidas" class="px-4 py-2 rounded-full text-sm font-bold transition-all hover:bg-white/10 hover:text-yellow-400" active-class="bg-white text-primary-700 shadow-sm hover:bg-white hover:text-primary-700">Partidas</router-link>
-            <router-link to="/equipes" class="px-4 py-2 rounded-full text-sm font-bold transition-all hover:bg-white/10 hover:text-yellow-400" active-class="bg-white text-primary-700 shadow-sm hover:bg-white hover:text-primary-700">Equipes</router-link>
-            <router-link to="/atletas" class="px-4 py-2 rounded-full text-sm font-bold transition-all hover:bg-white/10 hover:text-yellow-400" active-class="bg-white text-primary-700 shadow-sm hover:bg-white hover:text-primary-700">Atletas</router-link>
-            <router-link to="/diretoria" class="px-4 py-2 rounded-full text-sm font-bold transition-all hover:bg-white/10 hover:text-yellow-400" active-class="bg-white text-primary-700 shadow-sm hover:bg-white hover:text-primary-700">Diretoria</router-link>
+            <router-link to="/" class="px-4 py-2 rounded-full text-sm font-bold transition-colors hover:bg-white/10 hover:text-yellow-400" active-class="bg-white text-primary-700 shadow-sm hover:bg-white hover:text-primary-700" exact-active-class="bg-white text-primary-700 shadow-sm">Início</router-link>
+            <router-link to="/noticias" class="px-4 py-2 rounded-full text-sm font-bold transition-colors hover:bg-white/10 hover:text-yellow-400" active-class="bg-white text-primary-700 shadow-sm hover:bg-white hover:text-primary-700">Notícias</router-link>
+            <router-link to="/memoria" class="px-4 py-2 rounded-full text-sm font-bold transition-colors hover:bg-white/10 hover:text-yellow-400" active-class="bg-white text-primary-700 shadow-sm hover:bg-white hover:text-primary-700">Memória</router-link>
+            <router-link to="/campeonatos" class="px-4 py-2 rounded-full text-sm font-bold transition-colors hover:bg-white/10 hover:text-yellow-400" active-class="bg-white text-primary-700 shadow-sm hover:bg-white hover:text-primary-700">Eventos</router-link>
+            <router-link to="/partidas" class="px-4 py-2 rounded-full text-sm font-bold transition-colors hover:bg-white/10 hover:text-yellow-400" active-class="bg-white text-primary-700 shadow-sm hover:bg-white hover:text-primary-700">Partidas</router-link>
+            <router-link to="/equipes" class="px-4 py-2 rounded-full text-sm font-bold transition-colors hover:bg-white/10 hover:text-yellow-400" active-class="bg-white text-primary-700 shadow-sm hover:bg-white hover:text-primary-700">Equipes</router-link>
+            <router-link to="/atletas" class="px-4 py-2 rounded-full text-sm font-bold transition-colors hover:bg-white/10 hover:text-yellow-400" active-class="bg-white text-primary-700 shadow-sm hover:bg-white hover:text-primary-700">Atletas</router-link>
+            <router-link to="/diretoria" class="px-4 py-2 rounded-full text-sm font-bold transition-colors hover:bg-white/10 hover:text-yellow-400" active-class="bg-white text-primary-700 shadow-sm hover:bg-white hover:text-primary-700">Diretoria</router-link>
         </nav>
         
         <!-- Actions Area -->
         <div class="flex items-center gap-2 sm:gap-3 shrink-0">
             <!-- Login Button (Desktop) -->
-            <router-link to="/login" class="hidden xl:flex items-center gap-2 bg-yellow-400 hover:bg-yellow-300 text-primary-900 px-5 py-2.5 rounded-full font-black text-sm transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 transform">
+            <router-link to="/login" class="hidden xl:flex items-center gap-2 bg-yellow-400 hover:bg-yellow-300 text-primary-900 px-5 py-2.5 rounded-full font-black text-sm transition-colors shadow-lg">
                 <User :size="18" stroke-width="2.5" />
                 <span>ENTRAR</span>
             </router-link>
@@ -43,14 +43,14 @@
 
       <!-- Mobile Menu Overlay -->
       <transition
-        enter-active-class="transition duration-200 ease-out"
+        enter-active-class="transition duration-200 ease-out-strong"
         enter-from-class="opacity-0 -translate-y-2"
         enter-to-class="opacity-100 translate-y-0"
-        leave-active-class="transition duration-150 ease-in"
+        leave-active-class="transition duration-150 ease-out-strong"
         leave-from-class="opacity-100 translate-y-0"
         leave-to-class="opacity-0 -translate-y-2"
       >
-        <div v-if="mobileMenuOpen" class="absolute top-full left-0 w-full bg-white border-b border-gray-100 shadow-xl xl:hidden text-gray-800 py-4 px-4 flex flex-col gap-2 z-40 max-h-[min(80vh,calc(100dvh-4rem))] overflow-y-auto">
+        <div v-if="mobileMenuOpen" class="absolute top-full left-0 w-full bg-white border-b border-gray-100 shadow-xl xl:hidden text-gray-800 py-4 px-4 flex flex-col gap-2 z-40 max-h-[min(80vh,calc(100dvh-4rem))] overflow-y-auto overscroll-contain">
             <router-link to="/" class="flex items-center gap-3 px-4 py-3 rounded-xl font-bold hover:bg-gray-50 transition-colors" active-class="bg-blue-50 text-blue-600" @click="mobileMenuOpen = false">
                 <Home :size="20" /> Início
             </router-link>
@@ -86,13 +86,15 @@
       <MemoriaSubnav v-if="isMemoriaRoute" />
     </header>
 
-    <!-- Conteúdo -->
-    <main class="flex-1" :class="{ 'bg-white': !isTenant }">
+    <main v-if="isTenant" class="flex-1">
       <router-view></router-view>
     </main>
+    <div v-else class="flex-1" :class="route.name === 'Home' ? '' : 'bg-white font-sans'">
+      <router-view></router-view>
+    </div>
 
     <!-- Footer Público - Apenas visível no Portal do Tenant -->
-    <footer v-if="isTenant" class="bg-white text-gray-600 py-12 border-t border-gray-200">
+    <footer v-if="isTenant" class="bg-white text-gray-600 pt-12 pb-[calc(3rem+env(safe-area-inset-bottom,0px))] border-t border-gray-200">
       <div class="container mx-auto px-4 flex flex-col items-center gap-6 text-center">
         <div class="text-center">
             <img v-if="logoRodapeSrc" :src="logoRodapeSrc" class="h-14 object-contain mx-auto mb-3" alt="Logo do rodapé" />
@@ -139,7 +141,7 @@
 <script setup>
 import { Facebook, Twitter, Instagram, Youtube, Menu, User, X, Home, Newspaper, Trophy, Calendar, Shield, Users, Briefcase, Landmark } from 'lucide-vue-next';
 import { useTheme } from '@/composables/useTheme';
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { isTenantDomain } from '@/utils/tenantHelpers';
 import { getMainOrigin } from '@/utils/domainHelpers';
@@ -148,7 +150,7 @@ import MemoriaSubnav from '@/modules/portal/components/MemoriaSubnav.vue';
 const { theme } = useTheme();
 const route = useRoute();
 const mobileMenuOpen = ref(false);
-const isTenant = ref(true);
+const isTenant = ref(isTenantDomain());
 const logoLoadFailed = ref(false);
 const fallbackLogo = 'https://cdn-icons-png.flaticon.com/512/9386/9386916.png';
 const platformOrigin = getMainOrigin();
@@ -221,7 +223,26 @@ watch(
     }
 );
 
+const setThemeColor = (color) => {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', color);
+};
+
+watch(
+    () => [isTenant.value, theme.value?.cor_primaria],
+    () => {
+        if (isTenant.value) {
+            setThemeColor(theme.value?.cor_primaria || '#2563eb');
+        }
+    },
+    { immediate: true }
+);
+
 onMounted(() => {
     isTenant.value = isTenantDomain();
+});
+
+onUnmounted(() => {
+    if (isTenant.value) setThemeColor('#ffffff');
 });
 </script>

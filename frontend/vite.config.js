@@ -10,5 +10,13 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
+  },
+  optimizeDeps: {
+    entries: ['index.html', 'src/**/*.{vue,js}']
+  },
+  server: {
+    watch: {
+      ignored: ['**/public/taste/**']
+    }
   }
 })

@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-100 flex">
+  <div class="min-h-dvh bg-gray-100 flex">
     <aside class="w-64 bg-gray-900 text-white flex flex-col">
       <div class="p-4 border-b border-gray-800">
         <h1 class="text-xl font-bold text-center">Super Admin</h1>
