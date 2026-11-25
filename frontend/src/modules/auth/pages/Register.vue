@@ -561,9 +561,6 @@
                 {{ opt.label }}
               </option>
             </select>
-            <p class="text-xs font-medium text-emerald-800">
-              Sua inscrição será confirmada quando a contribuição for entregue.
-            </p>
           </div>
 
           <div class="space-y-2.5 pt-2 border-t border-slate-100 text-sm text-gray-700">

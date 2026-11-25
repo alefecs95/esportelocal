@@ -116,9 +116,6 @@
                   <br />
                   <strong>Criança (Kids / Teens):</strong> 1 kg de alimento ou 1 brinquedo.
                 </p>
-                <p class="text-xs text-emerald-800">
-                  Seu número de peito é gerado já no cadastro; a inscrição é confirmada após a entrega da contribuição junto à organização.
-                </p>
               </div>
 
               <details v-if="eventoInfo?.regulamento" class="group rounded-xl bg-slate-50 border border-slate-200/80">
