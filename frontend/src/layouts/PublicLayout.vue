@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-dvh flex flex-col" :class="isTenant ? 'bg-gray-50 font-sans' : ''">
+  <div class="min-h-dvh flex flex-col overflow-x-clip" :class="isTenant ? 'bg-gray-50 font-sans' : ''">
     <!-- Navbar Público - Apenas visível no Portal do Tenant -->
     <header v-if="isTenant" class="bg-primary-600 text-white shadow-md sticky top-0 z-50 border-b border-primary-700 pt-[env(safe-area-inset-top)]">
       <div class="container mx-auto px-4 py-3 flex justify-between items-center gap-2 min-w-0">

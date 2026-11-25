@@ -1,32 +1,32 @@
 <template>
-  <div class="w-full max-w-5xl mx-auto">
-    <div class="text-center mb-8">
-      <h1 class="text-3xl font-bold text-gray-900 mb-2">
+  <div class="w-full max-w-4xl mx-auto px-3.5 sm:px-6 py-5 sm:py-8 overflow-x-clip">
+    <div class="text-center mb-6 sm:mb-8 px-1">
+      <h1 class="text-xl sm:text-3xl font-extrabold tracking-tight text-slate-950 leading-tight break-words mb-2">
         {{ eventoCampeonato ? eventoCampeonato.nome : 'Cadastro de Atleta' }}
       </h1>
-      <p class="text-gray-500">
+      <p class="text-sm sm:text-base text-slate-500 leading-relaxed max-w-xl mx-auto">
         {{ eventoCampeonato ? 'Preencha os dados abaixo para realizar sua inscrição' : 'Preencha em etapas para concluir o cadastro com segurança' }}
       </p>
     </div>
 
-    <div class="mb-6 bg-white rounded-2xl border border-slate-200 shadow-sm p-4 md:p-5">
-      <div class="flex items-center justify-between mb-3">
-        <span class="text-sm font-semibold text-slate-700">Progresso do cadastro</span>
-        <span class="text-sm font-bold text-blue-600">{{ progressPercent }}%</span>
+    <div class="mb-5 sm:mb-6 bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5 sm:p-5">
+      <div class="flex items-center justify-between gap-2 mb-2.5">
+        <span class="text-xs sm:text-sm font-semibold text-slate-700">Progresso do cadastro</span>
+        <span class="text-xs sm:text-sm font-bold text-blue-600 tabular-nums">{{ progressPercent }}%</span>
       </div>
       <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
         <div class="h-full bg-blue-600 transition-all duration-300" :style="{ width: `${progressPercent}%` }"></div>
       </div>
-      <div class="grid grid-cols-2 md:grid-cols-5 gap-2 mt-3 text-xs">
-        <button v-if="isFieldVisible('cpf')" type="button" @click="goToStep(1)" class="px-2 py-1 rounded-md text-left" :class="currentStep === 1 ? 'bg-blue-50 text-blue-700 border border-blue-200' : stepStates.identificacao ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-50 text-slate-500'">1. CPF</button>
-        <button type="button" @click="goToStep(2)" class="px-2 py-1 rounded-md text-left" :class="currentStep === 2 ? 'bg-blue-50 text-blue-700 border border-blue-200' : stepStates.pessoais ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-50 text-slate-500'">2. Dados</button>
-        <button v-if="isFieldVisible('titulo_eleitor')" type="button" @click="goToStep(3)" class="px-2 py-1 rounded-md text-left" :class="currentStep === 3 ? 'bg-blue-50 text-blue-700 border border-blue-200' : stepStates.eleitorais ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-50 text-slate-500'">3. Eleitoral</button>
-        <button type="button" @click="goToStep(4)" class="px-2 py-1 rounded-md text-left" :class="currentStep === 4 ? 'bg-blue-50 text-blue-700 border border-blue-200' : stepStates.contato ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-50 text-slate-500'">4. Contato</button>
-        <button type="button" @click="goToStep(5)" class="px-2 py-1 rounded-md text-left" :class="currentStep === 5 ? 'bg-blue-50 text-blue-700 border border-blue-200' : form.receive_notifications ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-50 text-slate-500'">5. Finalizar</button>
+      <div class="flex flex-wrap sm:grid sm:grid-cols-5 gap-1.5 sm:gap-2 mt-3 text-xs">
+        <button v-if="isFieldVisible('cpf')" type="button" @click="goToStep(1)" class="px-2.5 py-1.5 rounded-lg text-left font-medium transition-colors" :class="currentStep === 1 ? 'bg-blue-50 text-blue-700 border border-blue-200' : stepStates.identificacao ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-50 text-slate-500'">1. CPF</button>
+        <button type="button" @click="goToStep(2)" class="px-2.5 py-1.5 rounded-lg text-left font-medium transition-colors" :class="currentStep === 2 ? 'bg-blue-50 text-blue-700 border border-blue-200' : stepStates.pessoais ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-50 text-slate-500'">2. Dados</button>
+        <button v-if="isFieldVisible('titulo_eleitor')" type="button" @click="goToStep(3)" class="px-2.5 py-1.5 rounded-lg text-left font-medium transition-colors" :class="currentStep === 3 ? 'bg-blue-50 text-blue-700 border border-blue-200' : stepStates.eleitorais ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-50 text-slate-500'">3. Eleitoral</button>
+        <button type="button" @click="goToStep(4)" class="px-2.5 py-1.5 rounded-lg text-left font-medium transition-colors" :class="currentStep === 4 ? 'bg-blue-50 text-blue-700 border border-blue-200' : stepStates.contato ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-50 text-slate-500'">4. Contato</button>
+        <button type="button" @click="goToStep(5)" class="px-2.5 py-1.5 rounded-lg text-left font-medium transition-colors" :class="currentStep === 5 ? 'bg-blue-50 text-blue-700 border border-blue-200' : form.receive_notifications ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-50 text-slate-500'">5. Finalizar</button>
       </div>
     </div>
 
-    <form @submit.prevent="handleRegister" class="space-y-6 bg-white rounded-2xl border border-slate-200 shadow-xl p-5 md:p-7">
+    <form @submit.prevent="handleRegister" class="space-y-5 sm:space-y-6 bg-white rounded-2xl border border-slate-200 shadow-sm sm:shadow-xl p-4 sm:p-6 md:p-7 register-form">
       <div v-if="error" class="bg-red-50 text-red-700 p-4 rounded-xl text-sm flex items-start gap-2 border border-red-100">
         <AlertCircle :size="16" class="mt-0.5 shrink-0" />
         <div>
@@ -1596,3 +1596,16 @@ const goToLogin = () => {
   router.push('/login');
 };
 </script>
+
+<style scoped>
+.register-form :where(input, select, textarea) {
+  max-width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .register-form :where(input:not([type='checkbox']):not([type='radio']):not([type='file']), select, textarea) {
+    font-size: 16px;
+  }
+}
+</style>
