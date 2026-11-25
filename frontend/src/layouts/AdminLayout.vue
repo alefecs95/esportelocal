@@ -13,7 +13,7 @@
     </Transition>
     <div class="flex-1 lg:ml-64 flex flex-col min-h-dvh w-full">
       <Navbar @toggle-sidebar="sidebarOpen = !sidebarOpen" />
-      <main class="flex-1 overflow-y-auto overscroll-contain p-3 sm:p-6 mt-[calc(4rem+env(safe-area-inset-top,0px))]">
+      <main class="flex-1 min-w-0 p-3 sm:p-6 mt-[calc(4rem+env(safe-area-inset-top,0px))]">
         <router-view></router-view>
       </main>
       <footer class="bg-white px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] text-center text-gray-500 text-sm">
