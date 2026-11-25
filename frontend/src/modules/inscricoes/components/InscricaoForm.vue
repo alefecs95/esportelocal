@@ -299,27 +299,29 @@ const onCampeonatoChange = async () => {
             return_list: true
         });
         
-        if (response.data.success) {
-            atletasElegiveis.value = response.data.data.atletas;
+        if (response.data?.success) {
+            atletasElegiveis.value = Array.isArray(response.data?.data?.atletas) ? response.data.data.atletas : [];
         }
     } catch (e) {
         console.error("Erro ao buscar atletas elegíveis", e);
+        atletasElegiveis.value = [];
     } finally {
         loadingAtletas.value = false;
     }
 };
 
 const atletasFiltrados = computed(() => {
-    let lista = atletasElegiveis.value;
+    let lista = Array.isArray(atletasElegiveis.value) ? atletasElegiveis.value : [];
     if (searchAtleta.value) {
         const termo = searchAtleta.value.toLowerCase();
-        lista = lista.filter(a => a.nome.toLowerCase().includes(termo));
+        lista = lista.filter(a => (a.nome || '').toLowerCase().includes(termo));
     }
     return lista;
 });
 
 const atletaSelecionado = computed(() => {
-    return atletasElegiveis.value.find(a => a.id === form.atleta_id) || null;
+    const lista = Array.isArray(atletasElegiveis.value) ? atletasElegiveis.value : [];
+    return lista.find(a => a.id === form.atleta_id) || null;
 });
 
 const atletaSelecionadoEhMenor = computed(() => {
