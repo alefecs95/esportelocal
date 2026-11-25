@@ -33,6 +33,10 @@ class CampeonatoService
             }
         }
         
+        if (array_key_exists('cartoes_amarelos_para_suspensao', $data) && $data['cartoes_amarelos_para_suspensao'] === null) {
+            $data['cartoes_amarelos_para_suspensao'] = 2;
+        }
+
         $campeonato = $this->campeonatoRepository->create($data);
 
         // Salvar categorias se fornecidas
@@ -60,6 +64,10 @@ class CampeonatoService
     {
         $campeonato = $this->find($id);
         
+        if (array_key_exists('cartoes_amarelos_para_suspensao', $data) && $data['cartoes_amarelos_para_suspensao'] === null) {
+            $data['cartoes_amarelos_para_suspensao'] = $campeonato->cartoes_amarelos_para_suspensao ?? 2;
+        }
+
         $this->campeonatoRepository->update($campeonato, $data);
         
         // Atualizar categorias (Sync: remove missing, update existing, create new)

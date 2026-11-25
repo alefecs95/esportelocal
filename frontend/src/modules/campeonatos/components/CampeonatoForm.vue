@@ -1050,7 +1050,7 @@ const submit = () => {
   });
 
   if (!data.suspensao_automatica_ativa) {
-    data.cartoes_amarelos_para_suspensao = null;
+    data.cartoes_amarelos_para_suspensao = data.cartoes_amarelos_para_suspensao || 2;
     data.cartao_vermelho_suspende = false;
   }
 
