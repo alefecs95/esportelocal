@@ -59,16 +59,30 @@ class UserController extends Controller
         return response()->json($arbitros);
     }
 
+    private function resolvePrefeituraId(User $actor): int
+    {
+        if ($actor->prefeitura_id) {
+            return (int) $actor->prefeitura_id;
+        }
+
+        if (app()->bound('current_tenant') && app('current_tenant')) {
+            return (int) app('current_tenant')->id;
+        }
+
+        abort(400, 'Nenhuma prefeitura identificada para gerenciar usuários.');
+    }
+
     public function adminIndex(Request $request)
     {
         $actor = $this->requireAdmin($request);
+        $prefeituraId = $this->resolvePrefeituraId($actor);
         $search = $request->query('q');
         $perfil = $request->query('perfil');
         $status = $request->query('status');
         $perPage = max(10, min((int) $request->query('per_page', 20), 100));
 
         $query = User::query()
-            ->where('prefeitura_id', $actor->prefeitura_id)
+            ->where('prefeitura_id', $prefeituraId)
             ->where('perfil', '!=', 'SUPER_ADMIN')
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
@@ -91,6 +105,7 @@ class UserController extends Controller
     public function adminStore(Request $request)
     {
         $actor = $this->requireAdmin($request);
+        $prefeituraId = $this->resolvePrefeituraId($actor);
         $allowedPerfis = ['ADMIN', 'ARBITRO', 'RESPONSAVEL', 'REDATOR', 'ATLETA'];
 
         $validated = $request->validate([
@@ -99,16 +114,16 @@ class UserController extends Controller
                 'nullable',
                 'email',
                 'max:255',
-                Rule::unique('users', 'email')->where(function ($query) use ($actor) {
-                    return $query->where('prefeitura_id', $actor->prefeitura_id);
+                Rule::unique('users', 'email')->where(function ($query) use ($prefeituraId) {
+                    return $query->where('prefeitura_id', $prefeituraId);
                 }),
             ],
             'cpf' => [
                 'required',
                 'string',
                 'max:20',
-                Rule::unique('users', 'cpf')->where(function ($query) use ($actor) {
-                    return $query->where('prefeitura_id', $actor->prefeitura_id);
+                Rule::unique('users', 'cpf')->where(function ($query) use ($prefeituraId) {
+                    return $query->where('prefeitura_id', $prefeituraId);
                 }),
             ],
             'perfil' => ['required', Rule::in($allowedPerfis)],
@@ -125,7 +140,7 @@ class UserController extends Controller
             'status' => $validated['status'],
             'password' => Hash::make($validated['password']),
             'forcar_troca_senha' => $request->boolean('forcar_troca_senha', true),
-            'prefeitura_id' => $actor->prefeitura_id,
+            'prefeitura_id' => $prefeituraId,
         ]);
 
         return response()->json($usuario, 201);
@@ -134,9 +149,10 @@ class UserController extends Controller
     public function adminUpdate(Request $request, int $id)
     {
         $actor = $this->requireAdmin($request);
+        $prefeituraId = $this->resolvePrefeituraId($actor);
         $allowedPerfis = ['ADMIN', 'ARBITRO', 'RESPONSAVEL', 'REDATOR', 'ATLETA'];
 
-        $usuario = User::where('prefeitura_id', $actor->prefeitura_id)
+        $usuario = User::where('prefeitura_id', $prefeituraId)
             ->where('perfil', '!=', 'SUPER_ADMIN')
             ->findOrFail($id);
 
@@ -147,8 +163,8 @@ class UserController extends Controller
                 'email',
                 'max:255',
                 Rule::unique('users', 'email')
-                    ->where(function ($query) use ($actor) {
-                        return $query->where('prefeitura_id', $actor->prefeitura_id);
+                    ->where(function ($query) use ($prefeituraId) {
+                        return $query->where('prefeitura_id', $prefeituraId);
                     })
                     ->ignore($usuario->id),
             ],
@@ -157,8 +173,8 @@ class UserController extends Controller
                 'string',
                 'max:20',
                 Rule::unique('users', 'cpf')
-                    ->where(function ($query) use ($actor) {
-                        return $query->where('prefeitura_id', $actor->prefeitura_id);
+                    ->where(function ($query) use ($prefeituraId) {
+                        return $query->where('prefeitura_id', $prefeituraId);
                     })
                     ->ignore($usuario->id),
             ],
@@ -190,12 +206,13 @@ class UserController extends Controller
     public function adminDestroy(Request $request, int $id)
     {
         $actor = $this->requireAdmin($request);
+        $prefeituraId = $this->resolvePrefeituraId($actor);
 
         if ((int) $actor->id === (int) $id) {
             abort(422, 'Você não pode excluir o próprio usuário.');
         }
 
-        $usuario = User::where('prefeitura_id', $actor->prefeitura_id)
+        $usuario = User::where('prefeitura_id', $prefeituraId)
             ->where('perfil', '!=', 'SUPER_ADMIN')
             ->findOrFail($id);
 

@@ -15,6 +15,18 @@ class InstitucionalController extends Controller
     ) {
     }
 
+    private function resolvePrefeitura(Request $request): ?Prefeitura
+    {
+        $user = $request->user();
+        $prefeituraId = $user?->prefeitura_id;
+
+        if (!$prefeituraId && app()->bound('current_tenant') && app('current_tenant')) {
+            $prefeituraId = app('current_tenant')->id;
+        }
+
+        return $prefeituraId ? Prefeitura::findOrFail($prefeituraId) : null;
+    }
+
     public function show(Request $request)
     {
         $denied = $this->denyUnlessTenantAdmin($request);
@@ -22,13 +34,11 @@ class InstitucionalController extends Controller
             return $denied;
         }
 
-        $user = $request->user();
+        $prefeitura = $this->resolvePrefeitura($request);
 
-        if (!$user->prefeitura_id) {
+        if (!$prefeitura) {
             return response()->json(['message' => 'Usuário não vinculado a uma prefeitura'], 400);
         }
-
-        $prefeitura = Prefeitura::findOrFail($user->prefeitura_id);
 
         return response()->json($this->buildPrefeituraResponse($prefeitura));
     }
@@ -40,13 +50,11 @@ class InstitucionalController extends Controller
             return $denied;
         }
 
-        $user = $request->user();
+        $prefeitura = $this->resolvePrefeitura($request);
 
-        if (!$user->prefeitura_id) {
+        if (!$prefeitura) {
             return response()->json(['message' => 'Usuário não vinculado a uma prefeitura'], 400);
         }
-
-        $prefeitura = Prefeitura::findOrFail($user->prefeitura_id);
 
         $rules = [
             'nome' => 'required|string|max:255',
@@ -139,13 +147,12 @@ class InstitucionalController extends Controller
             return $denied;
         }
 
-        $user = $request->user();
+        $prefeitura = $this->resolvePrefeitura($request);
 
-        if (!$user->prefeitura_id) {
+        if (!$prefeitura) {
             return response()->json(['message' => 'Usuário não vinculado a uma prefeitura'], 400);
         }
 
-        $prefeitura = Prefeitura::findOrFail($user->prefeitura_id);
         app()->instance('current_tenant', $prefeitura);
 
         $result = $this->whatsAppGatewayService->testConnection();
@@ -160,13 +167,12 @@ class InstitucionalController extends Controller
             return $denied;
         }
 
-        $user = $request->user();
+        $prefeitura = $this->resolvePrefeitura($request);
 
-        if (!$user->prefeitura_id) {
+        if (!$prefeitura) {
             return response()->json(['message' => 'Usuário não vinculado a uma prefeitura'], 400);
         }
 
-        $prefeitura = Prefeitura::findOrFail($user->prefeitura_id);
         app()->instance('current_tenant', $prefeitura);
 
         $result = $this->whatsAppGatewayService->connectSession((bool) $request->boolean('reset'));
@@ -181,13 +187,12 @@ class InstitucionalController extends Controller
             return $denied;
         }
 
-        $user = $request->user();
+        $prefeitura = $this->resolvePrefeitura($request);
 
-        if (!$user->prefeitura_id) {
+        if (!$prefeitura) {
             return response()->json(['message' => 'Usuário não vinculado a uma prefeitura'], 400);
         }
 
-        $prefeitura = Prefeitura::findOrFail($user->prefeitura_id);
         app()->instance('current_tenant', $prefeitura);
 
         $result = $this->whatsAppGatewayService->logoutSession();
@@ -202,13 +207,12 @@ class InstitucionalController extends Controller
             return $denied;
         }
 
-        $user = $request->user();
+        $prefeitura = $this->resolvePrefeitura($request);
 
-        if (!$user->prefeitura_id) {
+        if (!$prefeitura) {
             return response()->json(['message' => 'Usuário não vinculado a uma prefeitura'], 400);
         }
 
-        $prefeitura = Prefeitura::findOrFail($user->prefeitura_id);
         app()->instance('current_tenant', $prefeitura);
 
         $status = $this->whatsAppGatewayService->sessionStatus();
