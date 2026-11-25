@@ -1,0 +1,30 @@
+{
+ "moments": [
+  {
+   "id": "marquee-row",
+   "at": "2026-11-25T17:08:35.541Z",
+   "seed": "c377f46a"
+  },
+  {
+   "id": "counter-rolls",
+   "at": "2026-11-25T17:08:35.541Z",
+   "seed": "c377f46a"
+  },
+  {
+   "id": "word-highlight",
+   "at": "2026-11-25T17:09:12.429Z",
+   "seed": "caec147d"
+  }
+ ],
+ "palettes": [
+  "teal-on-paper"
+ ],
+ "types": [
+  "host"
+ ],
+ "dealt": [
+  "host",
+  "manrope",
+  "geist"
+ ]
+}
