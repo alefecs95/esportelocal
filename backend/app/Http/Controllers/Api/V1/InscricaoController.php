@@ -9,10 +9,12 @@ use App\Models\Campeonato;
 use App\Models\CampeonatoCategoria;
 use App\Services\AtletaService;
 use App\Services\CadastroCamposService;
+use App\Services\WhatsAppNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
@@ -21,7 +23,8 @@ class InscricaoController extends Controller
 {
     public function __construct(
         private CadastroCamposService $cadastroCamposService,
-        private AtletaService $atletaService
+        private AtletaService $atletaService,
+        private WhatsAppNotificationService $whatsAppNotificationService
     ) {
     }
 
@@ -682,11 +685,20 @@ class InscricaoController extends Controller
             now()->addDays(30),
             ['id' => $inscricao->id]
         ));
-        $inscricao->setAttribute('comprovante_pdf_url', URL::temporarySignedRoute(
+        $comprovantePdfUrl = URL::temporarySignedRoute(
             'pdf.v1.comprovante-inscricao',
             now()->addDays(30),
             ['inscricaoId' => $inscricao->id]
-        ));
+        );
+        $inscricao->setAttribute('comprovante_pdf_url', $comprovantePdfUrl);
+
+        try {
+            $this->whatsAppNotificationService->notifyInscricaoRealizada($inscricao, $comprovantePdfUrl);
+        } catch (\Throwable $e) {
+            Log::warning('Falha ao disparar notificação WhatsApp da inscrição: ' . $e->getMessage(), [
+                'inscricao_id' => $inscricao->id,
+            ]);
+        }
 
         return $this->response(true, 'Inscrição realizada com sucesso', $inscricao, 201);
     }

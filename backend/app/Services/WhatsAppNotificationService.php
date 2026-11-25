@@ -117,6 +117,84 @@ class WhatsAppNotificationService
         $this->broadcastToSubscribed('new_competition', $message);
     }
 
+    public function notifyInscricaoRealizada(Inscricao $inscricao, ?string $comprovantePdfUrl = null): void
+    {
+        $inscricao->loadMissing(['atleta', 'categoria', 'campeonato']);
+        $atleta = $inscricao->atleta;
+        $campeonato = $inscricao->campeonato;
+        $categoria = $inscricao->categoria;
+
+        if (!$atleta || !$campeonato) {
+            return;
+        }
+
+        $rawPhone = $atleta->telefone ?: $atleta->responsavel_telefone;
+        $phone = $this->normalizePhone($rawPhone);
+        if (!$phone) {
+            return;
+        }
+
+        $tenantName = $this->getTenantDisplayName();
+        $linhas = [
+            "✅ *Inscrição realizada com sucesso — {$tenantName}*",
+            '',
+            "🏆 *Evento:* {$campeonato->nome}",
+            "👤 *Participante:* {$atleta->nome}",
+        ];
+
+        if ($categoria?->nome) {
+            $prova = $categoria->nome;
+            if (!empty($categoria->largada_prevista)) {
+                $prova .= " (Largada {$categoria->largada_prevista})";
+            }
+            $linhas[] = "🏃 *Prova / Categoria:* {$prova}";
+        }
+
+        if ($inscricao->numero_peito) {
+            $linhas[] = "🔢 *Número de peito:* #{$inscricao->numero_peito}";
+        }
+
+        if ($campeonato->data_inicio) {
+            $dataFormatada = Carbon::parse($campeonato->data_inicio)->format('d/m/Y');
+            $linhas[] = "📅 *Data:* {$dataFormatada}";
+        }
+
+        if (!empty($campeonato->local)) {
+            $linhas[] = "📍 *Local:* {$campeonato->local}";
+        }
+
+        if ($campeonato->inscricao_solidaria && $inscricao->status === 'pendente') {
+            $formas = [
+                'dinheiro' => 'Dinheiro',
+                'alimento' => 'Alimento',
+                'brinquedo' => 'Brinquedo',
+            ];
+            $formaLabel = $formas[$inscricao->forma_contribuicao] ?? $inscricao->forma_contribuicao;
+            $linhas[] = '';
+            $linhas[] = '⏳ *Status:* Aguardando entrega da contribuição' . ($formaLabel ? " ({$formaLabel})" : '') . '.';
+            $linhas[] = 'Sua inscrição será confirmada quando a contribuição for entregue à organização.';
+        }
+
+        if ($inscricao->getAttribute('depende_termo_menor')) {
+            $linhas[] = '📝 *Menor de 18 anos:* leve o termo de autorização assinado pelo responsável na retirada do kit.';
+        }
+
+        if (!empty($campeonato->kit_retirada_info)) {
+            $linhas[] = '';
+            $linhas[] = "📦 *Retirada do kit:* {$campeonato->kit_retirada_info}";
+        }
+
+        if ($comprovantePdfUrl) {
+            $linhas[] = '';
+            $linhas[] = "📄 *Comprovante (PDF):*\n{$comprovantePdfUrl}";
+        }
+
+        $cpfDigits = $atleta->cpf ? preg_replace('/\D+/', '', $atleta->cpf) : null;
+        $user = $cpfDigits ? User::where('cpf', $cpfDigits)->first() : null;
+
+        $this->dispatchMessage($phone, 'inscricao_realizada', implode("\n", $linhas), $user?->id, true);
+    }
+
     public function broadcastToSubscribed(string $type, string $message): void
     {
         WhatsAppNotification::query()

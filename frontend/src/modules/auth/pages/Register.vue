@@ -668,15 +668,6 @@
             >
               Baixar Comprovante (PDF)
             </a>
-            <a
-              v-if="inscricaoResultado.comprovante_url"
-              :href="inscricaoResultado.comprovante_url"
-              target="_blank"
-              rel="noopener"
-              class="px-4 py-2 rounded-lg border border-blue-300 text-blue-700 text-sm font-semibold hover:bg-blue-50"
-            >
-              Link assinado do comprovante
-            </a>
           </div>
         </div>
         <div v-else class="p-6 space-y-4">
