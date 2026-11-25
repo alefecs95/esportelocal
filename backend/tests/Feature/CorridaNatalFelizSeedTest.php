@@ -42,8 +42,10 @@ class CorridaNatalFelizSeedTest extends TestCase
 
     public function test_seed_com_prefeitura_inexistente_falha_sem_criar_nada(): void
     {
+        $antes = Campeonato::withoutGlobalScopes()->count();
+
         $this->artisan('corrida:natal-feliz', ['prefeitura_id' => 999999])->assertFailed();
 
-        $this->assertSame(0, Campeonato::withoutGlobalScopes()->count());
+        $this->assertSame($antes, Campeonato::withoutGlobalScopes()->count());
     }
 }
