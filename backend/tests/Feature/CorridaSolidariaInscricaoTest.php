@@ -469,5 +469,10 @@ class CorridaSolidariaInscricaoTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.id', $inscricaoId)
             ->assertJsonPath('data.atleta_nome', 'Adulto Simplificado');
+
+        // Link do WhatsApp (domínio raiz, sem X-Tenant-Slug) deve abrir o PDF
+        $this->get($comprovantePdfUrl)
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
     }
 }

@@ -480,7 +480,9 @@ class InscricaoController extends Controller
 
     public function comprovantePublico($id): JsonResponse
     {
-        $inscricao = Inscricao::with(['atleta:id,nome,sexo,cidade', 'categoria', 'campeonato'])->find($id);
+        $inscricao = Inscricao::withoutGlobalScopes()
+            ->with(['atleta:id,nome,sexo,cidade', 'categoria', 'campeonato'])
+            ->find($id);
         if (!$inscricao) {
             return $this->response(false, 'Inscrição não encontrada.', [], 404);
         }

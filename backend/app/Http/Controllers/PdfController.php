@@ -193,7 +193,14 @@ class PdfController extends Controller
             $this->assertLinkNotExpired($request);
         }
 
-        $inscricao = Inscricao::with(['atleta', 'categoria', 'campeonato'])->findOrFail($inscricaoId);
+        $inscricao = Inscricao::withoutGlobalScopes()->with(['atleta', 'categoria', 'campeonato'])->findOrFail($inscricaoId);
+
+        if ($inscricao->prefeitura_id && !App::has('current_tenant')) {
+            $tenant = Prefeitura::find($inscricao->prefeitura_id);
+            if ($tenant) {
+                App::instance('current_tenant', $tenant);
+            }
+        }
         $campeonato = $inscricao->campeonato;
         $isMenor = app(\App\Services\CadastroCamposService::class)
             ->isMenorDeIdade($inscricao->atleta?->data_nascimento, $campeonato);

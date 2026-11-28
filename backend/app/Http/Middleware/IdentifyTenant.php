@@ -92,7 +92,10 @@ class IdentifyTenant
                     $request->is('api/v1/logout') ||
                     $request->is('api/v1/update-password') ||
                     $request->is('api/v1/atletas/consulta-cpf/*') ||
-                    $request->is('api/v1/atletas/consulta-titulo')
+                    $request->is('api/v1/atletas/consulta-titulo') ||
+                    // Links de PDF/comprovante enviados por WhatsApp e-mail (sem subdomínio do tenant)
+                    $request->is('api/signed/*') ||
+                    $request->is('api/v1/signed/*')
                 ) {
                     return $next($request);
                 }
